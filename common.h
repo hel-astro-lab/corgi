@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#pragma once
+
 
 #include <limits>
 #include <vector>
@@ -109,4 +109,3 @@ namespace commType {
 
 
 
-#endif
