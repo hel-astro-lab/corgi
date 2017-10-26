@@ -1,4 +1,4 @@
-# CORGI 
+# corgi
 ### C++ Object-oRiented Grid Infrastructure
 #### (...or some other combination of relevant words that spell out another funny word.)
 ---
