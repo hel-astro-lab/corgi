@@ -1,15 +1,58 @@
-import os, sys
+from __future__ import print_function
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
-
 import palettable as pal
 cmap = pal.wesanderson.Moonrise1_5.mpl_colormap
 
+
+import sys, os
+sys.path.append('../../python')       #plasma, plasmatools
+sys.path.append('../../corgi/pycorgi') #corgi mesh infrastucture
+
+
 import corgi
+import plasmatools as ptools
+import plasma as plasma
 
 
 Nrank = 4
+
+#make random starting order
+def loadMpiRandomly(n):
+    np.random.seed(4)
+    if n.master:
+        for i in range(corgi.Nx):
+            for j in range(corgi.Ny):
+                val = np.random.randint(n.Nrank)
+                n.setMpiGrid(i, j, val)
+
+
+#load nodes to be in stripe formation
+def loadMpiStrides(n):
+    if n.master: #only master initializes; then sends
+        stride = np.zeros( (corgi.Ny), np.int64)
+        dy = np.float(corgi.Ny) / np.float(n.Nrank) 
+        for j in range(corgi.Ny):
+            val = np.int( j/dy )
+            stride[j] = val
+
+        for i in range(corgi.Nx):
+            for j in range(corgi.Ny):
+                val = stride[j]
+                n.setMpiGrid(i, j, val)
+    n.bcastMpiGrid()
+
+
+#load cells into each node
+def loadCells(n):
+    for i in range(corgi.Nx):
+        for j in range(corgi.Ny):
+            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.mpiGrid(i,j), ref[j,i]))
+            if n.mpiGrid(i,j) == n.rank:
+                c = corgi.Cell(i, j, n.rank)
+                n.addLocalCell(c) #TODO load data to cell
 
 
 
@@ -51,21 +94,21 @@ def plot_node(ax, n, lap):
     #            tmp_grid[i,j] = 0.5
 
 
-    for cid in n.get_cells():
-        c = n.get_cell( cid )
+    for cid in n.getCells():
+        c = n.getCell( cid )
         (i, j) = c.index()
         #check dublicates
         if tmp_grid[i,j] != -1.0:
-            print "{}: ERROR in real cells at ({},{})".format(n.rank, i,j)
+            print("{}: ERROR in real cells at ({},{})".format(n.rank, i,j))
             sys.exit()
         tmp_grid[i,j] = c.owner
 
 
-    for cid in n.get_virtuals():
-        c = n.get_cell( cid )
+    for cid in n.getVirtuals():
+        c = n.getCell( cid )
         (i,j) = c.index()
         if tmp_grid[i,j] != -1.0:
-            print "{}: ERROR in virtual cells at ({},{})".format(n.rank, i,j)
+            print("{}: ERROR in virtual cells at ({},{})".format(n.rank, i,j))
             sys.exit()
         tmp_grid[i,j] = c.owner
 
@@ -74,8 +117,8 @@ def plot_node(ax, n, lap):
 
 
     # add text label about number of neighbors
-    for cid in n.get_cells():
-        c = n.get_cell( cid )
+    for cid in n.getCells():
+        c = n.getCell( cid )
         (i, j) = c.index()
         ix = corgi.xmin + corgi.xmax*(i+0.5)/corgi.Nx
         jy = corgi.ymin + corgi.ymax*(j+0.5)/corgi.Ny
@@ -88,8 +131,8 @@ def plot_node(ax, n, lap):
         ax.text(jy, ix, label, ha='center',va='center', size=8)
 
 
-    #for cid in n.get_virtuals():
-    #    c = n.get_cell( cid )
+    #for cid in n.getVirtuals():
+    #    c = n.getCell( cid )
     #    (i,j) = c.index()
     #    ix = corgi.xmin + corgi.xmax*(i+0.5)/corgi.Nx
     #    jy = corgi.ymin + corgi.ymax*(j+0.5)/corgi.Ny
@@ -97,7 +140,7 @@ def plot_node(ax, n, lap):
     #    ax.text(jy, ix, label, ha='center',va='center')
 
 
-    ax.set_title(str(len(n.get_virtuals() ))+"/"+str(len(n.get_cells() )))
+    ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getCells() )))
 
 
     #save
@@ -111,7 +154,6 @@ def plot_node(ax, n, lap):
 
 
 if __name__ == "__main__":
-
 
     ################################################## 
     # set up plotting and figure
@@ -128,85 +170,39 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[1]) )
 
 
-    c = corgi.Cell( 0, 0, 0 )
-    print "cid:", c.index()
-    print "owner", c.owner
-    print "neigs", c.neighs(-1, -1)
-    print "nhood:", c.nhood()
 
-    print "--------------------------------------------------"
-    print "testing node..."
+    ################################################## 
+    #init node
+    node = corgi.Node()
+    node.initMpi()
+    loadMpiStrides(node)
+    loadCells(node)
 
-    n = corgi.Node()
-    n.init_mpi()
 
-    # Path to be created (avoid clutter by issuing this with master)
+    # Path to be created 
     fpath = "out/"
-    if n.master:
+    if node.master:
         if not os.path.exists(fpath):
             os.makedirs(fpath)
 
 
+    ################################################## 
+    #visualize as a test
+    plot_node(axs[0], node, 0)
 
-    #make random starting order
-    if False:
-        np.random.seed(4)
-        if n.master:
-            for i in range(corgi.Nx):
-                for j in range(corgi.Ny):
-                    val = np.random.randint(n.Nrank)
-                    n.set_mpiGrid(i, j, val)
 
-    # Normal side-by-side stride start
-    if True:
-        if n.master:
-            stride = np.zeros( (corgi.Ny), np.int64)
-            dy = np.float(corgi.Ny) / np.float(n.Nrank) 
-            for j in range(corgi.Ny):
-                val = np.int( j/dy )
-                stride[j] = val
+    ################################################## 
+    # test step
+    node.analyzeBoundaryCells()
+    print("{}: send queue        : {}".format(node.rank, node.send_queue))
+    print("{}: send queue address: {}".format(node.rank, node.send_queue_address))
 
-            for i in range(corgi.Nx):
-                for j in range(corgi.Ny):
-                    val = stride[j]
-                    n.set_mpiGrid(i, j, val)
-
-    n.bcast_mpiGrid()
-
-    #for i in range(corgi.Nx):
-    #    for j in range(corgi.Ny):
-    #        print "{}: ({},{}) = {}".format(n.rank, i,j,n.mpiGrid(i,j))
-    #sys.exit()
-
-    #for i in range(corgi.Nx):
-    #    for j in range(corgi.Ny):
-    #        val = np.random.randint(n.Nrank)
-    #        n.set_mpiGrid(i, j, val)
+    node.communicateSendCells()
+    node.communicateRecvCells()
+    plot_node(axs[0], node, 1)
 
 
 
-    #load cells into local node
-    for i in range(corgi.Nx):
-        for j in range(corgi.Ny):
-            #print "{} ({},{}) {} ?= {}".format(n.rank, i,j, n.mpiGrid(i,j), ref[j,i])
-            if n.mpiGrid(i,j) == n.rank:
-                c = corgi.Cell(i, j, n.rank)
-
-                #TODO load data to cell
-                n.add_local_cell(c)
+    node.finalizeMpi()
 
 
-
-    plot_node(axs[0], n, 0)
-
-    n.analyze_boundary_cells()
-    print n.rank, ": send queue        : ", n.send_queue
-    print n.rank, ": send queue address: ", n.send_queue_address
-
-    n.communicate_send_cells()
-    n.communicate_recv_cells()
-    plot_node(axs[0], n, 1)
-
-
-
-    n.finalize_mpi()
