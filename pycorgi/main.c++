@@ -35,31 +35,31 @@ PYBIND11_MODULE(corgi, m) {
 
     py::class_<corgi::Node>(m, "Node" )
         .def(py::init<>())
-        .def_readwrite("rank",    &corgi::Node::rank)
-        .def_readwrite("Nrank",   &corgi::Node::Nrank)
-        .def_readwrite("master",  &corgi::Node::master)
-        .def("mpiGrid",           &corgi::Node::mpiGrid)
-        .def("is_local",          &corgi::Node::is_local)
-        .def("cell_id",           &corgi::Node::cell_id)
-        .def("add_local_cell",    &corgi::Node::add_local_cell)
-        .def("get_cell",          &corgi::Node::get_cell)
-        .def("get_cells",         &corgi::Node::get_cells,
+        .def_readwrite("rank",       &corgi::Node::rank)
+        .def_readwrite("Nrank",      &corgi::Node::Nrank)
+        .def_readwrite("master",     &corgi::Node::master)
+        .def("mpiGrid",              &corgi::Node::mpiGrid)
+        .def("isLocal",              &corgi::Node::isLocal)
+        .def("cellId",               &corgi::Node::cellId)
+        .def("addLocalCell",         &corgi::Node::addLocalCell)
+        .def("getCell",              &corgi::Node::getCell)
+        .def("getCells",             &corgi::Node::getCells,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        .def("get_virtuals",      &corgi::Node::get_virtuals,
+        .def("getVirtuals",          &corgi::Node::getVirtuals,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        .def("analyze_boundary_cells", &corgi::Node::analyze_boundary_cells)
+        .def("analyzeBoundaryCells", &corgi::Node::analyzeBoundaryCells)
 
         // communication wrappers
         .def_readwrite("send_queue",         &corgi::Node::send_queue)
         .def_readwrite("send_queue_address", &corgi::Node::send_queue_address)
-        .def("set_mpiGrid",                  &corgi::Node::set_mpiGrid)
-        .def("init_mpi",                     &corgi::Node::init_mpi)
-        .def("bcast_mpiGrid",                &corgi::Node::bcast_mpiGrid)
-        .def("communicate_send_cells",       &corgi::Node::communicate_send_cells)
-        .def("communicate_recv_cells",       &corgi::Node::communicate_recv_cells)
-        .def("finalize_mpi",                 &corgi::Node::finalize_mpi);
+        .def("setMpiGrid",           &corgi::Node::setMpiGrid)
+        .def("initMpi",              &corgi::Node::initMpi)
+        .def("bcastMpiGrid",         &corgi::Node::bcastMpiGrid)
+        .def("communicateSendCells", &corgi::Node::communicateSendCells)
+        .def("communicateRecvCells", &corgi::Node::communicateRecvCells)
+        .def("finalizeMpi",          &corgi::Node::finalizeMpi);
 
 
 

@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include <fmt/format.h>
 #include <fmt/format.cc>
 #include <fmt/string.h>
@@ -11,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef> // for offsetof
+#include <unordered_map>
 
 #include "mpi.h"
 
@@ -137,18 +136,18 @@ namespace corgi {
 
 
             /// get mpi process for whatever location
-            const int mpiGrid(const int i, const int j) {
+            int mpiGrid(const int i, const int j) {
                 return _mpiGrid[i][j];
             }
 
             /// set new mpi process for some cell
-            void set_mpiGrid(const int i, const int j, int val) {
+            void setMpiGrid(const int i, const int j, int val) {
                 _mpiGrid[i][j] = val;
             }
 
 
             /// Create unique cell ids based on Morton z ordering
-            uint64_t cell_id(size_t i, size_t j) {
+            uint64_t cellId(size_t i, size_t j) {
                 return uint64_t( j*conf::Nx + i );
             }
             
@@ -161,10 +160,10 @@ namespace corgi {
             */
 
             /// Add local cell to the node
-            void add_local_cell( corgi::Cell c ) {
+            void addLocalCell( corgi::Cell c ) {
 
                 // calculate unique global cell ID
-                uint64_t cid = cell_id(c.i, c.j);
+                uint64_t cid = cellId(c.i, c.j);
 
                 //TODO Catch error if cell is not already mine?
                 c.cid   = cid;
@@ -177,7 +176,7 @@ namespace corgi {
 
 
             /// Return pointer to the actual cell data
-            corgi::Cell* get_cell_data(const uint64_t cid) const {
+            corgi::Cell* getCellData(const uint64_t cid) const {
             	if (this->cells.count(cid) > 0) {
             		return (corgi::Cell*) &(this->cells.at(cid));
             	} else {
@@ -187,17 +186,17 @@ namespace corgi {
 
             /// Same as get_cell_data but with additional syntax sugar 
             corgi::Cell* operator [] (const uint64_t cid) const {
-                return get_cell_data(cid);
+                return getCellData(cid);
             }
 
             /// Get a *copy* of the full cell; this is not what one usually wants
-            corgi::Cell get_cell( uint64_t cid ) {
+            corgi::Cell getCell( uint64_t cid ) {
                 return cells.at(cid);
             }
 
 
             /*! Return a vector of cell indices that fulfill a given criteria.  */
-            std::vector<uint64_t> get_all_cells(
+            std::vector<uint64_t> getAllCells(
                     const std::vector<int>& criteria = std::vector<int>(),
                     const bool sorted=false ) {
                 std::vector<uint64_t> ret;
@@ -228,11 +227,11 @@ namespace corgi {
 
 
             /// Return all local cells
-            std::vector<uint64_t> get_cells(
+            std::vector<uint64_t> getCells(
                     const std::vector<int>& criteria = std::vector<int>(),
                     const bool sorted=false ) {
 
-                std::vector<uint64_t> cell_list = get_all_cells(criteria, sorted);
+                std::vector<uint64_t> cell_list = getAllCells(criteria, sorted);
 
                 size_t i = 0, len = cell_list.size();
                 while (i < len) {
@@ -250,10 +249,10 @@ namespace corgi {
 
 
             /// Return all cells that are of VIRTUAL type.
-            std::vector<uint64_t> get_virtuals(
+            std::vector<uint64_t> getVirtuals(
                     const std::vector<int>& criteria = std::vector<int>(),
                     const bool sorted=false ) {
-                std::vector<uint64_t> cell_list = get_all_cells(criteria, sorted);
+                std::vector<uint64_t> cell_list = getAllCells(criteria, sorted);
 
                 size_t i = 0, len = cell_list.size();
                 while (i < len) {
@@ -272,7 +271,7 @@ namespace corgi {
 
             /// Check if we have a cell with the given index
             // bool is_local(std::tuple<int, int> indx) {
-            bool is_local(uint64_t cid) {
+            bool isLocal(uint64_t cid) {
                 bool local = false;
 
                 // Do we have it on the list=
@@ -295,9 +294,9 @@ namespace corgi {
 
 
 
-            std::vector<int> virtual_neighborhood(uint64_t cid) {
+            std::vector<int> virtualNeighborhood(uint64_t cid) {
 
-                auto c = get_cell_data(cid);
+                auto c = getCellData(cid);
                 std::vector< std::tuple<size_t, size_t> > neigs = c->nhood();
                 std::vector<int> virtual_owners;
                 for (auto indx: neigs) {
@@ -313,9 +312,9 @@ namespace corgi {
                     // Get cell id from index notation
                     size_t i = std::get<0>(indx);
                     size_t j = std::get<1>(indx);
-                    uint64_t cid = cell_id(i, j);
+                    uint64_t cid = cellId(i, j);
 
-                    if (!is_local( cid )) {
+                    if (!isLocal( cid )) {
                         int whoami = _mpiGrid[ std::get<0>(indx) ][ std::get<1>(indx) ]; 
                         virtual_owners.push_back( whoami );
                     }
@@ -344,10 +343,10 @@ namespace corgi {
              * together with the cells and is analyzed there by others inside the
              * `rank_virtuals` function.
              * */
-            void analyze_boundary_cells() {
+            void analyzeBoundaryCells() {
 
-                for (auto cid: get_cells()) {
-                    std::vector<int> virtual_owners = virtual_neighborhood(cid);
+                for (auto cid: getCells()) {
+                    std::vector<int> virtual_owners = virtualNeighborhood(cid);
                     size_t N = virtual_owners.size();
 
                     // If N > 0 then this is a boundary cell.
@@ -366,7 +365,7 @@ namespace corgi {
                         // compute mode by creating a frequency array
                         // NOTE: in case of same frequency we implicitly pick smaller rank
                         int max=0, top_owner = virtual_owners[0];
-                        for(int i=0;i<virtual_owners.size();i++) {
+                        for(int i=0; i<virtual_owners.size(); i++) {
                             int co = (int)count(virtual_owners.begin(), 
                                             virtual_owners.end(), 
                                             virtual_owners[i]);
@@ -383,7 +382,7 @@ namespace corgi {
 
 
                         // update cell values
-                        auto c = get_cell_data(cid);
+                        auto c = getCellData(cid);
                         c->top_virtual_owner = top_owner;
                         c->communications    = virtual_owners.size();
                         c->number_of_virtual_neighbors = N;
@@ -401,7 +400,7 @@ namespace corgi {
             
 
             /// Clear send queue, issue this only after the send has been successfully done
-            void clear_send_queue() {
+            void clearSendQueue() {
                 send_queue.clear();
                 send_queue_address.clear();
             }
@@ -432,7 +431,7 @@ namespace corgi {
 
 
             /// Initialize MPI and related auxiliary variables
-            void init_mpi() {
+            void initMpi() {
 
                 //--------------------------------------------------
                 // Start MPI
@@ -482,14 +481,14 @@ namespace corgi {
 
 
             /// Finalize MPI environment 
-            void finalize_mpi() {
+            void finalizeMpi() {
                 MPI_Type_free(&mpi_cell_t);
                 MPI_Finalize();
             }
 
 
             /// Broadcast master ranks mpiGrid to everybody
-            void bcast_mpiGrid() {
+            void bcastMpiGrid() {
 
                 MPI_Bcast(&(_mpiGrid[0][0]), 
                         conf::Nx*conf::Ny, 
@@ -502,7 +501,7 @@ namespace corgi {
             /// Issue isends to everywhere
             // First we send a warning message of how many cells to expect.
             // Based on this the receiving side can prepare accordingly.
-            void communicate_send_cells() {
+            void communicateSendCells() {
 
                 sent_info_messages.clear();
                 sent_cell_messages.clear();
@@ -548,7 +547,7 @@ namespace corgi {
                 // once, and then sending the same thing to everybody who needs it.
                 int i = 0;
                 for (auto cid: send_queue) {
-                    send_cell_data( cid, send_queue_address[i] );
+                    sendCellData( cid, send_queue_address[i] );
                     i++;
                 }
 
@@ -556,8 +555,8 @@ namespace corgi {
 
 
             /// Pack cell and send to everybody on the dests list
-            void send_cell_data(uint64_t cid, std::vector<int> dests) {
-                auto c = get_cell_data(cid);
+            void sendCellData(uint64_t cid, std::vector<int> dests) {
+                auto c = getCellData(cid);
                 
                 size_t j = sent_cell_messages.size();
                 
@@ -580,7 +579,7 @@ namespace corgi {
 
 
             /// Receive incoming stuff
-            void communicate_recv_cells() {
+            void communicateRecvCells() {
 
                 recv_info_messages.clear();
                 recv_cell_messages.clear();
@@ -650,7 +649,7 @@ namespace corgi {
                         } else {
                             // Cell is already on my virtual list; update
                             // TODO: use = operator instead.
-                            auto c = get_cell_data(cid);
+                            auto c = getCellData(cid);
 
                             if (c->local) {
                                 // TODO: better error handling; i.e. resolve the conflict
@@ -672,11 +671,6 @@ namespace corgi {
                     i++;
                 }
             }
-
-
-
-            // -------------------------------------------------- 
-            
 
     }; // end of Node class
 
