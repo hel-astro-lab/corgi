@@ -42,19 +42,19 @@
 namespace conf {
 
     /// Grid dimensions
-    const size_t Nx = 10;
-    const size_t Ny = 10;
+    size_t Nx = 10;
+    size_t Ny = 10;
 
     /// block size inside spatial cell
-    const size_t NxCell = 2;
-    const size_t NyCell = 2;
+    size_t NxCell = 2;
+    size_t NyCell = 2;
 
     /// physical grid dimensions
-    const double xmin = 0.0;
-    const double xmax = 1.0;
+    double xmin = 0.0;
+    double xmax = 1.0;
 
-    const double ymin = 0.0;
-    const double ymax = 1.0;
+    double ymin = 0.0;
+    double ymax = 1.0;
 
 }
 

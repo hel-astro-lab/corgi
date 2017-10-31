@@ -15,6 +15,7 @@
 
 // #include "definitions.h"
 #include "common.h"
+#include "SparseGrid.h"
 
 
 namespace corgi {
@@ -120,7 +121,10 @@ namespace corgi {
 
         /// Global large scale grid where information
         // of all the mpi processes is stored
-        int _mpiGrid[conf::Nx][conf::Ny];
+        // int _mpiGrid[conf::Nx][conf::Ny];
+        // std::vector<std::vector<int> > _mpiGrid;
+        SparseGrid<int> _mpiGrid;
+
 
         /// Map with cellID & cell data
         std::unordered_map<uint64_t, corgi::Cell> cells;
@@ -136,13 +140,13 @@ namespace corgi {
 
 
             /// get mpi process for whatever location
-            int mpiGrid(const int i, const int j) {
-                return _mpiGrid[i][j];
+            int mpiGrid(const size_t i, const size_t j) {
+                return _mpiGrid(i,j);
             }
 
             /// set new mpi process for some cell
-            void setMpiGrid(const int i, const int j, int val) {
-                _mpiGrid[i][j] = val;
+            void setMpiGrid(const size_t i, const size_t j, int val) {
+                _mpiGrid(i,j) = val;
             }
 
 
@@ -315,7 +319,7 @@ namespace corgi {
                     uint64_t cid = cellId(i, j);
 
                     if (!isLocal( cid )) {
-                        int whoami = _mpiGrid[ std::get<0>(indx) ][ std::get<1>(indx) ]; 
+                        int whoami = _mpiGrid(indx); 
                         virtual_owners.push_back( whoami );
                     }
                 }
@@ -425,7 +429,10 @@ namespace corgi {
             std::vector<MPI_Request> recv_cell_messages;
 
             Node() {
-                fmt::print("initializing node...");
+                fmt::print("initializing node ({} {})...\n", conf::Nx, conf::Ny);
+                
+                // allocating _mpiGrid
+                _mpiGrid.resize(conf::Nx, conf::Ny);
 
             }
 
@@ -490,11 +497,41 @@ namespace corgi {
             /// Broadcast master ranks mpiGrid to everybody
             void bcastMpiGrid() {
 
-                MPI_Bcast(&(_mpiGrid[0][0]), 
-                        conf::Nx*conf::Ny, 
-                        MPI_INT, 
-                        MASTER_RANK, 
-                        MPI_COMM_WORLD);
+                std::vector<int> tmp;
+                fmt::print("{}:-------- NX={} NY={}-------\n\n",rank, conf::Nx, conf::Ny);
+
+                if (master) {
+                  tmp = _mpiGrid.serialize();
+                } else {
+                  tmp.resize(conf::Nx * conf::Ny);
+                  for(size_t k=0; k<conf::Nx*conf::Ny; k++) {tmp[k] = -1.0;};
+                }
+
+
+                MPI_Bcast(&tmp[0],
+                          conf::Nx*conf::Ny, 
+                          MPI_INT, 
+                          MASTER_RANK, 
+                          MPI_COMM_WORLD
+                         );
+
+                // unpack
+                if(!master) {
+                  _mpiGrid.unpack(tmp, conf::Nx, conf::Ny);
+                }
+
+                /*
+                fmt::print("printing serialized version...");
+                size_t k=0;
+                for(size_t j=0; j<conf::Ny; j++) {
+                  for(size_t i=0; i<conf::Nx; i++) {
+                     if(tmp[k] != 0.0) {
+                      fmt::print("{}: elem {} ({},{}): {} MPI {}\n",rank, k,i,j, tmp[k], _mpiGrid(i,j) );
+                    }
+                    k++;
+                  }
+                }
+                */
 
             }
 

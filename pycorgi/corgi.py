@@ -8,13 +8,8 @@ cmap = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 
 import sys, os
-sys.path.append('../../python')       #plasma, plasmatools
-sys.path.append('../../corgi/pycorgi') #corgi mesh infrastucture
-
 
 import corgi
-import plasmatools as ptools
-import plasma as plasma
 
 
 Nrank = 4
@@ -64,7 +59,7 @@ def imshow(ax, grid):
     ax.clear()
     ax.minorticks_on()
     ax.set_xlim(corgi.xmin, corgi.xmax)
-    ax.set_ylim(corgi.xmin, corgi.xmax)
+    ax.set_ylim(corgi.ymin, corgi.ymax)
 
     extent = [corgi.xmin, corgi.xmax, corgi.ymin, corgi.ymax]
 

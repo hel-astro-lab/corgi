@@ -4,7 +4,25 @@ namespace py = pybind11;
 
 #include "../corgi.h"
 
+void setNs(size_t Nx, size_t Ny) {
+  conf::Nx = Nx;
+  conf::Ny = Ny;
+};
 
+void setLims(double xmin, double xmax, double ymin, double ymax) {
+  conf::xmin = xmin;
+  conf::xmax = xmax;
+  conf::ymin = ymin;
+  conf::ymax = ymax;
+};
+
+void printConf() {
+  fmt::print("Nx:{}\n", conf::Nx);
+  fmt::print("Ny:{}\n", conf::Ny);
+
+  fmt::print("x :{}/{}\n", conf::xmin, conf::xmax);
+  fmt::print("y :{}/{}\n", conf::ymin, conf::ymax);
+};
 
 // --------------------------------------------------
 PYBIND11_MODULE(corgi, m) {
@@ -17,6 +35,10 @@ PYBIND11_MODULE(corgi, m) {
     m.attr("xmax")   = conf::xmax;
     m.attr("ymin")   = conf::ymin;
     m.attr("ymax")   = conf::ymax;
+
+    m.def("setNs",     &setNs);
+    m.def("setLims",   &setLims);
+    m.def("printConf", &printConf);
 
     py::class_<corgi::Cell>(m, "Cell" )
         .def(py::init<size_t, size_t, int >())
