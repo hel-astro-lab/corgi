@@ -75,6 +75,7 @@ class SparseGrid{
         throw std::range_error("size of vector does not match given input");
       }
 
+      // clear mat before actually unpacking
       clear();
 
       size_t k=0;

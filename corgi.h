@@ -138,6 +138,16 @@ namespace corgi {
             /// list containing lists to where the aforementioned send_queue cells are to be sent
             std::vector< std::vector<int> > send_queue_address;
 
+            /// Return global grid sizes
+            size_t getNx() { return conf::Nx; };
+            size_t getNy() { return conf::Ny; };
+
+            /// Return global grid dimensions
+            double getXmin() { return conf::xmin; };
+            double getXmax() { return conf::xmax; };
+            double getYmin() { return conf::ymin; };
+            double getYmax() { return conf::ymax; };
+
 
             /// get mpi process for whatever location
             int mpiGrid(const size_t i, const size_t j) {
@@ -498,8 +508,6 @@ namespace corgi {
             void bcastMpiGrid() {
 
                 std::vector<int> tmp;
-                fmt::print("{}:-------- NX={} NY={}-------\n\n",rank, conf::Nx, conf::Ny);
-
                 if (master) {
                   tmp = _mpiGrid.serialize();
                 } else {
@@ -519,19 +527,6 @@ namespace corgi {
                 if(!master) {
                   _mpiGrid.unpack(tmp, conf::Nx, conf::Ny);
                 }
-
-                /*
-                fmt::print("printing serialized version...");
-                size_t k=0;
-                for(size_t j=0; j<conf::Ny; j++) {
-                  for(size_t i=0; i<conf::Nx; i++) {
-                     if(tmp[k] != 0.0) {
-                      fmt::print("{}: elem {} ({},{}): {} MPI {}\n",rank, k,i,j, tmp[k], _mpiGrid(i,j) );
-                    }
-                    k++;
-                  }
-                }
-                */
 
             }
 

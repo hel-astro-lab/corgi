@@ -4,12 +4,21 @@ namespace py = pybind11;
 
 #include "../corgi.h"
 
-void setNs(size_t Nx, size_t Ny) {
+
+
+
+
+
+
+
+
+
+void setSize(size_t Nx, size_t Ny) {
   conf::Nx = Nx;
   conf::Ny = Ny;
 };
 
-void setLims(double xmin, double xmax, double ymin, double ymax) {
+void setGridLims(double xmin, double xmax, double ymin, double ymax) {
   conf::xmin = xmin;
   conf::xmax = xmax;
   conf::ymin = ymin;
@@ -24,6 +33,8 @@ void printConf() {
   fmt::print("y :{}/{}\n", conf::ymin, conf::ymax);
 };
 
+
+
 // --------------------------------------------------
 PYBIND11_MODULE(corgi, m) {
 
@@ -36,9 +47,10 @@ PYBIND11_MODULE(corgi, m) {
     m.attr("ymin")   = conf::ymin;
     m.attr("ymax")   = conf::ymax;
 
-    m.def("setNs",     &setNs);
-    m.def("setLims",   &setLims);
-    m.def("printConf", &printConf);
+    m.def("setSize",       &setSize);
+    m.def("setGridLims",   &setGridLims);
+    m.def("printConf",     &printConf);
+
 
     py::class_<corgi::Cell>(m, "Cell" )
         .def(py::init<size_t, size_t, int >())
@@ -60,6 +72,14 @@ PYBIND11_MODULE(corgi, m) {
         .def_readwrite("rank",       &corgi::Node::rank)
         .def_readwrite("Nrank",      &corgi::Node::Nrank)
         .def_readwrite("master",     &corgi::Node::master)
+
+        .def("getNx",                &corgi::Node::getNx)
+        .def("getNy",                &corgi::Node::getNy)
+        .def("getXmin",              &corgi::Node::getXmin)
+        .def("getXmax",              &corgi::Node::getXmax)
+        .def("getYmin",              &corgi::Node::getYmin)
+        .def("getYmax",              &corgi::Node::getYmax)
+
         .def("mpiGrid",              &corgi::Node::mpiGrid)
         .def("isLocal",              &corgi::Node::isLocal)
         .def("cellId",               &corgi::Node::cellId)

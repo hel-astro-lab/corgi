@@ -6,7 +6,6 @@ from matplotlib import cm
 import palettable as pal
 cmap = pal.wesanderson.Moonrise1_5.mpl_colormap
 
-
 import sys, os
 
 import corgi
@@ -18,8 +17,8 @@ Nrank = 4
 def loadMpiRandomly(n):
     np.random.seed(4)
     if n.master:
-        for i in range(corgi.Nx):
-            for j in range(corgi.Ny):
+        for i in range(n.getNx()):
+            for j in range(n.getNy()):
                 val = np.random.randint(n.Nrank)
                 n.setMpiGrid(i, j, val)
 
@@ -27,14 +26,14 @@ def loadMpiRandomly(n):
 #load nodes to be in stripe formation
 def loadMpiStrides(n):
     if n.master: #only master initializes; then sends
-        stride = np.zeros( (corgi.Ny), np.int64)
-        dy = np.float(corgi.Ny) / np.float(n.Nrank) 
-        for j in range(corgi.Ny):
+        stride = np.zeros( (n.getNy()), np.int64)
+        dy = np.float(n.getNy()) / np.float(n.Nrank) 
+        for j in range(n.getNy()):
             val = np.int( j/dy )
             stride[j] = val
 
-        for i in range(corgi.Nx):
-            for j in range(corgi.Ny):
+        for i in range(n.getNx()):
+            for j in range(n.getNy()):
                 val = stride[j]
                 n.setMpiGrid(i, j, val)
     n.bcastMpiGrid()
@@ -42,8 +41,8 @@ def loadMpiStrides(n):
 
 #load cells into each node
 def loadCells(n):
-    for i in range(corgi.Nx):
-        for j in range(corgi.Ny):
+    for i in range(n.getNx()):
+        for j in range(n.getNy()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.mpiGrid(i,j), ref[j,i]))
             if n.mpiGrid(i,j) == n.rank:
                 c = corgi.Cell(i, j, n.rank)
@@ -55,13 +54,16 @@ def loadCells(n):
 # plotting tools
 
 # visualize matrix
-def imshow(ax, grid):
+def imshow(ax, grid, xmin, xmax, ymin, ymax):
+
     ax.clear()
     ax.minorticks_on()
-    ax.set_xlim(corgi.xmin, corgi.xmax)
-    ax.set_ylim(corgi.ymin, corgi.ymax)
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
+    #ax.set_xlim(-3.0, 3.0)
+    #ax.set_ylim(-3.0, 3.0)
 
-    extent = [corgi.xmin, corgi.xmax, corgi.ymin, corgi.ymax]
+    extent = [ xmin, xmax, ymin, ymax ]
 
     mgrid = np.ma.masked_where(grid == -1.0, grid)
     ax.imshow(mgrid,
@@ -79,11 +81,11 @@ def imshow(ax, grid):
 
 # Visualize current cell ownership on node
 def plot_node(ax, n, lap):
-    tmp_grid = np.ones( (corgi.Nx, corgi.Ny) ) * -1.0
+    tmp_grid = np.ones( (n.getNx(), n.getNy()) ) * -1.0
 
     
-    #for i in range(corgi.Nx):
-    #    for j in range(corgi.Ny):
+    #for i in range(n.getNx()):
+    #    for j in range(n.getNy()):
     #        cid = n.cell_id(i,j)
     #        if n.is_local(cid):
     #            tmp_grid[i,j] = 0.5
@@ -107,36 +109,37 @@ def plot_node(ax, n, lap):
             sys.exit()
         tmp_grid[i,j] = c.owner
 
-    imshow(ax, tmp_grid)
-    #imshow(ax, n.mpiGrid)
+    imshow(ax, tmp_grid, n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax() )
 
 
     # add text label about number of neighbors
     for cid in n.getCells():
         c = n.getCell( cid )
-        (i, j) = c.index()
-        ix = corgi.xmin + corgi.xmax*(i+0.5)/corgi.Nx
-        jy = corgi.ymin + corgi.ymax*(j+0.5)/corgi.Ny
+        (j, i) = c.index()
+        dx = n.getXmax() - n.getXmin()
+        dy = n.getYmax() - n.getYmin()
+
+        #NOTE annoying "feature" of swapping Nx and Ny because of imshow transpose
+        ix = n.getXmin() + dx*(i+0.5)/n.getNy()
+        jy = n.getYmin() + dy*(j+0.5)/n.getNx()
 
         #Nv = n.number_of_virtual_neighbors(c)
         Nv = c.number_of_virtual_neighbors
         label = str(Nv)
         #label = "{} ({},{})/{}".format(cid,i,j,Nv)
         #label = "({},{})".format(i,j)
-        ax.text(jy, ix, label, ha='center',va='center', size=8)
+        ax.text(ix, jy, label, ha='center',va='center', size=8)
 
 
     #for cid in n.getVirtuals():
     #    c = n.getCell( cid )
     #    (i,j) = c.index()
-    #    ix = corgi.xmin + corgi.xmax*(i+0.5)/corgi.Nx
-    #    jy = corgi.ymin + corgi.ymax*(j+0.5)/corgi.Ny
+    #    ix = n.getXmin() + n.getXmax()*(i+0.5)/n.getNx()
+    #    jy = n.getYmin() + n.getYmin()*(j+0.5)/n.getNy()
     #    label = "Vir"
     #    ax.text(jy, ix, label, ha='center',va='center')
 
-
     ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getCells() )))
-
 
     #save
     slap = str(lap).rjust(4, '0')
@@ -149,6 +152,17 @@ def plot_node(ax, n, lap):
 
 
 if __name__ == "__main__":
+
+    ################################################## 
+    # setup environment
+    xmin = -1.0
+    xmax =  2.0
+    ymin = -2.0
+    ymax =  3.0
+
+    corgi.setSize(10, 15)
+    corgi.setGridLims(xmin, xmax, ymin, ymax)
+
 
     ################################################## 
     # set up plotting and figure
@@ -173,7 +187,6 @@ if __name__ == "__main__":
     loadMpiStrides(node)
     loadCells(node)
 
-
     # Path to be created 
     fpath = "out/"
     if node.master:
@@ -195,6 +208,9 @@ if __name__ == "__main__":
     node.communicateSendCells()
     node.communicateRecvCells()
     plot_node(axs[0], node, 1)
+
+
+
 
 
 
