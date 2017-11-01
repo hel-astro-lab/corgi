@@ -5,14 +5,6 @@ namespace py = pybind11;
 #include "../corgi.h"
 
 
-
-
-
-
-
-
-
-
 void setSize(size_t Nx, size_t Ny) {
   conf::Nx = Nx;
   conf::Ny = Ny;
@@ -52,7 +44,8 @@ PYBIND11_MODULE(corgi, m) {
     m.def("printConf",     &printConf);
 
 
-    py::class_<corgi::Cell>(m, "Cell" )
+    py::class_<corgi::Cell> corgiCell(m, "Cell" );
+    corgiCell
         .def(py::init<size_t, size_t, int >())
         .def_readwrite("cid",                         &corgi::Cell::cid)
         .def_readwrite("owner",                       &corgi::Cell::owner)
@@ -67,7 +60,8 @@ PYBIND11_MODULE(corgi, m) {
         .def("nhood",                                 &corgi::Cell::nhood);
 
 
-    py::class_<corgi::Node>(m, "Node" )
+    py::class_<corgi::Node> corgiNode(m, "Node" );
+    corgiNode
         .def(py::init<>())
         .def_readwrite("rank",       &corgi::Node::rank)
         .def_readwrite("Nrank",      &corgi::Node::Nrank)
@@ -104,5 +98,8 @@ PYBIND11_MODULE(corgi, m) {
         .def("finalizeMpi",          &corgi::Node::finalizeMpi);
 
 
-
 }
+
+
+
+

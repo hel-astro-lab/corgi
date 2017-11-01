@@ -18,8 +18,8 @@
 #include "SparseGrid.h"
 
 
-namespace corgi {
 
+namespace corgi {
 
     class Cell {
 
