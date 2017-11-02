@@ -1,5 +1,4 @@
 
-
 CMP = mpic++
 LNK = mpic++
 
@@ -11,9 +10,9 @@ PYBINDFLAGS=-shared -fPIC -undefined dynamic_lookup
 
 
 
-all: pycorgi
+default: pycorgi examples
 
-default: pycorgi
+all: pycorgi
 
 
 
@@ -25,6 +24,21 @@ pycorgi/corgi.o: corgi.h common.h toolbox/SparseGrid.h pycorgi/corgi.c++
 
 pycorgi: pycorgi/corgi.o
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o pycorgi/corgi.so pycorgi/corgi.o
+
+
+examples: pycorgi ex1
+
+
+tests/simulation.o: tests/simulation.h tests/simulation.c++ 
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o tests/simulation.o -c tests/simulation.c++
+
+tests/bindings.o: tests/bindings.c++
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o tests/bindings.o -c tests/bindings.c++
+
+ex1: tests/simulation.o tests/bindings.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o tests/specialization.so tests/simulation.o tests/bindings.o
+
+
 
 
 .PHONY: tests
