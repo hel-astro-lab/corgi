@@ -44,6 +44,9 @@ class Initialization(unittest.TestCase):
         self.assertEqual( self.node.getYmax(), self.ymax )
 
 
+def cellID(i,j,Nx,Ny):
+    return j*Nx + i
+
 
 class Parallel(unittest.TestCase):
     
@@ -59,9 +62,10 @@ class Parallel(unittest.TestCase):
     def setUp(self):
         self.node = corgi.Node(self.Nx, self.Ny)
         self.node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
-        self.node.initMpi()
 
-    def test_loading(self):
+    def test_mpiInitialization(self):
+
+        self.node.initMpi()
 
         self.refGrid = np.zeros((self.Nx, self.Ny), np.int)
         self.refGrid[0:5,   0:10] = 0
@@ -80,10 +84,31 @@ class Parallel(unittest.TestCase):
             for i in range(self.node.getNx()):
                 val = self.node.mpiGrid(i,j)
                 self.assertEqual(val, self.refGrid[i,j])
-    
-
-    def tearDown(self):
         self.node.finalizeMpi()
+
+
+    def test_cid(self):
+        for j in range(self.node.getNy()):
+            for i in range(self.node.getNx()):
+                cid = self.node.cellId(i, j)
+                cidr = cellID( i, j, self.node.getNx(), self.node.getNy() )
+                self.assertEqual(cid, cidr)
+
+
+    def test_loading(self):
+        for j in range(self.node.getNy()):
+            for i in range(self.node.getNx()):
+                c = corgi.Cell(i, j, 0, self.node.getNx(), self.node.getNy() )
+
+                self.node.addLocalCell(c) 
+
+        print self.node.getCells()
+
+
+
+
+
+
 
 
 
