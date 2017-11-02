@@ -20,7 +20,7 @@ default: pycorgi
 ##################################################
 # actual compilation & linking rules
 
-main.o: ../corgi.h ../common.h ../SparseGrid.h main.c++
+main.o: ../corgi.h ../common.h ../toolbox/SparseGrid.h main.c++
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o main.o -c main.c++
 
 pycorgi: main.o

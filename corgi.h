@@ -15,7 +15,7 @@
 
 // #include "definitions.h"
 #include "common.h"
-#include "SparseGrid.h"
+#include "toolbox/SparseGrid.h"
 
 
 
