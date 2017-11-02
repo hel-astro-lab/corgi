@@ -39,6 +39,5 @@ class Initialization(unittest.TestCase):
         self.assertEqual( self.cell2.bark(), "Ruff!" )
 
         self.assertEqual( self.cell2.howl(), "Auuuuuu!" )
-
          
 
