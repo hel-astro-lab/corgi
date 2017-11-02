@@ -1,13 +1,13 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 namespace py = pybind11;
-
-#include "simulation.h"
-
-
+    
+#include "example.h"
 
 
-PYBIND11_MODULE(specialization, m) {
+
+
+PYBIND11_MODULE(example, m) {
 
   // --------------------------------------------------
   // Loading cell bindings from corgi library
@@ -19,7 +19,7 @@ PYBIND11_MODULE(specialization, m) {
 
   py::class_<example::Pembroke>(m, "Pembroke", corgiCell)
     .def(py::init<size_t, size_t, int, size_t, size_t>())
-    .def("howl",     &example::Pembroke::bark)
+    .def("howl",     &example::Pembroke::howl)
     .def("bark",     &example::Pembroke::bark);
 
 

@@ -29,14 +29,14 @@ pycorgi: pycorgi/corgi.o
 examples: pycorgi ex1
 
 
-tests/simulation.o: tests/simulation.h tests/simulation.c++ 
-	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o tests/simulation.o -c tests/simulation.c++
+tests/example.o: tests/example.h tests/example.c++ 
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o tests/example.o -c tests/example.c++
 
 tests/bindings.o: tests/bindings.c++
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o tests/bindings.o -c tests/bindings.c++
 
-ex1: tests/simulation.o tests/bindings.o
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o tests/specialization.so tests/simulation.o tests/bindings.o
+ex1: tests/example.o tests/bindings.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o tests/example.so tests/example.o tests/bindings.o
 
 
 
