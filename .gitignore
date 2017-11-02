@@ -1,28 +1,48 @@
-#macOS
-.DS_Store
-
-#c++
-*.d
+# Compiled Object files
 *.slo
 *.lo
 *.o
 *.obj
+.DS_Store
+
+
+
+# Precompiled Headers
 *.gch
 *.pch
+
+# Compiled Dynamic libraries
 *.so
 *.dylib
 *.dll
+
+# Fortran module files
 *.mod
 *.smod
+
+# Compiled Static libraries
 *.lai
 *.la
 *.a
 *.lib
+*.pyc
+
+# Executables
 *.exe
 *.out
 *.app
+radpic
 
-#other garbage
+# debug folders
+*.dSYM
+
+#
 *.png
-/out/*.png
+*.pdf
 
+
+*/*/runs
+*.zip
+out/
+*/*/out/
+*.mp4

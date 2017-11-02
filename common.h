@@ -1,15 +1,18 @@
 #pragma once
 
-
+/*
 #include <limits>
 #include <vector>
-
-
 
 #define sqr(x) ((x)*(x))
 #define pow2(x) sqr(x)
 #define pow3(x) ((x)*(x)*(x))
+*/
+
+
+#ifndef MASTER_RANK
 #define MASTER_RANK 0
+#endif
 
 
 // Define uint64_t for MPI
@@ -38,7 +41,7 @@
 //     static bool master;
 // };
 
-
+/*
 namespace conf {
 
     /// Grid dimensions
@@ -57,8 +60,9 @@ namespace conf {
     double ymax = 1.0;
 
 }
+*/
 
-
+/*
 namespace BC {
 
     /// Periodic x boundary condition
@@ -84,11 +88,11 @@ namespace BC {
     }
 
 }
+*/
 
 
 /*! Contains different cell boundary types. Type of computation will depend on 
  * what this type is.
- */
 namespace cellType {
     enum {
         LOCAL,    //! Default type indicating that cell is owned by the current process
@@ -97,6 +101,7 @@ namespace cellType {
         N_CELLTYPES
     };
 }
+*/
 
 namespace commType {
     enum {

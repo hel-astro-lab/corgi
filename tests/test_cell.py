@@ -19,16 +19,19 @@ class Initialization(unittest.TestCase):
     j = 11
     o = 1
 
+    Nx = 10
+    Ny = 20
+
     def setUp(self):
-        self.cell = corgi.Cell(self.i, self.j, self.o)
+        self.cell = corgi.Cell(self.i, self.j, self.o, self.Nx, self.Ny)
 
-
-    # test that we can inherit from the corgi::Cell base class
-    def test_inheritance(self):
-
+    def test_indexing(self):
         (i,j) = self.cell.index()
-        self.assertEqual(i, 10)
-        self.assertEqual(j, 11)
+        self.assertEqual(i, self.i)
+        self.assertEqual(j, self.j)
+
+
+
 
 
 

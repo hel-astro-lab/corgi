@@ -50,3 +50,5 @@ tests:
 clean: 
 	rm pycorgi/*.o
 	rm pycorgi/*.so
+	rm tests/*.o
+	rm tests/*.so

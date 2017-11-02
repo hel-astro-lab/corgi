@@ -14,11 +14,12 @@ PYBIND11_MODULE(specialization, m) {
   py::object corgiCell = (py::object) py::module::import("corgi").attr("Cell");
 
   py::class_<example::Welsh>(m, "Welsh", corgiCell)
-    .def(py::init<size_t, size_t, int >())
+    .def(py::init<size_t, size_t, int, size_t, size_t>())
     .def("bark",     &example::Welsh::bark);
 
   py::class_<example::Pembroke>(m, "Pembroke", corgiCell)
-    .def(py::init<size_t, size_t, int >())
+    .def(py::init<size_t, size_t, int, size_t, size_t>())
+    .def("howl",     &example::Pembroke::bark)
     .def("bark",     &example::Pembroke::bark);
 
 

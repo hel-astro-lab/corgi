@@ -7,6 +7,7 @@ using namespace example;
 
 std::string Welsh::bark() { return "Woof!"; };
 
-std::string Pembroke::bark() { return "Rufff!"; };
+std::string Pembroke::bark() { return "Ruff!"; };
+std::string Pembroke::howl() { return "Auuuuuu!"; };
 
 

@@ -45,7 +45,7 @@ def loadCells(n):
         for j in range(n.getNy()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.mpiGrid(i,j), ref[j,i]))
             if n.mpiGrid(i,j) == n.rank:
-                c = corgi.Cell(i, j, n.rank)
+                c = corgi.Cell(i, j, n.rank, n.getNx, n.getNy)
                 n.addLocalCell(c) #TODO load data to cell
 
 
@@ -184,6 +184,7 @@ if __name__ == "__main__":
     #init node
     node = corgi.Node()
     node.initMpi()
+
     loadMpiStrides(node)
     loadCells(node)
 

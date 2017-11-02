@@ -2,9 +2,11 @@
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
+#include "../common.h"
+#include "../cell.h"
 #include "../corgi.h"
 
-
+/*
 void setSize(size_t Nx, size_t Ny) {
   conf::Nx = Nx;
   conf::Ny = Ny;
@@ -16,7 +18,9 @@ void setGridLims(double xmin, double xmax, double ymin, double ymax) {
   conf::ymin = ymin;
   conf::ymax = ymax;
 };
+*/
 
+/*
 void printConf() {
   fmt::print("Nx:{}\n", conf::Nx);
   fmt::print("Ny:{}\n", conf::Ny);
@@ -24,12 +28,14 @@ void printConf() {
   fmt::print("x :{}/{}\n", conf::xmin, conf::xmax);
   fmt::print("y :{}/{}\n", conf::ymin, conf::ymax);
 };
+*/
 
 
 
 // --------------------------------------------------
 PYBIND11_MODULE(corgi, m) {
 
+  /*
     m.attr("Nx")     = conf::Nx;
     m.attr("Ny")     = conf::Ny;
     m.attr("NxCell") = conf::NxCell;
@@ -41,12 +47,13 @@ PYBIND11_MODULE(corgi, m) {
 
     m.def("setSize",       &setSize);
     m.def("setGridLims",   &setGridLims);
-    m.def("printConf",     &printConf);
+    // m.def("printConf",     &printConf);
+  */
 
 
     py::class_<corgi::Cell> corgiCell(m, "Cell" );
     corgiCell
-        .def(py::init<size_t, size_t, int >())
+        .def(py::init<size_t, size_t, int, size_t, size_t>())
         .def_readwrite("cid",                         &corgi::Cell::cid)
         .def_readwrite("owner",                       &corgi::Cell::owner)
         .def_readwrite("top_virtual_owner",           &corgi::Cell::top_virtual_owner)
@@ -62,11 +69,12 @@ PYBIND11_MODULE(corgi, m) {
 
     py::class_<corgi::Node> corgiNode(m, "Node" );
     corgiNode
-        .def(py::init<>())
+        .def(py::init<size_t, size_t>())
         .def_readwrite("rank",       &corgi::Node::rank)
         .def_readwrite("Nrank",      &corgi::Node::Nrank)
         .def_readwrite("master",     &corgi::Node::master)
 
+        .def("setGridLims",          &corgi::Node::setGridLims)
         .def("getNx",                &corgi::Node::getNx)
         .def("getNy",                &corgi::Node::getNy)
         .def("getXmin",              &corgi::Node::getXmin)
