@@ -20,16 +20,19 @@ default: pycorgi
 ##################################################
 # actual compilation & linking rules
 
-main.o: ../corgi.h ../common.h ../toolbox/SparseGrid.h main.c++
-	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o main.o -c main.c++
+pycorgi/corgi.o: corgi.h common.h toolbox/SparseGrid.h pycorgi/corgi.c++
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pycorgi/corgi.o -c pycorgi/corgi.c++
 
-pycorgi: main.o
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o corgi.so main.o
+pycorgi: pycorgi/corgi.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o pycorgi/corgi.so pycorgi/corgi.o
 
 
+.PHONY: tests
+tests: 
+	python2 -m unittest discover -s tests/ -v
 
 
 .PHONY: clean
 clean: 
-	rm *.o
-	rm *.so
+	rm pycorgi/*.o
+	rm pycorgi/*.so
