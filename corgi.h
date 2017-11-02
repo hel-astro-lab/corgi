@@ -57,11 +57,16 @@ namespace corgi {
                 this->owner = o;
             }
 
+            /*! \brief *virtual* base class destructor 
+             * NOTE: this needs to be virtual so that child classes can be 
+             * destroyed.
+             */
+            virtual ~Cell() { }
+
             /// return mpiGrid index
             const std::tuple<size_t, size_t> index() {
                 return std::make_tuple( i, j );
             }
-
 
             /// return index of cells in relative to my position
             const std::tuple<size_t, size_t> neighs(int ir, int jr) {
@@ -126,11 +131,11 @@ namespace corgi {
         SparseGrid<int> _mpiGrid;
 
 
-        /// Map with cellID & cell data
-        std::unordered_map<uint64_t, corgi::Cell> cells;
-
-
         public:
+
+            /// Map with cellID & cell data
+            std::unordered_map< uint64_t, std::shared_ptr<corgi::Cell> > cells;
+
 
             /// list of cell id's that are to be sent to others
             std::vector<uint64_t> send_queue;
@@ -185,7 +190,7 @@ namespace corgi {
                 c.local = true;
                 // c.types.push_back( cellType::LOCAL );
                 
-                cells.insert( std::make_pair(cid, c) );
+                cells.insert( std::make_pair(cid, &c) );
             }
 
 
@@ -205,7 +210,7 @@ namespace corgi {
 
             /// Get a *copy* of the full cell; this is not what one usually wants
             corgi::Cell getCell( uint64_t cid ) {
-                return cells.at(cid);
+                return *cells.at(cid);
             }
 
 
@@ -223,7 +228,7 @@ namespace corgi {
 
                     // criteria checking
                     auto c = it.second;
-                    if (!c.is_types( criteria ) ) {
+                    if (!c->is_types( criteria ) ) {
                         continue;
                     }
                       
@@ -249,7 +254,7 @@ namespace corgi {
 
                 size_t i = 0, len = cell_list.size();
                 while (i < len) {
-                    if (!cells.at( cell_list[i] ).local) {
+                    if (!cells.at( cell_list[i] )->local) {
                         std::swap(cell_list[i], cell_list.back());
                         cell_list.pop_back();
                         len -= 1;
@@ -270,7 +275,7 @@ namespace corgi {
 
                 size_t i = 0, len = cell_list.size();
                 while (i < len) {
-                    if (cells.at( cell_list[i] ).local) {
+                    if (cells.at( cell_list[i] )->local) {
                         std::swap(cell_list[i], cell_list.back());
                         cell_list.pop_back();
                         len -= 1;
@@ -291,7 +296,7 @@ namespace corgi {
                 // Do we have it on the list=
                 if (cells.count( cid ) > 0) {
                     // is it local (i.e., not virtual)
-                    if ( cells.at(cid).local ) {
+                    if ( cells.at(cid)->local ) {
                         local = true;
                     }
                 }
@@ -379,7 +384,7 @@ namespace corgi {
                         // compute mode by creating a frequency array
                         // NOTE: in case of same frequency we implicitly pick smaller rank
                         int max=0, top_owner = virtual_owners[0];
-                        for(int i=0; i<virtual_owners.size(); i++) {
+                        for(size_t i=0; i<virtual_owners.size(); i++) {
                             int co = (int)count(virtual_owners.begin(), 
                                             virtual_owners.end(), 
                                             virtual_owners[i]);
@@ -676,7 +681,7 @@ namespace corgi {
                             //       probing the class interiors
                             
                             inc_c.local = false;
-                            cells.insert( std::make_pair(cid, inc_c) );
+                            cells.insert( std::make_pair(cid, &inc_c) );
 
                         } else {
                             // Cell is already on my virtual list; update
