@@ -65,7 +65,8 @@ class Node {
   // --------------------------------------------------
   // Cell Mapping
   typedef corgi::Cell                           CellType;
-  typedef std::unique_ptr<CellType>             CellPtr;
+  // typedef std::unique_ptr<CellType>             CellPtr;
+  typedef std::shared_ptr<CellType>             CellPtr;
   typedef std::unordered_map<uint64_t, CellPtr> CellMap;
 
   /// Map with cellID & cell data
@@ -106,11 +107,12 @@ class Node {
   // Cell addition etc. manipulation
     
   /// Add local cell to the node
-  void addCell(CellType& cell) {
+  // void addCell(CellType& cell) {
+  void addCell(CellPtr cellptr) {
 
-    // claim unique ownership of the cell
+    // claim unique ownership of the cell (for unique_ptr)
     // std::unique_ptr<corgi::Cell> cellptr = std::make_unique<corgi:Cell>(cell);
-    CellPtr cellptr = std::make_unique<CellType>(cell);
+    // CellPtr cellptr = std::make_unique<CellType>(cell);
     
     // calculate unique global cell ID
     uint64_t cid = cellId(cellptr->i, cellptr->j);
@@ -119,7 +121,8 @@ class Node {
     cellptr->owner = rank;
     cellptr->local = true; //TODO Catch error if cell is not already mine?
 
-    cells.emplace(cid, std::move(cellptr));
+    // cells.emplace(cid, std::move(cellptr)); // unique_ptr needs to be moved
+    cells.emplace(cid, cellptr); // NOTE using c++14 emplace to avoid copying
   }
 
 
@@ -162,14 +165,26 @@ class Node {
    *     if (it == otMap.end()) throw std::invalid_argument("entry not found");
    *     return *(it->second);
    * }
+   *
+   * This way map retains its ownership of the cell and we avoid giving pointers
+   * away from the Class.
    */
   CellType& getCell(const uint64_t cid) {
     auto it = cells.find(cid);
-    if (it == cells.end()) throw std::invalid_argument("Cell entry not found");
+    if (it == cells.end()) throw std::invalid_argument("cell entry not found");
 
     return *(it->second);
   }
-   
+
+  /// \brief Get individual cell (as a pointer)
+  CellPtr& getCellPtr(const uint64_t cid) {
+    auto it = cells.find(cid);
+    if (it == cells.end()) throw std::invalid_argument("entry not found");
+    return it->second;
+  }
+
+
+
 
   // /// Return pointer to the actual cell data
   // corgi::Cell* getCellData(const uint64_t cid) const {

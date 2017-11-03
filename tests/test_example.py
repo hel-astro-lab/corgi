@@ -102,15 +102,38 @@ class ParallelGrid(unittest.TestCase):
         k = 0
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
-                c = example.Welsh(i, j, 0, self.node.getNx(), self.node.getNy() )
+
+                #initialize heterogeneous grid
+                if (i%2 == 0):
+                    c = example.Welsh(i, j, 0, self.node.getNx(), self.node.getNy() )
+                else:
+                    c = example.Pembroke(i, j, 0, self.node.getNx(), self.node.getNy() )
                 self.node.addCell(c) 
                 k += 1
+
         self.assertEqual( k, self.Nx*self.Ny )
-        self.assertEqual( len(self.node.getCellIds()), self.Nx*self.Ny )
-        #print self.node.getCells()
+
+        cids = self.node.getCellIds() 
+        self.assertEqual( len(cids), self.Nx*self.Ny )
+
+        #now try and get them back
+        for cid in cids:
+            c = self.node.getCell(cid)
+
+            self.assertEqual(c.cid,   cid)
+            self.assertEqual(c.owner, self.node.rank)
+            self.assertEqual(c.local, True)
+
+            # we need to be able to bark also after the getting.
+            # This tests that operator slicing is not acting
+
+            if (c.i % 2 == 0): #Welsh
+                self.assertEqual( c.bark(), "Woof!" )
+            else:              #Pembroke
+                self.assertEqual( c.bark(), "Ruff!" )
 
 
-         
+
 
 
 if __name__ == '__main__':

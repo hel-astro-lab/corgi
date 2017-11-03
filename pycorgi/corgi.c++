@@ -51,7 +51,10 @@ PYBIND11_MODULE(corgi, m) {
   */
 
 
-    py::class_<corgi::Cell> corgiCell(m, "Cell" );
+    // py::class_<corgi::Cell> corgiCell(m, "Cell" );
+    //py::class_<Base, std::shared_ptr<Base>>(...);
+    // py::class_<Derived, Base, std::shared_ptr<Derived>>(...);
+    py::class_<corgi::Cell, std::shared_ptr<corgi::Cell>> corgiCell(m, "Cell" );
     corgiCell
         .def(py::init<size_t, size_t, int, size_t, size_t>())
         .def_readwrite("cid",                         &corgi::Cell::cid)
@@ -95,16 +98,11 @@ PYBIND11_MODULE(corgi, m) {
 
         .def("cellId",               &corgi::Node::cellId)
         .def("addCell",              &corgi::Node::addCell)
-        // .def("addCell",              [](corgi::Cell& cell) {
-        //     std::unique_ptr<corgi::Cell> cellptr = std::make_unique<corgi:Cell>(cell);
-        //     corgi::Node::addCell( std::move(cellptr) );
-        //     });
         .def("getCellIds",             &corgi::Node::getCellIds,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        .def("getCell",              &corgi::Node::getCell);
+        .def("getCell",              &corgi::Node::getCellPtr);
 
-        // .def("getAllCells",          &corgi::Node::getAllCells);
         // .def("getCells",             &corgi::Node::getCells,
         //         py::arg("criteria") = std::vector<int>(),
         //         py::arg("sorted") = true)
@@ -113,8 +111,8 @@ PYBIND11_MODULE(corgi, m) {
         //         py::arg("sorted") = true)
 
         // .def("isLocal",              &corgi::Node::isLocal)
-        // .def("getCell",              &corgi::Node::getCell)
         // .def("analyzeBoundaryCells", &corgi::Node::analyzeBoundaryCells)
+
 
         // // communication wrappers
         // .def_readwrite("send_queue",         &corgi::Node::send_queue)
