@@ -69,16 +69,23 @@ class Node {
   typedef std::shared_ptr<CellType>             CellPtr;
   typedef std::unordered_map<uint64_t, CellPtr> CellMap;
 
+  public:
   /// Map with cellID & cell data
   CellMap cells;
 
-
-  public:
   /*! Global large scale block grid where information
    * of all the mpi processes are stored
    */
   SparseGrid<int> mpiGrid;
 
+  // Python bindings for mpiGrid
+  int pyGetMpiGrid(size_t i, size_t j) {
+    return mpiGrid(i,j);
+  }
+
+  void pySetMpiGrid(size_t i, size_t j, int val) {
+    mpiGrid(i,j) = val;
+  }
 
   /// Create unique cell ids based on Morton z ordering
   uint64_t cellId(size_t i, size_t j) {
