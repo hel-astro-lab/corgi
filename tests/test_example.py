@@ -97,12 +97,16 @@ class ParallelGrid(unittest.TestCase):
 
 
 
-    def loading(self):
+    def test_loading(self):
+
+        k = 0
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
                 c = example.Welsh(i, j, 0, self.node.getNx(), self.node.getNy() )
-                self.node.addLocalCell(c) 
-        self.assertEqual( len(self.node.getAllCells()), self.Nx*self.Ny )
+                self.node.addCell(c) 
+                k += 1
+        self.assertEqual( k, self.Nx*self.Ny )
+        self.assertEqual( len(self.node.getCellIds()), self.Nx*self.Ny )
         #print self.node.getCells()
 
 

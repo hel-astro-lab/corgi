@@ -97,6 +97,7 @@ class Parallel(unittest.TestCase):
 
     def test_loading(self):
 
+        #load cells
         k = 0
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
@@ -104,10 +105,22 @@ class Parallel(unittest.TestCase):
                 self.node.addCell(c) 
                 k += 1
         self.assertEqual( k, self.Nx*self.Ny )
-        self.assertEqual( len(self.node.getCellIds() ), self.Nx*self.Ny )
 
+        cids = self.node.getCellIds() 
+        self.assertEqual( len(cids), self.Nx*self.Ny )
 
+        #now try and get then back
+        for cid in cids:
+            c = self.node.getCell(cid)
 
+            self.assertEqual(c.cid,   cid)
+            self.assertEqual(c.owner, self.node.rank)
+            self.assertEqual(c.local, True)
+
+            #ci = c.i
+            #cj = c.j
+            #self.assertEqual(ci, ri)
+            #self.assertEqual(cj, rj)
 
 
 

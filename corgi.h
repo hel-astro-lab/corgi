@@ -153,6 +153,23 @@ class Node {
     return ret;
   }
 
+  /*! \brief Get individual cell (as a reference)
+   *
+   * NOTE: from StackOverflow (recommended getter method):
+   * OtherType& get_othertype(const std::string& name)
+   * {
+   *     auto it = otMap.find(name);
+   *     if (it == otMap.end()) throw std::invalid_argument("entry not found");
+   *     return *(it->second);
+   * }
+   */
+  CellType& getCell(const uint64_t cid) {
+    auto it = cells.find(cid);
+    if (it == cells.end()) throw std::invalid_argument("Cell entry not found");
+
+    return *(it->second);
+  }
+   
 
   // /// Return pointer to the actual cell data
   // corgi::Cell* getCellData(const uint64_t cid) const {

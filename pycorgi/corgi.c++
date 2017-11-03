@@ -101,7 +101,8 @@ PYBIND11_MODULE(corgi, m) {
         //     });
         .def("getCellIds",             &corgi::Node::getCellIds,
                 py::arg("criteria") = std::vector<int>(),
-                py::arg("sorted") = true);
+                py::arg("sorted") = true)
+        .def("getCell",              &corgi::Node::getCell);
 
         // .def("getAllCells",          &corgi::Node::getAllCells);
         // .def("getCells",             &corgi::Node::getCells,
