@@ -63,7 +63,7 @@ class Parallel(unittest.TestCase):
         self.node = corgi.Node(self.Nx, self.Ny)
         self.node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
 
-    def test_mpiInitialization(self):
+    def mpiInitialization(self):
 
         self.node.initMpi()
 
@@ -82,7 +82,7 @@ class Parallel(unittest.TestCase):
 
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
-                val = self.node.mpiGrid(i,j)
+                val = self.node.getMpiGrid(i,j)
                 self.assertEqual(val, self.refGrid[i,j])
         self.node.finalizeMpi()
 
@@ -96,15 +96,15 @@ class Parallel(unittest.TestCase):
 
 
     def test_loading(self):
+
+        k = 0
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
                 c = corgi.Cell(i, j, 0, self.node.getNx(), self.node.getNy() )
-
-                self.node.addLocalCell(c) 
-
-        print self.node.getCells()
-
-
+                self.node.addCell(c) 
+                k += 1
+        self.assertEqual( k, self.Nx*self.Ny )
+        self.assertEqual( len(self.node.getCellIds() ), self.Nx*self.Ny )
 
 
 

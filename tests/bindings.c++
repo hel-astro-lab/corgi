@@ -26,7 +26,10 @@ PYBIND11_MODULE(example, m) {
 
   // --------------------------------------------------
   // Grid bindings
-
+  py::object corgiNode = (py::object) py::module::import("corgi").attr("Node");
+  py::class_<example::Grid>(m, "Grid", corgiNode)
+    .def(py::init<size_t, size_t>())
+    .def("petShop",   &example::Grid::petShop);
 
 
 }

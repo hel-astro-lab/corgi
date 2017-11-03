@@ -82,29 +82,48 @@ PYBIND11_MODULE(corgi, m) {
         .def("getYmin",              &corgi::Node::getYmin)
         .def("getYmax",              &corgi::Node::getYmax)
 
-        .def("mpiGrid",              &corgi::Node::mpiGrid)
-        .def("isLocal",              &corgi::Node::isLocal)
+        .def("getMpiGrid",              [](SparseGrid<int> &s, py::tuple indx) {
+          size_t i = indx[0].cast<size_t>();
+          size_t j = indx[1].cast<size_t>();
+          return s(i,j);
+          })
+        .def("setMpiGrid",              [](SparseGrid<int> &s, py::tuple indx, int val) {
+          size_t i = indx[0].cast<size_t>();
+          size_t j = indx[1].cast<size_t>();
+          s(i,j) = val;
+          })
+
         .def("cellId",               &corgi::Node::cellId)
-        .def("addLocalCell",         &corgi::Node::addLocalCell)
-        .def("getCell",              &corgi::Node::getCell)
-        .def("getCells",             &corgi::Node::getCells,
+        .def("addCell",              &corgi::Node::addCell)
+        // .def("addCell",              [](corgi::Cell& cell) {
+        //     std::unique_ptr<corgi::Cell> cellptr = std::make_unique<corgi:Cell>(cell);
+        //     corgi::Node::addCell( std::move(cellptr) );
+        //     });
+        .def("getCellIds",             &corgi::Node::getCellIds,
                 py::arg("criteria") = std::vector<int>(),
-                py::arg("sorted") = true)
-        .def("getVirtuals",          &corgi::Node::getVirtuals,
-                py::arg("criteria") = std::vector<int>(),
-                py::arg("sorted") = true)
-        .def("analyzeBoundaryCells", &corgi::Node::analyzeBoundaryCells)
+                py::arg("sorted") = true);
 
-        // communication wrappers
-        .def_readwrite("send_queue",         &corgi::Node::send_queue)
-        .def_readwrite("send_queue_address", &corgi::Node::send_queue_address)
-        .def("setMpiGrid",           &corgi::Node::setMpiGrid)
-        .def("initMpi",              &corgi::Node::initMpi)
-        .def("bcastMpiGrid",         &corgi::Node::bcastMpiGrid)
-        .def("communicateSendCells", &corgi::Node::communicateSendCells)
-        .def("communicateRecvCells", &corgi::Node::communicateRecvCells)
-        .def("finalizeMpi",          &corgi::Node::finalizeMpi);
+        // .def("getAllCells",          &corgi::Node::getAllCells);
+        // .def("getCells",             &corgi::Node::getCells,
+        //         py::arg("criteria") = std::vector<int>(),
+        //         py::arg("sorted") = true)
+        // .def("getVirtuals",          &corgi::Node::getVirtuals,
+        //         py::arg("criteria") = std::vector<int>(),
+        //         py::arg("sorted") = true)
 
+        // .def("isLocal",              &corgi::Node::isLocal)
+        // .def("getCell",              &corgi::Node::getCell)
+        // .def("analyzeBoundaryCells", &corgi::Node::analyzeBoundaryCells)
+
+        // // communication wrappers
+        // .def_readwrite("send_queue",         &corgi::Node::send_queue)
+        // .def_readwrite("send_queue_address", &corgi::Node::send_queue_address)
+        // .def("setMpiGrid",           &corgi::Node::setMpiGrid)
+        // .def("initMpi",              &corgi::Node::initMpi)
+        // .def("bcastMpiGrid",         &corgi::Node::bcastMpiGrid)
+        // .def("communicateSendCells", &corgi::Node::communicateSendCells)
+        // .def("communicateRecvCells", &corgi::Node::communicateRecvCells)
+        // .def("finalizeMpi",          &corgi::Node::finalizeMpi);
 
 }
 
