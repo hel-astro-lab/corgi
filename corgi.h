@@ -184,7 +184,7 @@ class Node {
   }
 
   /// \brief Get individual cell (as a pointer)
-  CellPtr& getCellPtr(const uint64_t cid) {
+  CellPtr getCellPtr(const uint64_t cid) {
     auto it = cells.find(cid);
     if (it == cells.end()) throw std::invalid_argument("entry not found");
     return it->second;
