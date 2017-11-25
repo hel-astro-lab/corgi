@@ -84,6 +84,7 @@ class Parallel(unittest.TestCase):
             for i in range(self.node.getNx()):
                 val = self.node.getMpiGrid(i,j)
                 self.assertEqual(val, self.refGrid[i,j])
+
         self.node.finalizeMpi()
 
 
