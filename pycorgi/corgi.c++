@@ -85,23 +85,28 @@ PYBIND11_MODULE(corgi, m) {
         .def("getYmin",              &corgi::Node::getYmin)
         .def("getYmax",              &corgi::Node::getYmax)
 
-        .def("getMpiGrid",              [](SparseGrid<int> &s, py::tuple indx) {
-          size_t i = indx[0].cast<size_t>();
-          size_t j = indx[1].cast<size_t>();
+        .def("getMpiGrid",           &corgi::Node::pyGetMpiGrid)
+        .def("setMpiGrid",           &corgi::Node::pySetMpiGrid)
+
+        /*
+        .def("getMpiGrid",              [](SparseGrid<int> &s, const size_t i, const size_t j) {
+          // size_t i = indx[0].cast<size_t>();
+          // size_t j = indx[1].cast<size_t>();
           return s(i,j);
           })
-        .def("setMpiGrid",              [](SparseGrid<int> &s, py::tuple indx, int val) {
-          size_t i = indx[0].cast<size_t>();
-          size_t j = indx[1].cast<size_t>();
+        .def("setMpiGrid",              [](SparseGrid<int> &s, const size_t i, const size_t j, int val) {
+          // size_t i = indx[0].cast<size_t>();
+          // size_t j = indx[1].cast<size_t>();
           s(i,j) = val;
           })
+         */
 
         .def("cellId",               &corgi::Node::cellId)
         .def("addCell",              &corgi::Node::addCell)
         .def("getCellIds",             &corgi::Node::getCellIds,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        .def("getCell",              &corgi::Node::getCellPtr);
+        .def("getCellPtr",              &corgi::Node::getCellPtr);
 
         // .def("getCells",             &corgi::Node::getCells,
         //         py::arg("criteria") = std::vector<int>(),
