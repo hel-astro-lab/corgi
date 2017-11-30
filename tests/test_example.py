@@ -118,7 +118,7 @@ class ParallelGrid(unittest.TestCase):
 
         #now try and get them back
         for cid in cids:
-            c = self.node.getCell(cid)
+            c = self.node.getCellPtr(cid)
 
             self.assertEqual(c.cid,   cid)
             self.assertEqual(c.owner, self.node.rank)
