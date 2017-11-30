@@ -41,6 +41,37 @@ class Initialization(unittest.TestCase):
         self.assertEqual( self.cell2.howl(), "Auuuuuu!" )
 
 
+# Testing multiple inheritance bindings
+class MultipleInheritance(unittest.TestCase):
+
+    i = 10
+    j = 11
+    o = 1
+
+    Nx = 10
+    Ny = 20
+
+    soc_num = 123456
+
+    def setUp(self):
+        self.swede  = example.Swede(self.soc_num)
+        self.viking = example.Viking()
+
+        self.vallhund = example.Vallhund(self.i, self.j, self.o, self.Nx, self.Ny, 
+                                        self.soc_num)
+
+    def test_extending(self):
+        self.assertEqual( self.vallhund.bark(), "ruf ruf ruf" )
+
+    def test_multiple_inheriting(self):
+
+        self.assertEqual( self.vallhund.fika(), self.swede.fika() )
+        self.assertEqual( self.vallhund.prayForOdin(), self.viking.prayForOdin() )
+
+        self.assertEqual( self.vallhund.number, self.swede.number )
+
+
+
 def cellID(i,j,Nx,Ny):
     return j*Nx + i
 
