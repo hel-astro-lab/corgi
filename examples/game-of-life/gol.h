@@ -12,7 +12,9 @@ namespace gol {
 
 
 /// Snapshot patch of a CA simulation
-class Patch {
+class Mesh {
+
+  public:
 
   /// patch dimensions
   size_t Nx;
@@ -22,13 +24,21 @@ class Patch {
   std::vector<int> mesh;
 
   /// ctor
-  Patch(size_t Nx, size_t Ny);
+  Mesh(size_t Nx, size_t Ny);
+
+  size_t indx(const size_t i, const size_t j) const {
+    return Nx*j + i;
+  };
 
   /// 2D access operator for values
-  int operator () (size_t i, size_t j) {
-    size_t indx = Nx*j + i;
-    return mesh[indx];
+  int operator () (const size_t i, const size_t j) const {
+    return mesh[ indx(i,j) ];
   };
+
+  int &operator () (const size_t i, const size_t j) {
+    return mesh[ indx(i,j) ];
+  };
+
 
 };
 
@@ -48,15 +58,15 @@ class CellularAutomataCell : public corgi::Cell {
 
     // extending the base class
 
-    datarotators::DataContainer<Patch> data;
+    datarotators::DataContainer<Mesh> data;
 
     /// Add data to the container
-    void addData(Patch m) {
+    void addData(Mesh m) {
       data.push_back(m);
     }
 
     /// get current patch
-    Patch& getData() {
+    Mesh& getData() {
       return *data.get();
     };
 
