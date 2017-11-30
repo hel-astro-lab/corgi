@@ -12,22 +12,30 @@ namespace gol {
 
 
 /// Snapshot patch of a CA simulation
-class patch {
+class Patch {
 
   /// patch dimensions
   size_t Nx;
   size_t Ny;
 
+  /// Internal 2D mesh storing the values
   std::vector<int> mesh;
 
-  patch(size_t Nx, size_t Ny);
+  /// ctor
+  Patch(size_t Nx, size_t Ny);
 
+  /// 2D access operator for values
+  int operator () (size_t i, size_t j) {
+    size_t indx = Nx*j + i;
+    return mesh[indx];
+  };
 
 };
 
 
 
-/// Small general local cellular automata patch
+
+/// Small local cellular automata patch
 class CellularAutomataCell : public corgi::Cell {
 
   public:
@@ -38,10 +46,21 @@ class CellularAutomataCell : public corgi::Cell {
 
     ~CellularAutomataCell() { };
 
-    // extend the base class
-    // std::string bark();
+    // extending the base class
 
-    datarotators::DataContainer<patch> data;
+    datarotators::DataContainer<Patch> data;
+
+    /// Add data to the container
+    void addData(Patch m) {
+      data.push_back(m);
+    }
+
+    /// get current patch
+    Patch& getData() {
+      return *data.get();
+    };
+
+
 
 
 };
