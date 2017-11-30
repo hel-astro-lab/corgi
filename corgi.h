@@ -191,6 +191,11 @@ class Node {
   }
 
 
+  CellPtr getCellPtr(const size_t i, const size_t j) {
+    uint64_t cid = cellId(i, j);
+    return getCellPtr(cid);
+  }
+
 
 
   // /// Return pointer to the actual cell data

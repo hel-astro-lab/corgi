@@ -106,7 +106,8 @@ PYBIND11_MODULE(corgi, m) {
         .def("getCellIds",             &corgi::Node::getCellIds,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        .def("getCellPtr",              &corgi::Node::getCellPtr);
+        .def("getCellPtr", py::overload_cast<const uint64_t>(&corgi::Node::getCellPtr))
+        .def("getCellPtr", py::overload_cast<const size_t, const size_t>(&corgi::Node::getCellPtr));
 
         // .def("getCells",             &corgi::Node::getCells,
         //         py::arg("criteria") = std::vector<int>(),
