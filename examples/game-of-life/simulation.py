@@ -95,8 +95,8 @@ def plotNode(ax, n, conf):
 
         #Nv = n.number_of_virtual_neighbors(c)
         Nv = c.number_of_virtual_neighbors
-        #label = str(Nv)
-        label = "{} ({},{})/{}".format(cid,i,j,Nv)
+        label = str(Nv)
+        #label = "{} ({},{})/{}".format(cid,i,j,Nv)
         #label = "({},{})".format(i,j)
         ax.text(ix, jy, label, ha='center',va='center', size=8)
 
@@ -135,14 +135,17 @@ def plotMesh(ax, n, conf):
 
     imshow(ax, data,
             n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
-            #cmap = palette,
-            #vmin = 0.0,
-            vmax = data.max(),
+            cmap = palette,
+            vmin = 0.0,
+            #vmax = data.max(),
             clip = 0,
             )
 
-    print "old mesh\n:"
-    print np.flipud(data.T)
+    #print "old mesh\n:"
+    #print np.flipud(data.T)
+
+
+
 
 def plotMesh2(ax, n, conf):
 
@@ -167,14 +170,14 @@ def plotMesh2(ax, n, conf):
 
     imshow(ax, data,
             n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
-            #cmap = palette,
-            #vmin = 0.0,
-            vmax = data.max(),
+            cmap = palette,
+            vmin = 0.0,
+            #vmax = data.max(),
             clip = 0,
             )
 
-    print "new mesh\n:"
-    print np.flipud(data.T)
+    #print "new mesh\n:"
+    #print np.flipud(data.T)
 
 
 def saveVisz(lap, n, conf):
@@ -236,11 +239,19 @@ def randomInitialize(n, conf):
                 mesh = pygol.Mesh( conf["NxMesh"], conf["NyMesh"] )
 
                 # fill mesh
-                for q in range(conf["NxMesh"]):
-                    for k in range(conf["NyMesh"]):
-                        #mesh[q,k] = np.random.randint(0,2)
+                if (i == 2) and (j == 2):
+                    for q in range(conf["NxMesh"]):
+                        for k in range(conf["NyMesh"]):
+                            ref = np.random.randint(0,11)
+                            if ref < 5:
+                                mesh[q,k] = 1
+                            else:
+                                mesh[q,k] = 0
+
+
+
                         #mesh[q,k] = q + conf["NxMesh"]*k
-                        mesh[q,k] = val
+                        #mesh[q,k] = val
                         val += 1
 
                 #mesh[0,0] = 1
@@ -272,10 +283,10 @@ if __name__ == "__main__":
     
     #setup node
     conf = {
-            "Nx"     : 3,
-            "Ny"     : 3,
-            "NxMesh" : 2,
-            "NyMesh" : 2,
+            "Nx"     : 5,
+            "Ny"     : 5,
+            "NxMesh" : 100,
+            "NyMesh" : 100,
             "dir"    : "out",
             "Nrank"  : 1
             }
@@ -293,27 +304,46 @@ if __name__ == "__main__":
         if not os.path.exists( conf["dir"]):
             os.makedirs(conf["dir"])
     
+    sol = pygol.Solver()
     
     
     plotNode(axs[0], node, conf)
     plotMesh(axs[1], node, conf)
     saveVisz(0, node, conf)
     
-    for lap in range(1):
+
+
+    for lap in range(1, 1000):
+        print "---lap: {}".format(lap)
+    
+        #update halo regions
         for i in range(node.getNx()):
             for j in range(node.getNy()):
                 c = node.getCellPtr(i,j) #get cell ptr
-    
-                #update halo regions
                 c.updateBoundaries(node)
-    
-                #progress one time step
-                #c.solve()
+
+        #progress one time step
+        for i in range(node.getNx()):
+            for j in range(node.getNy()):
+                c = node.getCellPtr(i,j) #get cell ptr
+                sol.solve(c)
+
+        #cycle everybody in time
+        for i in range(node.getNx()):
+            for j in range(node.getNy()):
+                c = node.getCellPtr(i,j) #get cell ptr
+                c.cycle()
+
+
+        if (lap % 10 == 0):
+            plotNode(axs[0], node, conf)
+            plotMesh(axs[1], node, conf)
+            saveVisz(lap, node, conf)
         
-        
-    plotNode(axs[0], node, conf)
-    plotMesh2(axs[1], node, conf)
-    saveVisz(1, node, conf)
+
+    #plotNode(axs[0], node, conf)
+    #plotMesh2(axs[1], node, conf)
+    #saveVisz(1, node, conf)
     
     
     

@@ -61,6 +61,13 @@ class Grid : public corgi::Node {
 
     // std::string petShop();
 
+    /// Cycle data containers of each cell forward
+    // void cycle() {
+    //   for (auto& it: cells) {
+    //     auto cellptr = std::dynamic_pointer_cast<CellularAutomataCell>( it.second );
+    //     cellptr->data.cycle();
+    //   }
+    // }
 
 };
 
@@ -90,11 +97,27 @@ class CellularAutomataCell : public corgi::Cell {
 
     Mesh* getDataPtr();
 
+    Mesh& getNewData();
+
     void updateBoundaries(Grid& grid);
+
+
+    /// step forward
+    void cycle() { data.cycle(); }
 
 };
 
 
+
+class Solver {
+
+
+  public:
+    void solve(CellularAutomataCell& cell);
+
+
+
+};
 
 
 

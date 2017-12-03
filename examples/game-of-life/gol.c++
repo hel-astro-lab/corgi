@@ -50,6 +50,11 @@ Mesh* CellularAutomataCell::getDataPtr() {
   return data.get();
 };
 
+/// get new data
+Mesh& CellularAutomataCell::getNewData() {
+  return *data.getNew();
+};
+
 
 /// Update boundary/halo regions from neighbors
 void CellularAutomataCell::updateBoundaries(Grid& grid) {
@@ -105,16 +110,42 @@ void CellularAutomataCell::updateBoundaries(Grid& grid) {
   Mesh& mbl = cbl->getData();
   mesh(-1,-1) = mbl(mbl.Nx-1, mbl.Ny-1);
   
-  
-
-  // mesh(-1,-1) = 10.0;
-  // mesh(mesh.Nx, mesh.Ny) = 10.0;
-
-
 
 };
 
 
+void Solver::solve(CellularAutomataCell& cell) {
+  Mesh& m    = cell.getData();
+  Mesh& mnew = cell.getNewData();
+
+
+  for(int i=0; i<(int)m.Nx; i++) { 
+    for(int j=0; j<(int)m.Ny; j++) { 
+
+      // count alives
+      int alive = 0;
+      for(int ir=-1; ir<2; ir++) {
+        for(int jr=-1; jr<2; jr++) {
+          int state = m( i + ir, j + jr );
+
+          if(state == 1) { alive++; }
+
+        }
+      }
+
+      // apply rules
+      if(alive == 3) {
+        mnew(i,j) = 1;
+      // } else if(alive != 2) {
+      //   mnew(i,j) = 0;
+      }
+
+
+    }
+  }
+
+
+}
 
 
 

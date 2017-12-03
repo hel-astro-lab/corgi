@@ -54,6 +54,7 @@ PYBIND11_MODULE(pygol, m) {
     .def(py::init<size_t, size_t, int, size_t, size_t>())
     .def("addData",          &gol::CellularAutomataCell::addData)
     .def("getData",          &gol::CellularAutomataCell::getData)
+    .def("cycle",            &gol::CellularAutomataCell::cycle)
     .def("updateBoundaries", &gol::CellularAutomataCell::updateBoundaries);
 
 
@@ -65,6 +66,9 @@ PYBIND11_MODULE(pygol, m) {
     .def(py::init<size_t, size_t>());
     // .def("petShop",   &gol::Grid::petShop);
 
+  py::class_<gol::Solver>(m, "Solver")
+    .def(py::init<>())
+    .def("solve", &gol::Solver::solve);
 
 }
 
