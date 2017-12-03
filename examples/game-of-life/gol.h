@@ -17,65 +17,38 @@ class Mesh {
   public:
 
   /// patch dimensions
-  size_t Nx;
-  size_t Ny;
+  int Nx;
+  int Ny;
+
+  int halo = 1;
 
   /// Internal 2D mesh storing the values
   std::vector<int> mesh;
 
   /// ctor
-  Mesh(size_t Nx, size_t Ny);
+  Mesh(int Nx, int Ny);
 
-  size_t indx(const size_t i, const size_t j) const {
-    return Nx*j + i;
-  };
+  // Indexing with +1 halo regions around the array
+  int indx(const int i, const int j) const {
+    return (i+halo) + (Nx +2*halo)*(j+halo);
+  }
 
   /// 2D access operator for values
-  int operator () (const size_t i, const size_t j) const {
+  int operator () (const int i, const int j) const {
     return mesh[ indx(i,j) ];
-  };
+  }
 
-  int &operator () (const size_t i, const size_t j) {
+  int &operator () (const int i, const int j) {
     return mesh[ indx(i,j) ];
-  };
+  }
+
+
+  void copyVert(Mesh& rhs, int lhsI, int rhsI);
+
+  void copyHorz(Mesh& rhs, int lhsJ, int rhsJ);
 
 
 };
-
-
-
-
-/// Small local cellular automata patch
-class CellularAutomataCell : public corgi::Cell {
-
-  public:
-    CellularAutomataCell(size_t i, size_t j, 
-             int o, 
-             size_t nx, size_t ny
-             ) : corgi::Cell(i, j, o, nx, ny) { }
-
-    ~CellularAutomataCell() { };
-
-    // extending the base class
-
-    datarotators::DataContainer<Mesh> data;
-
-    /// Add data to the container
-    void addData(Mesh m) {
-      data.push_back(m);
-    }
-
-    /// get current patch
-    Mesh& getData() {
-      return *data.get();
-    };
-
-
-
-
-};
-
-
 
 
 /// Simulation grid
@@ -90,6 +63,40 @@ class Grid : public corgi::Node {
 
 
 };
+
+
+
+/// Small local cellular automata patch
+class CellularAutomataCell : public corgi::Cell {
+
+  public:
+
+    typedef CellularAutomataCell CellType;
+    typedef std::shared_ptr<CellularAutomataCell> CellPtr;
+
+    CellularAutomataCell(size_t i, size_t j, 
+             int o, 
+             size_t nx, size_t ny
+             ) : corgi::Cell(i, j, o, nx, ny) { }
+
+    ~CellularAutomataCell() { };
+
+    // extending the base class
+    datarotators::DataContainer<Mesh> data;
+
+    void addData(Mesh m);
+
+    Mesh& getData();
+
+    Mesh* getDataPtr();
+
+    void updateBoundaries(Grid& grid);
+
+};
+
+
+
+
 
 
 

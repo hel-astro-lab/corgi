@@ -61,3 +61,5 @@ clean:
 	rm pycorgi/*.so
 	rm tests/*.o
 	rm tests/*.so
+	rm examples/game-of-life/*.o
+	rm examples/game-of-life/*.so

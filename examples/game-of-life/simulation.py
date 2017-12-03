@@ -27,7 +27,7 @@ def imshow(ax,
 
     extent = [ xmin, xmax, ymin, ymax ]
 
-    mgrid = np.ma.masked_where(grid == clip, grid)
+    mgrid = np.ma.masked_where(grid <= clip, grid)
     
     mgrid = mgrid.T
     ax.imshow(mgrid,
@@ -42,6 +42,8 @@ def imshow(ax,
               #alpha=0.5
               )
  
+
+
 
 
 # Visualize current cell ownership on node
@@ -93,8 +95,8 @@ def plotNode(ax, n, conf):
 
         #Nv = n.number_of_virtual_neighbors(c)
         Nv = c.number_of_virtual_neighbors
-        label = str(Nv)
-        #label = "{} ({},{})/{}".format(cid,i,j,Nv)
+        #label = str(Nv)
+        label = "{} ({},{})/{}".format(cid,i,j,Nv)
         #label = "({},{})".format(i,j)
         ax.text(ix, jy, label, ha='center',va='center', size=8)
 
@@ -133,10 +135,46 @@ def plotMesh(ax, n, conf):
 
     imshow(ax, data,
             n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
-            cmap = palette,
-            vmin = 0.0,
-            vmax = 1.0,
+            #cmap = palette,
+            #vmin = 0.0,
+            vmax = data.max(),
+            clip = 0,
             )
+
+    print "old mesh\n:"
+    print np.flipud(data.T)
+
+def plotMesh2(ax, n, conf):
+
+    NxFull = conf["Nx"] * conf["NxMesh"]
+    NyFull = conf["Ny"] * conf["NyMesh"]
+
+    NxMesh = conf["NxMesh"]
+    NyMesh = conf["NyMesh"]
+
+    data = -1.0 * np.ones( (NxFull, NyFull) )
+
+    cid = n.cellId(1,1)
+    c = n.getCellPtr( cid )
+    (i, j) = c.index()
+
+    mesh = c.getData()
+
+    for k in range(-1, NyMesh+1, 1):
+        for q in range(-1, NxMesh+1, 1):
+            data[ i*NxMesh + q, j*NyMesh + k ] = mesh[q,k]
+
+
+    imshow(ax, data,
+            n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
+            #cmap = palette,
+            #vmin = 0.0,
+            vmax = data.max(),
+            clip = 0,
+            )
+
+    print "new mesh\n:"
+    print np.flipud(data.T)
 
 
 def saveVisz(lap, n, conf):
@@ -186,6 +224,8 @@ def loadCells(n):
 
 
 def randomInitialize(n, conf):
+
+    val = 0
     for i in range(n.getNx()):
         for j in range(n.getNy()):
             #if n.getMpiGrid(i,j) == n.rank:
@@ -196,9 +236,13 @@ def randomInitialize(n, conf):
                 mesh = pygol.Mesh( conf["NxMesh"], conf["NyMesh"] )
 
                 # fill mesh
-                for k in range(conf["NyMesh"]):
-                    for q in range(conf["NxMesh"]):
-                        mesh[q,k] = np.random.randint(0,2)
+                for q in range(conf["NxMesh"]):
+                    for k in range(conf["NyMesh"]):
+                        #mesh[q,k] = np.random.randint(0,2)
+                        #mesh[q,k] = q + conf["NxMesh"]*k
+                        mesh[q,k] = val
+                        val += 1
+
                 #mesh[0,0] = 1
 
                 c.addData(mesh)
@@ -208,52 +252,69 @@ def randomInitialize(n, conf):
 
 ##################################################
 ##################################################
-# set up plotting and figure
-plt.fig = plt.figure(1, figsize=(4,8))
-plt.rc('font', family='serif', size=12)
-plt.rc('xtick')
-plt.rc('ytick')
 
-gs = plt.GridSpec(2, 1)
-gs.update(hspace = 0.5)
+if __name__ == "__main__":
 
-axs = []
-axs.append( plt.subplot(gs[0]) )
-axs.append( plt.subplot(gs[1]) )
-
-
-
-#setup node
-conf = {
-        "Nx": 10,
-        "Ny": 10,
-        "NxMesh": 4,
-        "NyMesh": 4,
-        "dir": "out",
-        "Nrank": 1
-        }
-
-node = pygol.Grid( conf["Nx"], conf["Ny"] ) 
-node.setGridLims(0.0, 1.0, 0.0, 1.0)
-
-loadCells(node)
-randomInitialize(node, conf)
-
-
-
-# Path to be created 
-if node.master:
-    if not os.path.exists( conf["dir"]):
-        os.makedirs(conf["dir"])
-
-
-plotNode(axs[0], node, conf)
-plotMesh(axs[1], node, conf)
-
-saveVisz(0, node, conf)
-
-
-
-
-
-
+    # set up plotting and figure
+    plt.fig = plt.figure(1, figsize=(4,8))
+    plt.rc('font', family='serif', size=12)
+    plt.rc('xtick')
+    plt.rc('ytick')
+    
+    gs = plt.GridSpec(2, 1)
+    gs.update(hspace = 0.5)
+    
+    axs = []
+    axs.append( plt.subplot(gs[0]) )
+    axs.append( plt.subplot(gs[1]) )
+    
+    
+    
+    #setup node
+    conf = {
+            "Nx"     : 3,
+            "Ny"     : 3,
+            "NxMesh" : 2,
+            "NyMesh" : 2,
+            "dir"    : "out",
+            "Nrank"  : 1
+            }
+    
+    node = pygol.Grid( conf["Nx"], conf["Ny"] ) 
+    node.setGridLims(0.0, 1.0, 0.0, 1.0)
+    
+    loadCells(node)
+    randomInitialize(node, conf)
+    
+    
+    
+    # Path to be created 
+    if node.master:
+        if not os.path.exists( conf["dir"]):
+            os.makedirs(conf["dir"])
+    
+    
+    
+    plotNode(axs[0], node, conf)
+    plotMesh(axs[1], node, conf)
+    saveVisz(0, node, conf)
+    
+    for lap in range(1):
+        for i in range(node.getNx()):
+            for j in range(node.getNy()):
+                c = node.getCellPtr(i,j) #get cell ptr
+    
+                #update halo regions
+                c.updateBoundaries(node)
+    
+                #progress one time step
+                #c.solve()
+        
+        
+    plotNode(axs[0], node, conf)
+    plotMesh2(axs[1], node, conf)
+    saveVisz(1, node, conf)
+    
+    
+    
+    

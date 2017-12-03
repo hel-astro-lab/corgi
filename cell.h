@@ -1,8 +1,11 @@
 #pragma once
 
+
 #include <vector>
+#include <iostream>
 
 #include "common.h"
+
 
 
 namespace corgi {
@@ -19,7 +22,7 @@ class Cell {
     int owner;
 
     /// coarse mpiGrid grid indices
-    size_t i, j;
+    size_t my_i, my_j;
 
     /// If I am a virtual cell, who do I share the values the most.
     int top_virtual_owner;
@@ -42,8 +45,8 @@ class Cell {
 
     /// initalize cell according to its location (i,j) and owner (o)
     Cell(size_t i, size_t j, int o, size_t Nx, size_t Ny) {
-      this->i     = i;
-      this->j     = j;
+      this->my_i     = i;
+      this->my_j     = j;
       this->owner = o;
 
       this->Nx    = Nx;
@@ -58,37 +61,37 @@ class Cell {
 
     /// return mpiGrid index
     const std::tuple<size_t, size_t> index() {
-      return std::make_tuple( i, j );
+      return std::make_tuple( my_i, my_j );
     }
 
     /// default periodic x boundary condition
-    virtual size_t xwrap(int i) {
-        while (i < 0) {
-            i += Nx;
+    size_t xwrap(int iw) {
+        while (iw < 0) {
+            iw += Nx;
         }
-        while (i >= Nx) {
-            i -= Nx;
+        while (iw >= (int)Nx) {
+            iw -= Nx;
         }
-        return size_t(i);
+        return size_t(iw);
     }
 
 
     /// default periodic y boundary condition
-    virtual size_t ywrap( int j ) {
-        while (j < 0) {
-            j += Ny;
+    size_t ywrap( int jw ) {
+        while (jw < 0) {
+            jw += Ny;
         }
-        while (j >= Ny) {
-            j -= Ny;
+        while (jw >= (int)Ny) {
+            jw -= Ny;
         }
-        return size_t(j);
+        return size_t(jw);
     }
 
 
     /// return index of cells in relative to my position
     const std::tuple<size_t, size_t> neighs(int ir, int jr) {
-      size_t ii = xwrap( (int)this->i + ir );
-      size_t jj = ywrap( (int)this->j + jr );
+      size_t ii = xwrap( (int)my_i + ir );
+      size_t jj = ywrap( (int)my_j + jr );
       return std::make_tuple( ii, jj );
     }
 
