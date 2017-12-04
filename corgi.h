@@ -65,7 +65,6 @@ class Node {
   // --------------------------------------------------
   // Cell Mapping
   typedef corgi::Cell                           CellType;
-  // typedef std::unique_ptr<CellType>             CellPtr;
   typedef std::shared_ptr<CellType>             CellPtr;
   typedef std::unordered_map<uint64_t, CellPtr> CellMap;
 
@@ -122,7 +121,7 @@ class Node {
     // CellPtr cellptr = std::make_unique<CellType>(cell);
     
     // calculate unique global cell ID
-    uint64_t cid = cellId(cellptr->i, cellptr->j);
+    uint64_t cid = cellId(cellptr->my_i, cellptr->my_j);
   
     cellptr->cid   = cid;
     cellptr->owner = rank;
@@ -183,6 +182,17 @@ class Node {
     return *(it->second);
   }
 
+  CellType& getCell(const size_t i, const size_t j) {
+    uint64_t cid = cellId(i, j);
+    return getCell(cid);
+  }
+
+  CellType& getCell(const std::tuple<size_t, size_t> ind) {
+    size_t i = std::get<0>(ind);
+    size_t j = std::get<1>(ind);
+    return getCell(i, j);
+  }
+
   /// \brief Get individual cell (as a pointer)
   CellPtr getCellPtr(const uint64_t cid) {
     auto it = cells.find(cid);
@@ -196,6 +206,11 @@ class Node {
     return getCellPtr(cid);
   }
 
+  CellPtr getCellPtr(const std::tuple<size_t, size_t> ind) {
+    size_t i = std::get<0>(ind);
+    size_t j = std::get<1>(ind);
+    return getCellPtr(i, j);
+  }
 
 
   // /// Return pointer to the actual cell data

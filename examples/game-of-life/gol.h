@@ -12,41 +12,43 @@ namespace gol {
 
 
 /// Snapshot patch of a CA simulation
-class patch {
-
-  /// patch dimensions
-  size_t Nx;
-  size_t Ny;
-
-  std::vector<int> mesh;
-
-  patch(size_t Nx, size_t Ny);
-
-
-};
-
-
-
-/// Small general local cellular automata patch
-class CellularAutomataCell : public corgi::Cell {
+class Mesh {
 
   public:
-    CellularAutomataCell(size_t i, size_t j, 
-             int o, 
-             size_t nx, size_t ny
-             ) : corgi::Cell(i, j, o, nx, ny) { }
 
-    ~CellularAutomataCell() { };
+  /// patch dimensions
+  int Nx;
+  int Ny;
 
-    // extend the base class
-    // std::string bark();
+  int halo = 1;
 
-    datarotators::DataContainer<patch> data;
+  /// Internal 2D mesh storing the values
+  std::vector<int> mesh;
+
+  /// ctor
+  Mesh(int Nx, int Ny);
+
+  // Indexing with +1 halo regions around the array
+  int indx(const int i, const int j) const {
+    return (i+halo) + (Nx +2*halo)*(j+halo);
+  }
+
+  /// 2D access operator for values
+  int operator () (const int i, const int j) const {
+    return mesh[ indx(i,j) ];
+  }
+
+  int &operator () (const int i, const int j) {
+    return mesh[ indx(i,j) ];
+  }
+
+
+  void copyVert(Mesh& rhs, int lhsI, int rhsI);
+
+  void copyHorz(Mesh& rhs, int lhsJ, int rhsJ);
 
 
 };
-
-
 
 
 /// Simulation grid
@@ -59,8 +61,65 @@ class Grid : public corgi::Node {
 
     // std::string petShop();
 
+    /// Cycle data containers of each cell forward
+    // void cycle() {
+    //   for (auto& it: cells) {
+    //     auto cellptr = std::dynamic_pointer_cast<CellularAutomataCell>( it.second );
+    //     cellptr->data.cycle();
+    //   }
+    // }
 
 };
+
+
+
+/// Small local cellular automata patch
+class CellularAutomataCell : public corgi::Cell {
+
+  public:
+
+    typedef CellularAutomataCell CellType;
+    typedef std::shared_ptr<CellularAutomataCell> CellPtr;
+
+    CellularAutomataCell(size_t i, size_t j, 
+             int o, 
+             size_t nx, size_t ny
+             ) : corgi::Cell(i, j, o, nx, ny) { }
+
+    ~CellularAutomataCell() { };
+
+    // extending the base class
+    datarotators::DataContainer<Mesh> data;
+
+    void addData(Mesh m);
+
+    Mesh& getData();
+
+    Mesh* getDataPtr();
+
+    Mesh& getNewData();
+
+    void updateBoundaries(Grid& grid);
+
+
+    /// step forward
+    void cycle() { data.cycle(); }
+
+};
+
+
+
+class Solver {
+
+
+  public:
+    void solve(CellularAutomataCell& cell);
+
+
+
+};
+
+
 
 
 

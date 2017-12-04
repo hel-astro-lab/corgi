@@ -26,8 +26,7 @@ pycorgi: pycorgi/corgi.o
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o pycorgi/corgi.so pycorgi/corgi.o
 
 
-examples: pycorgi ex1
-
+examples: pycorgi ex1 ex_gol
 
 tests/example.o: tests/example.h tests/example.c++ 
 	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o tests/example.o -c tests/example.c++
@@ -38,6 +37,16 @@ tests/bindings.o: tests/bindings.c++
 ex1: tests/example.o tests/bindings.o
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o tests/example.so tests/example.o tests/bindings.o
 
+
+examples/game-of-life/gol.o: examples/game-of-life/gol.c++
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o examples/game-of-life/gol.o -c examples/game-of-life/gol.c++
+
+examples/game-of-life/pygol.o: examples/game-of-life/pygol.c++ 
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o examples/game-of-life/pygol.o -c examples/game-of-life/pygol.c++
+
+ex_gol: examples/game-of-life/gol.o examples/game-of-life/pygol.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o examples/game-of-life/pygol.so examples/game-of-life/pygol.o examples/game-of-life/gol.o
+	cp pycorgi/corgi.so examples/game-of-life/
 
 
 
@@ -52,3 +61,5 @@ clean:
 	rm pycorgi/*.so
 	rm tests/*.o
 	rm tests/*.so
+	rm examples/game-of-life/*.o
+	rm examples/game-of-life/*.so
