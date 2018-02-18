@@ -9,7 +9,7 @@ LNK = g++-7
 
 
 
-CXXFLAGS+=-Wall -O2 -std=c++14 -march=native
+CXXFLAGS+=-Wall -O2 -std=c++14 -march=native -funroll-loops
 
 
 
