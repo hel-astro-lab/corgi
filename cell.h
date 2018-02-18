@@ -4,6 +4,7 @@
 #include <vector>
 #include <tuple>
 #include <iostream>
+#include <algorithm>
 
 #include "common.h"
 
