@@ -1,8 +1,17 @@
+#CMP = mpic++
+#LNK = mpic++
 
-CMP = mpic++
-LNK = mpic++
+#CMP = c++
+#LNK = c++
 
-CXXFLAGS+=-Wall -O3 -std=c++14
+CMP = g++-7
+LNK = g++-7
+
+
+
+CXXFLAGS+=-Wall -O2 -std=c++14 -march=native
+
+
 
 #pybind in macOS needs to have these additional flags
 PYBINDINCLS= `python2 -m pybind11 --includes`
@@ -46,7 +55,6 @@ examples/game-of-life/pygol.o: examples/game-of-life/pygol.c++
 
 ex_gol: examples/game-of-life/gol.o examples/game-of-life/pygol.o
 	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o examples/game-of-life/pygol.so examples/game-of-life/pygol.o examples/game-of-life/gol.o
-	cp pycorgi/corgi.so examples/game-of-life/
 
 
 
@@ -57,9 +65,9 @@ tests:
 
 .PHONY: clean
 clean: 
-	rm pycorgi/*.o
-	rm pycorgi/*.so
-	rm tests/*.o
-	rm tests/*.so
-	rm examples/game-of-life/*.o
-	rm examples/game-of-life/*.so
+	-rm pycorgi/*.o
+	-rm pycorgi/*.so
+	-rm tests/*.o
+	-rm tests/*.so
+	-rm examples/game-of-life/*.o
+	-rm examples/game-of-life/*.so

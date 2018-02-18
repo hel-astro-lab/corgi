@@ -2,6 +2,7 @@
 
 
 #include <vector>
+#include <tuple>
 #include <iostream>
 
 #include "common.h"
