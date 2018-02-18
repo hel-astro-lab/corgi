@@ -2,11 +2,11 @@
 #LNK = mpic++
 #CXXFLAGS+=-Wall -O3 -std=c++14
 
-#CMP = c++
-#LNK = c++
+CMP = c++
+LNK = c++
 
-CMP = g++-7
-LNK = g++-7
+#CMP = g++-7
+#LNK = g++-7
 
 #CXXFLAGS+=-Wall -Wno-int-in-bool-context -O2 -march=native -std=c++14
 #CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=c++14
@@ -33,11 +33,11 @@ all: pycorgi
 ##################################################
 # actual compilation & linking rules
 
-pycorgi/corgi.o: corgi.h common.h toolbox/SparseGrid.h pycorgi/corgi.c++
-	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o pycorgi/corgi.o -c pycorgi/corgi.c++
+corgi.o: corgi.h common.h toolbox/SparseGrid.h pycorgi/corgi.c++
+	${CMP} ${CXXFLAGS} ${PYBINDINCLS} -o corgi.o -c pycorgi/corgi.c++
 
-pycorgi: pycorgi/corgi.o
-	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o pycorgi/corgi.so pycorgi/corgi.o
+pycorgi: corgi.o
+	${LNK} ${PYBINDFLAGS} ${PYBINDINCLS} ${LDFLAGS} -o pycorgi/corgi.so corgi.o
 
 
 examples: pycorgi ex1 ex_gol
@@ -70,9 +70,10 @@ tests:
 
 .PHONY: clean
 clean: 
-	rm pycorgi/*.o
-	rm pycorgi/*.so
-	rm tests/*.o
-	rm tests/*.so
-	rm examples/game-of-life/*.o
-	rm examples/game-of-life/*.so
+	-rm *.o
+	-rm pycorgi/*.o
+	-rm pycorgi/*.so
+	-rm tests/*.o
+	-rm tests/*.so
+	-rm examples/game-of-life/*.o
+	-rm examples/game-of-life/*.so

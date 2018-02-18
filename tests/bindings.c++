@@ -74,8 +74,8 @@ PYBIND11_MODULE(example, m) {
   // py::class_<Derived, Base, std::shared_ptr<Derived>>(...);
     
 
-  //py::class_<example::Welsh, corgi::Cell, std::shared_ptr<example::Welsh>>(m, "Welsh")
-  py::class_<example::Welsh, std::shared_ptr<example::Welsh>>(m, "Welsh", corgiCell )
+  py::class_<example::Welsh, corgi::Cell, std::shared_ptr<example::Welsh>>(m, "Welsh")
+  //py::class_<example::Welsh, std::shared_ptr<example::Welsh>>(m, "Welsh", corgiCell )
     .def(py::init<size_t, size_t, int, size_t, size_t>())
     .def("bark",     &example::Welsh::bark);
 
@@ -106,9 +106,10 @@ PYBIND11_MODULE(example, m) {
     .def("prayForOdin", &example::Viking::prayForOdin);
 
   py::class_<example::Vallhund, 
+             corgi::Cell,
              example::Swede, 
              example::Viking, 
-             std::shared_ptr<example::Vallhund>>(m, "Vallhund", corgiCell) 
+             std::shared_ptr<example::Vallhund>>(m, "Vallhund" ) 
     .def(py::init<size_t, size_t, int, size_t, size_t, int>())
     .def("bark",     &example::Vallhund::bark);
 

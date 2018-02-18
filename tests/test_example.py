@@ -24,11 +24,14 @@ class Initialization(unittest.TestCase):
     #test that derived classes can inherit base class methods
     def test_inheritance(self):
 
-        (i,j) = self.cell1.index()
+        ind = self.cell1.index()
+        (i,j) = ind
+
         self.assertEqual(i, self.i)
         self.assertEqual(j, self.j)
 
-        (i,j) = self.cell2.index()
+        ind = self.cell2.index()
+        (i,j) = ind
         self.assertEqual(i, self.i)
         self.assertEqual(j, self.j)
 
