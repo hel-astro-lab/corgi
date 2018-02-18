@@ -8,14 +8,13 @@
 CMP = g++-7
 LNK = g++-7
 
-#CXXFLAGS+=-Wall -Wno-int-in-bool-context -O2 -march=native -std=c++17 -funroll-loops
-#CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=c++17
+CXXFLAGS+=-Wall -Wno-int-in-bool-context -O3 -march=native -funroll-loops -std=c++14 
+LDFLAGS= 
+
 
 ## debug flags
 #CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=c++17 -fsanitize=address -fno-omit-frame-pointer
-CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=c++17
-
-LDFLAGS= 
+#CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=c++17
 #LDFLAGS= -lasan -lubsan
 
 
