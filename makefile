@@ -13,21 +13,21 @@ LNK = g++-7
 
 ## debug flags
 #CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=c++14 -fsanitize=address -fno-omit-frame-pointer
-CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=c++14
+CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=gnu++14
 
 LDFLAGS= 
 #LDFLAGS= -lasan -lubsan
 
 
 #pybind in macOS needs to have these additional flags
-PYBINDINCLS= `python2 -m pybind11 --includes`
+PYBINDINCLS= `python3 -m pybind11 --includes`
 PYBINDFLAGS=-shared -fPIC -undefined dynamic_lookup 
 
 
 
 
 #pybind in macOS needs to have these additional flags
-PYBINDINCLS= `python2 -m pybind11 --includes`
+PYBINDINCLS= `python3 -m pybind11 --includes`
 PYBINDFLAGS=-shared -fPIC -undefined dynamic_lookup 
 
 
@@ -73,7 +73,7 @@ ex_gol: examples/game-of-life/gol.o examples/game-of-life/pygol.o
 
 .PHONY: tests
 tests: 
-	python2 -m unittest discover -s tests/ -v
+	python3 -m unittest discover -s tests/ -v
 
 
 .PHONY: clean
