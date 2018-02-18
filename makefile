@@ -1,5 +1,6 @@
 #CMP = mpic++
 #LNK = mpic++
+#CXXFLAGS+=-Wall -O3 -std=c++14
 
 #CMP = c++
 #LNK = c++
@@ -7,9 +8,21 @@
 CMP = g++-7
 LNK = g++-7
 
+#CXXFLAGS+=-Wall -Wno-int-in-bool-context -O2 -march=native -std=c++14 -funroll-loops
+#CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=c++14
+
+## debug flags
+#CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=c++14 -fsanitize=address -fno-omit-frame-pointer
+CXXFLAGS+=-Wall -Wno-int-in-bool-context -g -std=c++14
+
+LDFLAGS= 
+#LDFLAGS= -lasan -lubsan
 
 
-CXXFLAGS+=-Wall -O2 -std=c++14 -march=native -funroll-loops
+#pybind in macOS needs to have these additional flags
+PYBINDINCLS= `python2 -m pybind11 --includes`
+PYBINDFLAGS=-shared -fPIC -undefined dynamic_lookup 
+
 
 
 
