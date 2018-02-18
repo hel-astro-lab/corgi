@@ -103,11 +103,14 @@ PYBIND11_MODULE(corgi, m) {
 
         .def("cellId",               &corgi::Node::cellId)
         .def("addCell",              &corgi::Node::addCell)
-        .def("getCellIds",             &corgi::Node::getCellIds,
+        .def("getCellIds",           &corgi::Node::getCellIds,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        .def("getCellPtr", py::overload_cast<const uint64_t>(&corgi::Node::getCellPtr))
-        .def("getCellPtr", py::overload_cast<const size_t, const size_t>(&corgi::Node::getCellPtr));
+        .def("getCellPtr", py::overload_cast<const uint64_t>(&corgi::Node::getCellPtr),             py::return_value_policy::automatic)
+        .def("getCellPtr", py::overload_cast<const size_t, const size_t>(&corgi::Node::getCellPtr), py::return_value_policy::automatic)
+        //.def("getCell",    py::overload_cast<const uint64_t>(&corgi::Node::getCell),                py::return_value_policy::reference)
+        //.def("getCell",    py::overload_cast<const size_t, const size_t>(&corgi::Node::getCell),    py::return_value_policy::reference);
+        .def("getCell",    &corgi::Node::getCell, py::return_value_policy::reference);
 
         // .def("getCells",             &corgi::Node::getCells,
         //         py::arg("criteria") = std::vector<int>(),

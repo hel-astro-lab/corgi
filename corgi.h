@@ -11,6 +11,7 @@
 #include <memory>
 #include <unordered_map>
 
+
 // #include <cstddef> // for offsetof
 
 #include "mpi.h"
@@ -30,24 +31,32 @@ class Node {
   /// Global grid dimensions
   size_t Nx = 0;
   size_t Ny = 0;
+  // size_t Nz = 0;
 
   /// Global simulation box size
   double xmin = 0.0;
   double xmax = 0.0;
   double ymin = 0.0;
   double ymax = 0.0;
+  // double zmin = 0.0;
+  // double zmax = 0.0;
 
   public:
 
   /// Return global grid sizes
   size_t getNx() { return Nx; };
   size_t getNy() { return Ny; };
+  // size_t getNz() { return Nz; };
 
   /// Return global grid dimensions
   double getXmin() { return xmin; };
   double getXmax() { return xmax; };
+
   double getYmin() { return ymin; };
   double getYmax() { return ymax; };
+
+  // double getZmin() { return zmin; };
+  // double getZmax() { return zmax; };
 
 
   /// Set physical grid size
@@ -61,12 +70,14 @@ class Node {
   }
 
 
+
   private:
   // --------------------------------------------------
   // Cell Mapping
   typedef corgi::Cell                           CellType;
   typedef std::shared_ptr<CellType>             CellPtr;
   typedef std::unordered_map<uint64_t, CellPtr> CellMap;
+
 
   public:
   /// Map with cellID & cell data
@@ -199,7 +210,6 @@ class Node {
     if (it == cells.end()) throw std::invalid_argument("entry not found");
     return it->second;
   }
-
 
   CellPtr getCellPtr(const size_t i, const size_t j) {
     uint64_t cid = cellId(i, j);

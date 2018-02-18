@@ -3,30 +3,32 @@
 #include <map>
 #include <vector>
 #include <stdexcept>
-
+#include <tuple>
 
 
 /// Simple sparse matrix class
 template <class T>
 class SparseGrid{
   public:
-    std::map<std::pair<size_t, size_t>, T> mat;
+    std::map<std::tuple<size_t, size_t>, T> mat;
     size_t Nx;
     size_t Ny;
 
     /// standard (i,j) syntax
     T& operator()(size_t i, size_t j) { 
-      return mat[std::make_pair(i,j)];
-    }
-    const T& operator()(size_t i, size_t j) const { 
-      return mat[std::make_pair(i,j)];
+      return mat[std::make_tuple(i,j)];
     }
 
-    /// std::pair syntax
-    T& operator()(std::pair<size_t, size_t> indx) { 
+    const T& operator()(size_t i, size_t j) const { 
+      return mat[std::make_tuple(i,j)];
+    }
+
+    /// std::tuple syntax
+    T& operator()(std::tuple<size_t, size_t> indx) { 
       return mat[indx];
     }
-    const T& operator()(std::pair<size_t, size_t> indx) const { 
+
+    const T& operator()(std::tuple<size_t, size_t> indx) const { 
       return mat[indx];
     }
 
@@ -61,7 +63,7 @@ class SparseGrid{
 
       // get elements from map
       size_t indx;
-      for(auto const elem: mat) {
+      for(const auto&& elem: mat) {
         indx = Nx*elem.first.second + elem.first.first;
         ret[indx] = elem.second;
       }
@@ -82,7 +84,7 @@ class SparseGrid{
       for(size_t j=0; j<Ny; j++) {
         for(size_t i=0; i<Nx; i++) {
           if(vec[k] != 0.0) {
-            mat[ std::make_pair(i,j) ] = vec[k];
+            mat[ std::make_tuple(i,j) ] = vec[k];
           }
           k++;
         }

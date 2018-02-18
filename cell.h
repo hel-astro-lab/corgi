@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <iostream>
+#include <tuple>
+#include <algorithm>
 
 #include "common.h"
 
@@ -43,7 +45,7 @@ class Cell {
     size_t Ny= 0;
 
 
-    /// initalize cell according to its location (i,j) and owner (o)
+    /// initialize cell according to its location (i,j) and owner (o)
     Cell(size_t i, size_t j, int o, size_t Nx, size_t Ny) {
       this->my_i     = i;
       this->my_j     = j;
@@ -60,7 +62,7 @@ class Cell {
     virtual ~Cell() { }
 
     /// return mpiGrid index
-    const std::tuple<size_t, size_t> index() {
+    std::tuple<size_t, size_t> index() const {
       return std::make_tuple( my_i, my_j );
     }
 
@@ -89,7 +91,7 @@ class Cell {
 
 
     /// return index of cells in relative to my position
-    const std::tuple<size_t, size_t> neighs(int ir, int jr) {
+    std::tuple<size_t, size_t> neighs(int ir, int jr) {
       size_t ii = xwrap( (int)my_i + ir );
       size_t jj = ywrap( (int)my_j + jr );
       return std::make_tuple( ii, jj );
