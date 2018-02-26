@@ -122,7 +122,11 @@ class Node {
     
     // calculate unique global cell ID
     uint64_t cid = cellId(cellptr->my_i, cellptr->my_j);
+
+    // Erase any existing cells to avoid emplace of doing nothing TODO: is this correct?
+    cells.erase(cid);
   
+
     cellptr->cid   = cid;
     cellptr->owner = rank;
     cellptr->local = true; //TODO Catch error if cell is not already mine?
