@@ -44,6 +44,10 @@ class Cell {
     size_t Nx = 0;
     size_t Ny= 0;
 
+    /// tile boundaries
+    std::vector<double> mins = {0.0, 0.0, 0.0};
+    std::vector<double> maxs = {1.0, 1.0, 1.0};
+
 
     /// initalize cell according to its location (i,j) and owner (o)
     Cell(size_t i, size_t j, int o, size_t Nx, size_t Ny) {
@@ -138,6 +142,25 @@ class Cell {
       // passed all criteria
       return true;
     }
+
+    // --------------------------------------------------
+    // (optional) tile geometry 
+
+    /// set tile minimum limits
+    void set_tile_mins(std::vector<double> bbox)
+    {
+      // TODO assert size
+      mins = bbox;
+    }
+
+    /// set tile minimum limits
+    void set_tile_maxs(std::vector<double> bbox)
+    {
+      // TODO assert size
+      maxs = bbox;
+    }
+
+
 
 }; // end of Cell class
 

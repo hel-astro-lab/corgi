@@ -65,6 +65,10 @@ PYBIND11_MODULE(corgi, m) {
         .def_readwrite("i",                           &corgi::Cell::my_i)
         .def_readwrite("j",                           &corgi::Cell::my_j)
         .def_readwrite("local",                       &corgi::Cell::local)
+        .def_readwrite("mins",                        &corgi::Cell::mins)
+        .def_readwrite("maxs",                        &corgi::Cell::maxs)
+        .def("set_tile_mins",                         &corgi::Cell::set_tile_mins)
+        .def("set_tile_maxs",                         &corgi::Cell::set_tile_maxs)
         .def("index",                                 &corgi::Cell::index)
         .def("neighs",                                &corgi::Cell::neighs)
         .def("nhood",                                 &corgi::Cell::nhood);
