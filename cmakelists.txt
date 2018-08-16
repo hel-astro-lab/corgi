@@ -53,12 +53,11 @@ add_subdirectory(tests)
 #-------------------------------------------------- 
 # unit tests
 #
-# TODO: not working
 add_custom_target(check-pycorgi ALL
-                  ${PYTHON_EXECUTABLE} -m unittest discover -s tests/ -v
+                  ${PYTHON_EXECUTABLE} -m unittest discover -s ../tests/ -v
                   DEPENDS pycorgi pycorgitest
                   VERBATIM
-                  WORKING_DIRECTORY ${MAINFOLDER}
+                  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/lib
                   )
 
 
