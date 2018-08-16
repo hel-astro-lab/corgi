@@ -1,9 +1,6 @@
 import unittest
-
 import sys
-sys.path.append('pycorgi')
-
-import corgi 
+import pycorgi 
 
 
 class Params:
@@ -23,7 +20,7 @@ class Initialization(unittest.TestCase):
     Ny = 20
 
     def setUp(self):
-        self.cell = corgi.Cell(self.i, self.j, self.o, self.Nx, self.Ny)
+        self.cell = pycorgi.Cell(self.i, self.j, self.o, self.Nx, self.Ny)
 
     def test_indexing(self):
         (i,j) = self.cell.index()

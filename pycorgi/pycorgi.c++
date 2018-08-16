@@ -33,7 +33,7 @@ void printConf() {
 
 
 // --------------------------------------------------
-PYBIND11_MODULE(corgi, m) {
+PYBIND11_MODULE(pycorgi, m) {
 
   /*
     m.attr("Nx")     = conf::Nx;

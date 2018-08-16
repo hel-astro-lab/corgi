@@ -8,7 +8,7 @@ cmap = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 import sys, os
 
-import corgi
+import pycorgi
 
 
 Nrank = 4
@@ -45,7 +45,7 @@ def loadCells(n):
         for j in range(n.getNy()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.mpiGrid(i,j), ref[j,i]))
             if n.mpiGrid(i,j) == n.rank:
-                c = corgi.Cell(i, j, n.rank, n.getNx, n.getNy)
+                c = pycorgi.Cell(i, j, n.rank, n.getNx, n.getNy)
                 n.addLocalCell(c) #TODO load data to cell
 
 
@@ -160,8 +160,8 @@ if __name__ == "__main__":
     ymin = -2.0
     ymax =  3.0
 
-    corgi.setSize(10, 15)
-    corgi.setGridLims(xmin, xmax, ymin, ymax)
+    pycorgi.setSize(10, 15)
+    pycorgi.setGridLims(xmin, xmax, ymin, ymax)
 
 
     ################################################## 
@@ -182,7 +182,7 @@ if __name__ == "__main__":
 
     ################################################## 
     #init node
-    node = corgi.Node()
+    node = pycorgi.Node()
     node.initMpi()
 
     loadMpiStrides(node)

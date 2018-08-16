@@ -2,11 +2,10 @@ project (pycorgi)
 
 file(GLOB SOURCES *.c++ *.h)
 
-#add_subdirectory(pybind11)
 find_package(pybind11 REQUIRED)
-
 
 pybind11_add_module(pycorgi ${SOURCES})
 target_compile_options(pycorgi PRIVATE ${WARNING_FLAGS})
-#target_link_libraries(pycorgi PRIVATE corgi)
 
+
+install (TARGETS pycorgi DESTINATION lib)
