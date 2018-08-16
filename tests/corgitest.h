@@ -6,7 +6,7 @@
 #include "../corgi.h"
 
 
-namespace example {
+namespace corgitest {
 
 class Welsh : public corgi::Cell {
 
@@ -128,4 +128,4 @@ class Grid : public corgi::Node {
 
 
 
-} // end of namespace example
+} // end of namespace corgitest

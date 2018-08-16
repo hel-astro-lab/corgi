@@ -1,11 +1,8 @@
 import unittest
-
 import sys
-sys.path.append('pycorgi')
-sys.path.append('tests')
 
-
-import example
+import pycorgi
+import pycorgitest
 
 
 class Initialization(unittest.TestCase):
@@ -18,8 +15,8 @@ class Initialization(unittest.TestCase):
     Ny = 20
 
     def setUp(self):
-        self.cell1 = example.Welsh(self.i, self.j, self.o, self.Nx, self.Ny)
-        self.cell2 = example.Pembroke(self.i, self.j, self.o, self.Nx, self.Ny)
+        self.cell1 = pycorgitest.Welsh(self.i, self.j, self.o, self.Nx, self.Ny)
+        self.cell2 = pycorgitest.Pembroke(self.i, self.j, self.o, self.Nx, self.Ny)
 
     #test that derived classes can inherit base class methods
     def test_inheritance(self):
@@ -54,10 +51,10 @@ class MultipleInheritance(unittest.TestCase):
     soc_num = 123456
 
     def setUp(self):
-        self.swede  = example.Swede(self.soc_num)
-        self.viking = example.Viking()
+        self.swede  = pycorgitest.Swede(self.soc_num)
+        self.viking = pycorgitest.Viking()
 
-        self.vallhund = example.Vallhund(self.i, self.j, self.o, self.Nx, self.Ny, 
+        self.vallhund = pycorgitest.Vallhund(self.i, self.j, self.o, self.Nx, self.Ny, 
                                         self.soc_num)
 
     def test_extending(self):
@@ -88,7 +85,7 @@ class ParallelGrid(unittest.TestCase):
 
 
     def setUp(self):
-        self.node = example.Grid(self.Nx, self.Ny)
+        self.node = pycorgitest.Grid(self.Nx, self.Ny)
         self.node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
 
 
@@ -136,9 +133,9 @@ class ParallelGrid(unittest.TestCase):
 
                 #initialize heterogeneous grid
                 if (i%2 == 0):
-                    c = example.Welsh(i, j, 0, self.node.getNx(), self.node.getNy() )
+                    c = pycorgitest.Welsh(i, j, 0, self.node.getNx(), self.node.getNy() )
                 else:
-                    c = example.Pembroke(i, j, 0, self.node.getNx(), self.node.getNy() )
+                    c = pycorgitest.Pembroke(i, j, 0, self.node.getNx(), self.node.getNy() )
                 self.node.addCell(c) 
                 k += 1
 
