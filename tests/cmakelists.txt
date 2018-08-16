@@ -1,0 +1,8 @@
+project (test-example)
+
+find_package(pybind11 REQUIRED)
+
+file (GLOB TEST_SRCS *.c++ *.h *.cpp *.hpp *.c *.cxx)
+
+pybind11_add_module(py-test-example ${TEST_SRCS})
+target_compile_options(py-test-example PRIVATE ${WARNING_FLAGS})

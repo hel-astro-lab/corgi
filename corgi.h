@@ -125,7 +125,6 @@ class Node {
 
     // Erase any existing cells to avoid emplace of doing nothing TODO: is this correct?
     cells.erase(cid);
-  
 
     cellptr->cid   = cid;
     cellptr->owner = rank;

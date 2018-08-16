@@ -8,8 +8,8 @@
 CMP = g++-7
 LNK = g++-7
 
-CXXFLAGS+=-Wall -Wno-int-in-bool-context -O3 -march=native -funroll-loops -std=c++14 
-LDFLAGS= 
+CXXFLAGS+=-Wall -Wno-int-in-bool-context -O2 -march=native -funroll-loops -std=c++14 
+LDFLAGS= -fopenmp
 
 
 ## debug flags
