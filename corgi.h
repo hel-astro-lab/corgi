@@ -142,7 +142,7 @@ class Node {
     std::vector<uint64_t> ret;
 
     for (auto& it: cells) {
-      if (criteria.size() == 0) {
+      if (criteria.empty()) {
         ret.push_back( it.first );
         continue;
       }
@@ -158,7 +158,7 @@ class Node {
 
 
     // optional sort based on the cell id
-    if (sorted && ret.size() > 0) {
+    if (sorted && !ret.empty()) {
       std::sort(ret.begin(), ret.end());
     }
 
