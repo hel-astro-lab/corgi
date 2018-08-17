@@ -150,14 +150,14 @@ class Cell {
     void set_tile_mins(std::vector<double> bbox)
     {
       // TODO assert size
-      mins = bbox;
+      mins = std::move(bbox);
     }
 
     /// set tile minimum limits
     void set_tile_maxs(std::vector<double> bbox)
     {
       // TODO assert size
-      maxs = bbox;
+      maxs = std::move(bbox);
     }
 
 
