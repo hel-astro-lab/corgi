@@ -16,7 +16,7 @@ class Welsh : public corgi::Cell {
              size_t nx, size_t ny
              ) : corgi::Cell(i, j, o, nx, ny) { }
 
-    ~Welsh() { };
+    ~Welsh() override { };
 
     // extend the base class
     std::string bark();
@@ -32,7 +32,7 @@ class Pembroke : public corgi::Cell {
              size_t nx, size_t ny
              ) : corgi::Cell(i, j, o, nx, ny) { }
 
-    ~Pembroke() { };
+    ~Pembroke() override { };
 
     // extend the base class
     std::string bark();
@@ -103,7 +103,7 @@ class Vallhund : public Swede,
       corgi::Cell(i, j, o, nx, ny) 
     { }
 
-    ~Vallhund() { };
+    ~Vallhund() override { };
 
 
     std::string bark();
