@@ -16,7 +16,7 @@ class Welsh : public corgi::Cell {
              size_t nx, size_t ny
              ) : corgi::Cell(i, j, o, nx, ny) { }
 
-    ~Welsh() override { };
+    ~Welsh() override = default;
 
     // extend the base class
     std::string bark();
@@ -32,7 +32,7 @@ class Pembroke : public corgi::Cell {
              size_t nx, size_t ny
              ) : corgi::Cell(i, j, o, nx, ny) { }
 
-    ~Pembroke() override { };
+    ~Pembroke() override = default;
 
     // extend the base class
     std::string bark();
@@ -103,7 +103,7 @@ class Vallhund : public Swede,
       corgi::Cell(i, j, o, nx, ny) 
     { }
 
-    ~Vallhund() override { };
+    ~Vallhund() override = default;
 
 
     std::string bark();
@@ -117,7 +117,7 @@ class Grid : public corgi::Node {
   public:
     Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
 
-    ~Grid() { };
+    ~Grid() = default;
 
     // std::unordered_map< uint64_t, std::shared_ptr<corgi::Cell>> cells;
 

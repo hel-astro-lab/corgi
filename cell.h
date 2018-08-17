@@ -63,7 +63,7 @@ class Cell {
      * NOTE: this needs to be virtual so that child classes can be 
      * destroyed.
      */
-    virtual ~Cell() { }
+    virtual ~Cell() = default;
 
     /// return mpiGrid index
     const std::tuple<size_t, size_t> index() {

@@ -105,7 +105,7 @@ class Node {
   }
 
   /// Deallocate and free everything
-  ~Node() { } 
+  ~Node() = default;
 
 
   public:
