@@ -180,7 +180,7 @@ class Node {
    */
   CellType& getCell(const uint64_t cid) {
     auto it = cells.find(cid);
-    if (it == cells.end()) throw std::invalid_argument("cell entry not found");
+    if (it == cells.end()) { throw std::invalid_argument("cell entry not found"); }
 
     return *(it->second);
   }
@@ -199,7 +199,7 @@ class Node {
   /// \brief Get individual cell (as a pointer)
   CellPtr getCellPtr(const uint64_t cid) {
     auto it = cells.find(cid);
-    if (it == cells.end()) throw std::invalid_argument("entry not found");
+    if (it == cells.end()) { throw std::invalid_argument("entry not found"); }
     return it->second;
   }
 
