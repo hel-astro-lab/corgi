@@ -64,8 +64,8 @@ class Node {
   private:
   // --------------------------------------------------
   // Cell Mapping
-  typedef corgi::Cell                           CellType;
-  typedef std::shared_ptr<CellType>             CellPtr;
+  using CellType = corgi::Cell;
+  using CellPtr = std::shared_ptr<CellType>;
   typedef std::unordered_map<uint64_t, CellPtr> CellMap;
 
   public:
