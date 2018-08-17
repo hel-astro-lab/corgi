@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdint.h>
-#include <limits.h>
+#include <cstdint>
+#include <climits>
 
 /*
 #include <limits>
