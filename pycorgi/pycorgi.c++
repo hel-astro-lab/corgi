@@ -3,7 +3,6 @@
 namespace py = pybind11;
 
 #include "../common.h"
-#include "../cell.h"
 #include "../corgi.h"
 
 /*
@@ -36,26 +35,27 @@ void printConf() {
 PYBIND11_MODULE(pycorgi, m) {
 
     using Node = corgi::Node<2>;
+    using Tile = corgi::Tile<2>;
 
 
-    py::class_<corgi::Cell, std::shared_ptr<corgi::Cell>> corgiCell(m, "Cell" );
-    corgiCell
+    py::class_<Tile, std::shared_ptr<Tile>> corgiTile(m, "Tile" );
+    corgiTile
         .def(py::init<size_t, size_t, int, size_t, size_t>())
-        .def_readwrite("cid",                         &corgi::Cell::cid)
-        .def_readwrite("owner",                       &corgi::Cell::owner)
-        .def_readwrite("top_virtual_owner",           &corgi::Cell::top_virtual_owner)
-        .def_readwrite("number_of_virtual_neighbors", &corgi::Cell::number_of_virtual_neighbors)
-        .def_readwrite("communications",              &corgi::Cell::communications)
-        .def_readwrite("i",                           &corgi::Cell::my_i)
-        .def_readwrite("j",                           &corgi::Cell::my_j)
-        .def_readwrite("local",                       &corgi::Cell::local)
-        .def_readwrite("mins",                        &corgi::Cell::mins)
-        .def_readwrite("maxs",                        &corgi::Cell::maxs)
-        .def("set_tile_mins",                         &corgi::Cell::set_tile_mins)
-        .def("set_tile_maxs",                         &corgi::Cell::set_tile_maxs)
-        .def("index",                                 &corgi::Cell::index)
-        .def("neighs",                                &corgi::Cell::neighs)
-        .def("nhood",                                 &corgi::Cell::nhood);
+        .def_readwrite("cid",                         &Tile::cid)
+        .def_readwrite("owner",                       &Tile::owner)
+        .def_readwrite("top_virtual_owner",           &Tile::top_virtual_owner)
+        .def_readwrite("number_of_virtual_neighbors", &Tile::number_of_virtual_neighbors)
+        .def_readwrite("communications",              &Tile::communications)
+        .def_readwrite("i",                           &Tile::my_i)
+        .def_readwrite("j",                           &Tile::my_j)
+        .def_readwrite("local",                       &Tile::local)
+        .def_readwrite("mins",                        &Tile::mins)
+        .def_readwrite("maxs",                        &Tile::maxs)
+        .def("set_tile_mins",                         &Tile::set_tile_mins)
+        .def("set_tile_maxs",                         &Tile::set_tile_maxs)
+        .def("index",                                 &Tile::index)
+        .def("neighs",                                &Tile::neighs)
+        .def("nhood",                                 &Tile::nhood);
 
 
     py::class_<Node> corgiNode(m, "Node" );
@@ -73,26 +73,16 @@ PYBIND11_MODULE(pycorgi, m) {
         .def("getYmin", [](Node &n){ return n.getYmin(); })
         .def("getYmax", [](Node &n){ return n.getYmax(); })
 
-        //.def("getNx",                &Node::getNx)
-        //.def("getNy",                &Node::getNy)
-        //.def("getXmin",              &Node::getXmin)
-        //.def("getXmax",              &Node::getXmax)
-        //.def("getYmin",              &Node::getYmin)
-        //.def("getYmax",              &Node::getYmax)
-
         //.def("setGridLims",          &Node::setGridLims)
         .def("setGridLims", [](Node &n, double xmin, double xmax, 
                                         double ymin, double ymax)
             { n.setGridLims({{xmin,ymin}}, {{xmax, ymax}}); })
 
-        .def("GetMpiGrid", [](Node &n, const size_t i, const size_t j){ 
+        .def("getMpiGrid", [](Node &n, const size_t i, const size_t j){ 
             const auto val = n.pyGetMpiGrid(i,j); 
             return val;
             })
-        .def("SetMpiGrid", [](Node &n, size_t i, size_t j, int val){ n.pySetMpiGrid(val, i, j); })
-
-        //.def("getMpiGrid",           &Node::pyGetMpiGrid)
-        //.def("setMpiGrid",           &Node::pySetMpiGrid)
+        .def("setMpiGrid", [](Node &n, size_t i, size_t j, int val){ n.pySetMpiGrid(val, i, j); })
 
         /*
         .def("getMpiGrid",              [](SparseGrid<int> &s, const size_t i, const size_t j) {
@@ -107,16 +97,15 @@ PYBIND11_MODULE(pycorgi, m) {
           })
          */
 
-        //.def("cellId",               &Node::cellId)
-        .def("cellId", [](const Node &n, const size_t i, const size_t j){ return n.id(i,j);})
-        .def("addCell",              &Node::addCell)
-        .def("getCellIds",           &Node::getCellIds,
+        .def("tileId", [](const Node &n, const size_t i, const size_t j){ return n.id(i,j);})
+        .def("addTile",              &Node::addTile)
+        .def("getTileIds",           &Node::getTileIds,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        .def("getCellPtr", py::overload_cast<const uint64_t>(&Node::getCellPtr))
-        .def("getCellPtr", py::overload_cast<const size_t, const size_t>(&Node::getCellPtr));
+        .def("getTilePtr", py::overload_cast<const uint64_t>(&Node::getTilePtr))
+        .def("getTilePtr", py::overload_cast<const size_t, const size_t>(&Node::getTilePtr));
 
-        // .def("getCells",             &Node::getCells,
+        // .def("getTiles",             &Node::getTiles,
         //         py::arg("criteria") = std::vector<int>(),
         //         py::arg("sorted") = true)
         // .def("getVirtuals",          &Node::getVirtuals,
@@ -124,7 +113,7 @@ PYBIND11_MODULE(pycorgi, m) {
         //         py::arg("sorted") = true)
 
         // .def("isLocal",              &ode::isLocal)
-        // .def("analyzeBoundaryCells", &ode::analyzeBoundaryCells)
+        // .def("analyzeBoundaryTiles", &ode::analyzeBoundaryTiles)
 
 
         // // communication wrappers
@@ -133,8 +122,8 @@ PYBIND11_MODULE(pycorgi, m) {
         // .def("setMpiGrid",           &Node::setMpiGrid)
         // .def("initMpi",              &Node::initMpi)
         // .def("bcastMpiGrid",         &Node::bcastMpiGrid)
-        // .def("communicateSendCells", &Node::communicateSendCells)
-        // .def("communicateRecvCells", &Node::communicateRecvCells)
+        // .def("communicateSendTiles", &Node::communicateSendTiles)
+        // .def("communicateRecvTiles", &Node::communicateRecvTiles)
         // .def("finalizeMpi",          &Node::finalizeMpi);
 
 }

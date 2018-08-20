@@ -8,8 +8,11 @@
 
 /// Simple sparse matrix class
 //template <class T, std::size_t D>
-template <class T>
+template <class T, std::size_t D>
 class SparseGrid{
+
+  private:
+
 
   public:
     std::map<std::pair<size_t, size_t>, T> mat;

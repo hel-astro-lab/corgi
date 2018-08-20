@@ -16,7 +16,7 @@
 
 #include "internals.h"
 #include "toolbox/SparseGrid.h"
-#include "cell.h"
+#include "tile.h"
 
 
 #include "mpi.h"
@@ -61,20 +61,21 @@ class Node {
   // --------------------------------------------------
   private:
     
-  // Cell Mapping
-  using CellType = corgi::Cell;
-  using CellPtr = std::shared_ptr<CellType>;
-  typedef std::unordered_map<uint64_t, CellPtr> CellMap;
+  // Mappings
+  using TileID_t = uint64_t;
+  using Tile_t   = corgi::Tile<D>;
+  using TilePtr  = std::shared_ptr<Tile_t>;
+  using TileMap  = std::unordered_map<TileID_t, TilePtr>;
 
 
   public:
-  /// Map with cellID & cell data
-  CellMap cells;
+  /// Map with tileID & tile data
+  TileMap tiles;
 
   /*! Global large scale block grid where information
    * of all the mpi processes are stored
    */
-  SparseGrid<int> mpiGrid;
+  SparseGrid<int, D> mpiGrid;
 
 
   public:
@@ -186,7 +187,6 @@ class Node {
     const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(end());   }
     const_reverse_iterator crend()   const noexcept { return const_reverse_iterator(begin()); }
   */
-
 
 
 
@@ -323,7 +323,7 @@ class Node {
 
   public:
     
-  /// cell IDs
+  /// tile IDs
   template<typename... Indices>
   corgi_internals::enable_if_t<
       (sizeof...(Indices) == D) && corgi_internals::are_integral<Indices...>::value, index_type > 
@@ -401,38 +401,38 @@ class Node {
 
   public:
   // --------------------------------------------------
-  // Cell addition etc. manipulation
+  // Tile addition etc. manipulation
     
-  /// Add local cell to the node
-  // void addCell(CellType& cell) {
-  void addCell(CellPtr cellptr) {
+  /// Add local tile to the node
+  // void addTile(Tile& tile) {
+  void addTile(TilePtr tileptr) {
 
-    // claim unique ownership of the cell (for unique_ptr)
-    // std::unique_ptr<corgi::Cell> cellptr = std::make_unique<corgi:Cell>(cell);
-    // CellPtr cellptr = std::make_unique<CellType>(cell);
+    // claim unique ownership of the tile (for unique_ptr)
+    // std::unique_ptr<corgi::Tile> tileptr = std::make_unique<corgi:Tile>(tile);
+    // TilePtr tileptr = std::make_unique<Tile_t>(tile);
     
-    // calculate unique global cell ID
-    uint64_t cid = id(cellptr->my_i, cellptr->my_j);
+    // calculate unique global tile ID
+    uint64_t cid = id(tileptr->my_i, tileptr->my_j);
 
-    // Erase any existing cells to avoid emplace of doing nothing TODO: is this correct?
-    cells.erase(cid);
+    // Erase any existing tiles to avoid emplace of doing nothing TODO: is this correct?
+    tiles.erase(cid);
 
-    cellptr->cid   = cid;
-    cellptr->owner = rank;
-    cellptr->local = true; //TODO Catch error if cell is not already mine?
+    tileptr->cid   = cid;
+    tileptr->owner = rank;
+    tileptr->local = true; //TODO Catch error if tile is not already mine?
 
-    // cells.emplace(cid, std::move(cellptr)); // unique_ptr needs to be moved
-    cells.emplace(cid, cellptr); // NOTE using c++14 emplace to avoid copying
+    // tiles.emplace(cid, std::move(tileptr)); // unique_ptr needs to be moved
+    tiles.emplace(cid, tileptr); // NOTE using c++14 emplace to avoid copying
   }
 
 
-  /*! Return a vector of cell indices that fulfill a given criteria.  */
-  std::vector<uint64_t> getCellIds(
+  /*! Return a vector of tile indices that fulfill a given criteria.  */
+  std::vector<uint64_t> getTileIds(
       const std::vector<int>& criteria = std::vector<int>(),
       const bool sorted=false ) {
     std::vector<uint64_t> ret;
 
-    for (auto& it: cells) {
+    for (auto& it: tiles) {
       if (criteria.empty()) {
         ret.push_back( it.first );
         continue;
@@ -448,7 +448,7 @@ class Node {
     }
 
 
-    // optional sort based on the cell id
+    // optional sort based on the tile id
     if (sorted && !ret.empty()) {
       std::sort(ret.begin(), ret.end());
     }
@@ -456,7 +456,7 @@ class Node {
     return ret;
   }
 
-  /*! \brief Get individual cell (as a reference)
+  /*! \brief Get individual tile (as a reference)
    *
    * NOTE: from StackOverflow (recommended getter method):
    * OtherType& get_othertype(const std::string& name)
@@ -466,118 +466,118 @@ class Node {
    *     return *(it->second);
    * }
    *
-   * This way map retains its ownership of the cell and we avoid giving pointers
+   * This way map retains its ownership of the tile and we avoid giving pointers
    * away from the Class.
    */
-  CellType& getCell(const uint64_t cid) {
-    auto it = cells.find(cid);
-    if (it == cells.end()) { throw std::invalid_argument("cell entry not found"); }
+  Tile_t& getTile(const uint64_t cid) {
+    auto it = tiles.find(cid);
+    if (it == tiles.end()) { throw std::invalid_argument("tile entry not found"); }
 
     return *(it->second);
   }
 
-  CellType& getCell(const size_t i, const size_t j) {
+  Tile_t& getTile(const size_t i, const size_t j) {
     uint64_t cid = id(i, j);
-    return getCell(cid);
+    return getTile(cid);
   }
 
-  CellType& getCell(const std::tuple<size_t, size_t> ind) {
+  Tile_t& getTile(const std::tuple<size_t, size_t> ind) {
     size_t i = std::get<0>(ind);
     size_t j = std::get<1>(ind);
-    return getCell(i, j);
+    return getTile(i, j);
   }
 
-  /// \brief Get individual cell (as a pointer)
-  CellPtr getCellPtr(const uint64_t cid) {
-    auto it = cells.find(cid);
-    if (it == cells.end()) { throw std::invalid_argument("entry not found"); }
+  /// \brief Get individual tile (as a pointer)
+  TilePtr getTilePtr(const uint64_t cid) {
+    auto it = tiles.find(cid);
+    if (it == tiles.end()) { throw std::invalid_argument("entry not found"); }
     return it->second;
   }
 
 
-  CellPtr getCellPtr(const size_t i, const size_t j) {
+  TilePtr getTilePtr(const size_t i, const size_t j) {
     uint64_t cid = id(i, j);
-    return getCellPtr(cid);
+    return getTilePtr(cid);
   }
 
-  CellPtr getCellPtr(const std::tuple<size_t, size_t> ind) {
+  TilePtr getTilePtr(const std::tuple<size_t, size_t> ind) {
     size_t i = std::get<0>(ind);
     size_t j = std::get<1>(ind);
-    return getCellPtr(i, j);
+    return getTilePtr(i, j);
   }
 
 
-  // /// Return pointer to the actual cell data
-  // corgi::Cell* getCellData(const uint64_t cid) const {
-  //   if (this->cells.count(cid) > 0) {
-  //     return (corgi::Cell*) &(this->cells.at(cid));
+  // /// Return pointer to the actual tile data
+  // corgi::Tile* getTileData(const uint64_t cid) const {
+  //   if (this->tiles.count(cid) > 0) {
+  //     return (corgi::Tile*) &(this->tiles.at(cid));
   //   } else {
   //     return NULL;
   //   }
   // }
 
-  // /// Same as get_cell_data but with additional syntax sugar 
-  // corgi::Cell* operator [] (const uint64_t cid) const {
-  //   return getCellData(cid);
+  // /// Same as get_tile_data but with additional syntax sugar 
+  // corgi::Tile* operator [] (const uint64_t cid) const {
+  //   return getTileData(cid);
   // }
 
-  // /// Get a *copy* of the full cell; this is not what one usually wants
-  // corgi::Cell getCell( uint64_t cid ) {
-  //   return *cells.at(cid);
+  // /// Get a *copy* of the full tile; this is not what one usually wants
+  // corgi::Tile getTile( uint64_t cid ) {
+  //   return *tiles.at(cid);
   // }
 
-  // /// Return all local cells
-  // std::vector<uint64_t> getCells(
+  // /// Return all local tiles
+  // std::vector<uint64_t> getTiles(
   //     const std::vector<int>& criteria = std::vector<int>(),
   //     const bool sorted=false ) {
 
-  //   std::vector<uint64_t> cell_list = getAllCells(criteria, sorted);
+  //   std::vector<uint64_t> tile_list = getAllTiles(criteria, sorted);
 
-  //   size_t i = 0, len = cell_list.size();
+  //   size_t i = 0, len = tile_list.size();
   //   while (i < len) {
-  //     if (!cells.at( cell_list[i] )->local) {
-  //       std::swap(cell_list[i], cell_list.back());
-  //       cell_list.pop_back();
+  //     if (!tiles.at( tile_list[i] )->local) {
+  //       std::swap(tile_list[i], tile_list.back());
+  //       tile_list.pop_back();
   //       len -= 1;
   //     } else {
   //       i++;
   //     }
   //   }
 
-  //   return cell_list;
+  //   return tile_list;
   // }
 
 
-  // /// Return all cells that are of VIRTUAL type.
+  // /// Return all tiles that are of VIRTUAL type.
   // std::vector<uint64_t> getVirtuals(
   //     const std::vector<int>& criteria = std::vector<int>(),
   //     const bool sorted=false ) {
-  //   std::vector<uint64_t> cell_list = getAllCells(criteria, sorted);
+  //   std::vector<uint64_t> tile_list = getAllTiles(criteria, sorted);
 
-  //   size_t i = 0, len = cell_list.size();
+  //   size_t i = 0, len = tile_list.size();
   //   while (i < len) {
-  //     if (cells.at( cell_list[i] )->local) {
-  //       std::swap(cell_list[i], cell_list.back());
-  //       cell_list.pop_back();
+  //     if (tiles.at( tile_list[i] )->local) {
+  //       std::swap(tile_list[i], tile_list.back());
+  //       tile_list.pop_back();
   //       len -= 1;
   //     } else {
   //       i++;
   //     }
   //   }
 
-  //   return cell_list;
+  //   return tile_list;
   // }
 
 
-  // /// Check if we have a cell with the given index
+  // /// Check if we have a tile with the given index
   // // bool is_local(std::tuple<int, int> indx) {
   // bool isLocal(uint64_t cid) {
   //   bool local = false;
 
   //   // Do we have it on the list=
-  //   if (cells.count( cid ) > 0) {
+  //   if (tiles.count( cid ) > 0) {
   //     // is it local (i.e., not virtual)
-  //     if ( cells.at(cid)->local ) {
+  //     if ( tiles.at(cid)->local ) {
   //       local = true;
   //     }
   //   }
@@ -585,23 +585,23 @@ class Node {
   //   return local;
   // }
 
-  // // TODO: relative indexing w.r.t. given cell
-  // // std::tuple<size_t, size_t> get_neighbor_index(corgi::Cell, int i, int j) {
+  // // TODO: relative indexing w.r.t. given tile
+  // // std::tuple<size_t, size_t> get_neighbor_index(corgi::Tile, int i, int j) {
   // //     return c.neighs( std::make_tuple(i,j) );
   // // }
 
-  // // TODO: get_neighbor_cell(c, i, j)
+  // // TODO: get_neighbor_tile(c, i, j)
 
 
 
   // std::vector<int> virtualNeighborhood(uint64_t cid) {
 
-  //   auto c = getCellData(cid);
+  //   auto c = getTileData(cid);
   //   std::vector< std::tuple<size_t, size_t> > neigs = c->nhood();
   //   std::vector<int> virtual_owners;
   //   for (auto indx: neigs) {
 
-  //     /* TODO: check boundary cells here; 
+  //     /* TODO: check boundary tiles here; 
   //      * now we assume periodicity in x and y
   //      if (std::get<0>(indx) == ERROR_INDEX ||
   //      std::get<1>(indx) == ERROR_INDEX) {
@@ -609,7 +609,7 @@ class Node {
   //      }
   //      */
 
-  //     // Get cell id from index notation
+  //     // Get tile id from index notation
   //     size_t i = std::get<0>(indx);
   //     size_t j = std::get<1>(indx);
   //     uint64_t cid = id(i, j);
@@ -624,32 +624,32 @@ class Node {
   // }
 
 
-  // // Number of virtual neighbors that the cell might have.
+  // // Number of virtual neighbors that the tile might have.
   // /*
-  //    size_t number_of_virtual_neighborhood(corgi::Cell c) {
+  //    size_t number_of_virtual_neighborhood(corgi::Tile c) {
   //    return virtual_neighborhood(c).size();
   //    }
   //    */
 
 
-  // /*! Analyze my local boundary cells that will be later on
-  //  * send to the neighbors as virtual cells. 
+  // /*! Analyze my local boundary tiles that will be later on
+  //  * send to the neighbors as virtual tiles. 
   //  *
   //  * This is where the magic happens and we analyze what and who to send to.
   //  * These values *must* be same for everybody, this is why we use
   //  * mode of the owner list and in case of conflict pick the smaller value.
   //  * This way everybody knows what to expect and we avoid creating conflicts 
   //  * in communication. This information is then being sent to other processes 
-  //  * together with the cells and is analyzed there by others inside the
+  //  * together with the tiles and is analyzed there by others inside the
   //  * `rank_virtuals` function.
   //  * */
-  // void analyzeBoundaryCells() {
+  // void analyzeBoundaryTiles() {
 
-  //   for (auto cid: getCells()) {
+  //   for (auto cid: getTiles()) {
   //     std::vector<int> virtual_owners = virtualNeighborhood(cid);
   //     size_t N = virtual_owners.size();
 
-  //     // If N > 0 then this is a boundary cell.
+  //     // If N > 0 then this is a boundary tile.
   //     // other criteria could also apply but here we assume
   //     // neighborhood according to spatial distance.
   //     if (N > 0) {
@@ -681,8 +681,8 @@ class Node {
   //             ), virtual_owners.end() );
 
 
-  //       // update cell values
-  //       auto c = getCellData(cid);
+  //       // update tile values
+  //       auto c = getTileData(cid);
   //       c->top_virtual_owner = top_owner;
   //       c->communications    = virtual_owners.size();
   //       c->number_of_virtual_neighbors = N;
@@ -710,10 +710,10 @@ class Node {
   // // --------------------------------------------------
   // // Send queues etc.
   //   
-  // /// list of cell id's that are to be sent to others
+  // /// list of tile id's that are to be sent to others
   // std::vector<uint64_t> send_queue;
 
-  // /// list containing lists to where the aforementioned send_queue cells are to be sent
+  // /// list containing lists to where the aforementioned send_queue tiles are to be sent
   // std::vector< std::vector<int> > send_queue_address;
 
 
@@ -728,13 +728,13 @@ class Node {
   // indicate master node
   bool master = false;
 
-  // MPI_Datatype mpi_cell_t;
+  // MPI_Datatype mpi_tile_t;
 
   // std::vector<MPI_Request> sent_info_messages;
-  // std::vector<MPI_Request> sent_cell_messages;
+  // std::vector<MPI_Request> sent_tile_messages;
 
   // std::vector<MPI_Request> recv_info_messages;
-  // std::vector<MPI_Request> recv_cell_messages;
+  // std::vector<MPI_Request> recv_tile_messages;
 
 
 
@@ -761,17 +761,17 @@ class Node {
 
 
   //   //--------------------------------------------------
-  //   // Initialize the cell frame type
+  //   // Initialize the tile frame type
   //   int count = 7;
   //   int blocklens[] = { 1, 1, 1, 1, 1, 1, 1 };
   //   MPI_Aint indices[7];
-  //   indices[0] = (MPI_Aint)offsetof( Cell, cid);
-  //   indices[1] = (MPI_Aint)offsetof( Cell, owner);
-  //   indices[2] = (MPI_Aint)offsetof( Cell, i);
-  //   indices[3] = (MPI_Aint)offsetof( Cell, j);
-  //   indices[4] = (MPI_Aint)offsetof( Cell, top_virtual_owner);
-  //   indices[5] = (MPI_Aint)offsetof( Cell, communications);
-  //   indices[6] = (MPI_Aint)offsetof( Cell, number_of_virtual_neighbors);
+  //   indices[0] = (MPI_Aint)offsetof( Tile, cid);
+  //   indices[1] = (MPI_Aint)offsetof( Tile, owner);
+  //   indices[2] = (MPI_Aint)offsetof( Tile, i);
+  //   indices[3] = (MPI_Aint)offsetof( Tile, j);
+  //   indices[4] = (MPI_Aint)offsetof( Tile, top_virtual_owner);
+  //   indices[5] = (MPI_Aint)offsetof( Tile, communications);
+  //   indices[6] = (MPI_Aint)offsetof( Tile, number_of_virtual_neighbors);
 
   //   MPI_Datatype types[] = {
   //     MPI_UINT64_T,  // cid
@@ -782,8 +782,8 @@ class Node {
   //     MPI_SIZE_T,    // communications
   //     MPI_SIZE_T     // num. of virt. owners.
   //   };
-  //   MPI_Type_create_struct(count, blocklens, indices, types, &mpi_cell_t);
-  //   MPI_Type_commit(&mpi_cell_t);
+  //   MPI_Type_create_struct(count, blocklens, indices, types, &mpi_tile_t);
+  //   MPI_Type_commit(&mpi_tile_t);
 
   //   //--------------------------------------------------
 
@@ -792,7 +792,7 @@ class Node {
 
   // /// Finalize MPI environment 
   // void finalizeMpi() {
-  //   MPI_Type_free(&mpi_cell_t);
+  //   MPI_Type_free(&mpi_tile_t);
   //   MPI_Finalize();
   // }
 
@@ -824,12 +824,12 @@ class Node {
   // }
 
   // /// Issue isends to everywhere
-  // // First we send a warning message of how many cells to expect.
+  // // First we send a warning message of how many tiles to expect.
   // // Based on this the receiving side can prepare accordingly.
-  // void communicateSendCells() {
+  // void communicateSendTiles() {
 
   //   sent_info_messages.clear();
-  //   sent_cell_messages.clear();
+  //   sent_tile_messages.clear();
   //   int j = 0;
 
   //   for (int dest = 0; dest<Nrank; dest++) {
@@ -846,16 +846,16 @@ class Node {
   //       i++;
   //     }
 
-  //     // initial message informing how many cells are coming
+  //     // initial message informing how many tiles are coming
   //     // TODO: this whole thing could be avoided by using 
   //     // MPI_Iprobe in the receiving end. Maybe.
-  //     uint64_t Nincoming_cells = uint64_t(to_be_sent.size());
+  //     uint64_t Nincoming_tiles = uint64_t(to_be_sent.size());
 
   //     MPI_Request req;
   //     sent_info_messages.push_back( req );
 
   //     MPI_Isend(
-  //         &Nincoming_cells, 
+  //         &Nincoming_tiles, 
   //         1,
   //         MPI_UNSIGNED_LONG_LONG,
   //         dest,
@@ -867,36 +867,36 @@ class Node {
   //   }
 
 
-  //   // send the real cell data now
-  //   // We optimize this by only packing the cell data
+  //   // send the real tile data now
+  //   // We optimize this by only packing the tile data
   //   // once, and then sending the same thing to everybody who needs it.
   //   int i = 0;
   //   for (auto cid: send_queue) {
-  //     sendCellData( cid, send_queue_address[i] );
+  //     sendTileData( cid, send_queue_address[i] );
   //     i++;
   //   }
 
   // }
 
 
-  // /// Pack cell and send to everybody on the dests list
-  // void sendCellData(uint64_t cid, std::vector<int> dests) {
-  //   auto c = getCellData(cid);
+  // /// Pack tile and send to everybody on the dests list
+  // void sendTileData(uint64_t cid, std::vector<int> dests) {
+  //   auto c = getTileData(cid);
 
-  //   size_t j = sent_cell_messages.size();
+  //   size_t j = sent_tile_messages.size();
 
   //   for (auto dest: dests) {
   //     MPI_Request req;
-  //     sent_cell_messages.push_back( req );
+  //     sent_tile_messages.push_back( req );
 
   //     MPI_Isend(
   //         c,
   //         1,
-  //         mpi_cell_t,
+  //         mpi_tile_t,
   //         dest,
   //         commType::CELLDATA,
   //         comm,
-  //         &sent_cell_messages[j]
+  //         &sent_tile_messages[j]
   //         );
   //     j++;
   //   }
@@ -904,16 +904,16 @@ class Node {
 
 
   // /// Receive incoming stuff
-  // void communicateRecvCells() {
+  // void communicateRecvTiles() {
 
   //   recv_info_messages.clear();
-  //   recv_cell_messages.clear();
+  //   recv_tile_messages.clear();
 
   //   size_t i = 0;
   //   for (int source=0; source<Nrank; source++) {
   //     if (source == rank) { continue; } // do not receive from myself
 
-  //     // communicate with how many cells there are incoming
+  //     // communicate with how many tiles there are incoming
 
   //     // TODO: use MPI_IProbe to check if there are 
   //     // any messages for me instead of assuming that there is
@@ -921,9 +921,9 @@ class Node {
   //     MPI_Request req;
   //     recv_info_messages.push_back( req );
 
-  //     uint64_t Nincoming_cells;
+  //     uint64_t Nincoming_tiles;
   //     MPI_Irecv(
-  //         &Nincoming_cells,
+  //         &Nincoming_tiles,
   //         1,
   //         MPI_UNSIGNED_LONG_LONG,
   //         source,
@@ -936,50 +936,50 @@ class Node {
   //     MPI_Wait(&recv_info_messages[i], MPI_STATUS_IGNORE);
 
   //     /*
-  //        fmt::print("{}: I got a message! Waiting {} cells from {}\n",
-  //        rank, Nincoming_cells, source);
+  //        fmt::print("{}: I got a message! Waiting {} tiles from {}\n",
+  //        rank, Nincoming_tiles, source);
   //        */
 
 
-  //     // Now receive the cells themselves
-  //     size_t j = recv_cell_messages.size();
-  //     for (size_t ic=0; ic<Nincoming_cells; ic++) {
-  //       Cell inc_c(0,0,0, Nx, Ny); // TODO: initialize with better default values
+  //     // Now receive the tiles themselves
+  //     size_t j = recv_tile_messages.size();
+  //     for (size_t ic=0; ic<Nincoming_tiles; ic++) {
+  //       Tile inc_c(0,0,0, Nx, Ny); // TODO: initialize with better default values
 
   //       MPI_Request reqc;
-  //       recv_cell_messages.push_back( reqc );
+  //       recv_tile_messages.push_back( reqc );
   //       MPI_Irecv(
   //           &inc_c,
   //           1,
-  //           mpi_cell_t,
+  //           mpi_tile_t,
   //           source,
   //           commType::CELLDATA,
   //           comm,
-  //           &recv_cell_messages[j]
+  //           &recv_tile_messages[j]
   //           );
 
-  //       MPI_Wait(&recv_cell_messages[j], MPI_STATUS_IGNORE);
+  //       MPI_Wait(&recv_tile_messages[j], MPI_STATUS_IGNORE);
   //       j++;
 
   //       uint64_t cid = inc_c.cid;
-  //       if (this->cells.count(cid) == 0) {
-  //         // Cell does not exist yet; create it
-  //         // TODO: Check validity of the cell better
-  //         // TODO: Use add_cell() instead of directly 
+  //       if (this->tiles.count(cid) == 0) {
+  //         // Tile does not exist yet; create it
+  //         // TODO: Check validity of the tile better
+  //         // TODO: Use add_tile() instead of directly 
   //         //       probing the class interiors
 
   //         inc_c.local = false;
-  //         cells.insert( std::make_pair(cid, &inc_c) );
+  //         tiles.insert( std::make_pair(cid, &inc_c) );
 
   //       } else {
-  //         // Cell is already on my virtual list; update
+  //         // Tile is already on my virtual list; update
   //         // TODO: use = operator instead.
-  //         auto c = getCellData(cid);
+  //         auto c = getTileData(cid);
 
   //         if (c->local) {
   //           // TODO: better error handling; i.e. resolve the conflict
   //           // TODO: use throw exceptions
-  //           // fmt::print("{}: ERROR trying to add virtual cell that is already local\n", rank);
+  //           // fmt::print("{}: ERROR trying to add virtual tile that is already local\n", rank);
   //           exit(1);
   //         }
 

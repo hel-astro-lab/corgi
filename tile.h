@@ -12,12 +12,13 @@
 
 namespace corgi {
 
-class Cell {
+template<std::size_t D>
+class Tile {
 
   public:
-    // Order here is fixed for mpi_cell_t
+    // Order here is fixed for mpi_tile_t
 
-    /// unique cell ID
+    /// unique tile ID
     uint64_t cid;
 
     /// MPI rank of who owns me
@@ -26,7 +27,7 @@ class Cell {
     /// coarse mpiGrid grid indices
     size_t my_i, my_j;
 
-    /// If I am a virtual cell, who do I share the values the most.
+    /// If I am a virtual tile, who do I share the values the most.
     int top_virtual_owner;
 
     /// how many times do I have to be sent to others
@@ -35,22 +36,22 @@ class Cell {
     /// How many virtual neighbors do I have
     size_t number_of_virtual_neighbors = 0;
 
-    /// Cell type listing
+    /// tile type listing
     bool local;
 
     std::vector<int> types;
 
     /// Global grid dimensions (needed for wrapping boundaries)
     size_t Nx = 0;
-    size_t Ny= 0;
+    size_t Ny = 0;
 
     /// tile boundaries
     std::vector<double> mins = {0.0, 0.0, 0.0};
     std::vector<double> maxs = {1.0, 1.0, 1.0};
 
 
-    /// initalize cell according to its location (i,j) and owner (o)
-    Cell(size_t i, size_t j, int o, size_t Nx, size_t Ny) {
+    /// initalize tile according to its location (i,j) and owner (o)
+    Tile(size_t i, size_t j, int o, size_t Nx, size_t Ny) {
       this->my_i     = i;
       this->my_j     = j;
       this->owner = o;
@@ -63,7 +64,7 @@ class Cell {
      * NOTE: this needs to be virtual so that child classes can be 
      * destroyed.
      */
-    virtual ~Cell() = default;
+    virtual ~Tile() = default;
 
     /// return mpiGrid index
     const std::tuple<size_t, size_t> index() {
@@ -94,7 +95,7 @@ class Cell {
     }
 
 
-    /// return index of cells in relative to my position
+    /// return index of tiles in relative to my position
     const std::tuple<size_t, size_t> neighs(int ir, int jr) {
       size_t ii = xwrap( (int)my_i + ir );
       size_t jj = ywrap( (int)my_j + jr );
@@ -116,7 +117,7 @@ class Cell {
     }
 
 
-    /// Check if cell fulfills a single criteria
+    /// Check if tile fulfills a single criteria
     bool is_type( int criteria ) {
       if( std::find(
             types.begin(), 
@@ -129,7 +130,7 @@ class Cell {
       return true;
     }
 
-    /// Vectorized version requiring cell to fulfill every criteria
+    /// Vectorized version requiring tile to fulfill every criteria
     bool is_types( std::vector<int> criteria ) {
       for (auto crit: criteria) {
         if (is_type(crit))  {
@@ -162,6 +163,6 @@ class Cell {
 
 
 
-}; // end of Cell class
+}; // end of Tile class
 
 }

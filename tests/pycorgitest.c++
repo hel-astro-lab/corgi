@@ -8,22 +8,22 @@ namespace py = pybind11;
 PYBIND11_MODULE(pycorgitest, m) {
 
   // --------------------------------------------------
-  // Loading gell bindings from corgi library
-  py::object corgiCell = (py::object) py::module::import("pycorgi").attr("Cell");
+  // Loading tile bindings from corgi library
+  py::object corgiTile = (py::object) py::module::import("pycorgi").attr("Tile");
 
   // Welsh and Pembroke inherit grid infrastructure from base class and then extend it.
   // NOTE: they must be defined with a special shared container (shared_ptr) in order
   // for the python referencing to work correctly.
   //
   // Example structure from pybind:
-  // py::class_<corgitest::Welsh>(m, "Welsh", corgiCell)
+  // py::class_<corgitest::Welsh>(m, "Welsh", corgiTile)
   // py::class_<Derived, Base, std::shared_ptr<Derived>>(...);
     
-  py::class_<corgitest::Welsh, corgi::Cell, std::shared_ptr<corgitest::Welsh>>(m, "Welsh")
+  py::class_<corgitest::Welsh, corgi::Tile<2>, std::shared_ptr<corgitest::Welsh>>(m, "Welsh")
     .def(py::init<size_t, size_t, int, size_t, size_t>())
     .def("bark",     &corgitest::Welsh::bark);
 
-  py::class_<corgitest::Pembroke, corgi::Cell, std::shared_ptr<corgitest::Pembroke>>(m, "Pembroke")
+  py::class_<corgitest::Pembroke, corgi::Tile<2>, std::shared_ptr<corgitest::Pembroke>>(m, "Pembroke")
     .def(py::init<size_t, size_t, int, size_t, size_t>())
     .def("howl",     &corgitest::Pembroke::howl)
     .def("bark",     &corgitest::Pembroke::bark);

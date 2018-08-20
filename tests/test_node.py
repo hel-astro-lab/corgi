@@ -42,7 +42,7 @@ class Initialization(unittest.TestCase):
         self.assertEqual( self.node.getYmax(), self.ymax )
 
 
-def cellID(i,j,Nx,Ny):
+def tileID(i,j,Nx,Ny):
     return j*Nx + i
 
 
@@ -89,28 +89,28 @@ class Parallel(unittest.TestCase):
     def test_cid(self):
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
-                cid = self.node.cellId(i, j)
-                cidr = cellID( i, j, self.node.getNx(), self.node.getNy() )
+                cid = self.node.tileId(i, j)
+                cidr = tileID( i, j, self.node.getNx(), self.node.getNy() )
                 self.assertEqual(cid, cidr)
 
 
     def test_loading(self):
 
-        #load cells
+        #load tiles
         k = 0
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
-                c = pycorgi.Cell(i, j, 0, self.node.getNx(), self.node.getNy() )
-                self.node.addCell(c) 
+                c = pycorgi.Tile(i, j, 0, self.node.getNx(), self.node.getNy() )
+                self.node.addTile(c) 
                 k += 1
         self.assertEqual( k, self.Nx*self.Ny )
 
-        cids = self.node.getCellIds() 
+        cids = self.node.getTileIds() 
         self.assertEqual( len(cids), self.Nx*self.Ny )
 
         #now try and get then back
         for cid in cids:
-            c = self.node.getCellPtr(cid)
+            c = self.node.getTilePtr(cid)
 
             self.assertEqual(c.cid,   cid)
             self.assertEqual(c.owner, self.node.rank)

@@ -20,14 +20,12 @@ class Initialization(unittest.TestCase):
     Ny = 20
 
     def setUp(self):
-        self.cell = pycorgi.Cell(self.i, self.j, self.o, self.Nx, self.Ny)
+        self.tile = pycorgi.Tile(self.i, self.j, self.o, self.Nx, self.Ny)
 
     def test_indexing(self):
-        (i,j) = self.cell.index()
+        (i,j) = self.tile.index()
         self.assertEqual(i, self.i)
         self.assertEqual(j, self.j)
-
-
 
 
 
