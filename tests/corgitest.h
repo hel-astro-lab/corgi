@@ -112,10 +112,10 @@ class Vallhund : public Swede,
 
 
 
-class Grid : public corgi::Node {
+class Grid : public corgi::Node<2> {
 
   public:
-    Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
+    Grid(size_t nx, size_t ny) : corgi::Node<2>(nx, ny) { }
 
     ~Grid() = default;
 

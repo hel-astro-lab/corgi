@@ -7,10 +7,14 @@
 
 
 /// Simple sparse matrix class
+//template <class T, std::size_t D>
 template <class T>
 class SparseGrid{
+
   public:
     std::map<std::pair<size_t, size_t>, T> mat;
+
+
     size_t Nx;
     size_t Ny;
 
@@ -50,6 +54,16 @@ class SparseGrid{
       Nx = nx;
       Ny = ny;
     }
+
+    //XXX ugly hack to make this work, for now
+    //void resize(std::initializer_list<size_t> lens) {
+    //  auto it=lens.begin();
+    //  Nx = *it;
+
+    //  it++;
+    //  Ny = *it;
+    //}
+    
 
     /// Return object that is contiguous in memory
     std::vector<T> serialize() {

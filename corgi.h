@@ -10,63 +10,68 @@
 #include <cmath>
 #include <memory>
 #include <unordered_map>
+#include <cassert>
+#include <initializer_list>
+#include <sstream>
 
-// #include <cstddef> // for offsetof
-
-#include "mpi.h"
-
-// #include "common.h"
+#include "internals.h"
 #include "toolbox/SparseGrid.h"
 #include "cell.h"
 
 
+#include "mpi.h"
+
+
 namespace corgi {
 
+
+/*! Individual node object that stores patches of grid in it.
+ *
+ * See:
+ * - https://github.com/maddouri/hyper_array/
+ * - https://github.com/astrobiology/orca_array
+*/
+
+template<std::size_t D>
 class Node {
 
-  private:
-
-  // --------------------------------------------------
-  /// Global grid dimensions
-  size_t Nx = 0;
-  size_t Ny = 0;
-
-  /// Global simulation box size
-  double xmin = 0.0;
-  double xmax = 0.0;
-  double ymin = 0.0;
-  double ymax = 0.0;
 
   public:
-
-  /// Return global grid sizes
-  size_t getNx() { return Nx; };
-  size_t getNy() { return Ny; };
-
-  /// Return global grid dimensions
-  double getXmin() { return xmin; };
-  double getXmax() { return xmax; };
-  double getYmin() { return ymin; };
-  double getYmax() { return ymax; };
-
-
-  /// Set physical grid size
-  void setGridLims(double _xmin, double _xmax, 
-                   double _ymin, double _ymax) {
-    xmin = _xmin;
-    xmax = _xmax;
-
-    ymin = _ymin;
-    ymax = _ymax;
-  }
+      
+  // --------------------------------------------------
+  // definitions
+  using size_type  = std::size_t;
+  using index_type = std::size_t;
+  using float_type = double;
 
 
   private:
+
   // --------------------------------------------------
+  /// number of elements in each dimension
+  ::std::array<size_type, D> _lengths;
+
+  /// coefficients to use to compute the index
+  //::std::array<size_type, D> _coeffs;
+
+  /// total (imaginary) number of elements
+  //size_type _size;
+
+  /// start coordinates of each dimension
+  ::std::array<float_type, D> _mins;
+    
+  /// ending coordinates of each dimension
+  ::std::array<float_type, D> _maxs;
+
+
+  // --------------------------------------------------
+  private:
+    
   // Cell Mapping
   using CellType = corgi::Cell;
   using CellPtr = std::shared_ptr<CellType>;
   typedef std::unordered_map<uint64_t, CellPtr> CellMap;
+
 
   public:
   /// Map with cellID & cell data
@@ -77,18 +82,35 @@ class Node {
    */
   SparseGrid<int> mpiGrid;
 
+
+  public:
+  // --------------------------------------------------
   // Python bindings for mpiGrid
-  int pyGetMpiGrid(size_t i, size_t j) {
-    return mpiGrid(i,j);
+
+  // get element
+  template<typename... Indices>
+  corgi_internals::enable_if_t<
+      (sizeof...(Indices) == D) && corgi_internals::are_integral<Indices...>::value, int > 
+  pyGetMpiGrid(Indices... indices)  /*const*/
+  {
+    //return mpiGrid( _validate_index_range(indices...) );
+    
+    // hack
+    auto indx = _validate_index_range(indices...);
+    return mpiGrid(indx[0], indx[1]);
   }
 
-  void pySetMpiGrid(size_t i, size_t j, int val) {
-    mpiGrid(i,j) = val;
-  }
 
-  /// Create unique cell ids based on Morton z ordering
-  uint64_t cellId(size_t i, size_t j) {
-    return uint64_t( j*Nx + i );
+  // set element
+  template<typename... Indices>
+  corgi_internals::enable_if_t<
+      (sizeof...(Indices) == D) && corgi_internals::are_integral<Indices...>::value, void > 
+  pySetMpiGrid(int val, Indices... indices) {
+    //mpiGrid( _validate_index_range(indices...) ) = val;
+
+    // hack
+    auto indx = _validate_index_range(indices...);
+    mpiGrid(indx[0], indx[1]) = val;
   }
 
 
@@ -97,15 +119,344 @@ class Node {
   // Cell constructors & destructors
     
   /// Constructor
-  Node(size_t nx, size_t ny) : Nx(nx), Ny(ny) {
-    // fmt::print("initializing node ({} {})...\n", Nx, Ny);
-      
-    // allocating _mpiGrid
-    mpiGrid.resize(Nx, Ny);
-  }
+  //Node(size_t nx, size_t ny) : Nx(nx), Ny(ny) {
+  //  // fmt::print("initializing node ({} {})...\n", Nx, Ny);
+  //    
+  //  // allocating _mpiGrid
+  //  mpiGrid.resize(Nx, Ny);
+  //}
+
+
 
   /// Deallocate and free everything
   ~Node() = default;
+
+  public:
+
+  // --------------------------------------------------
+  // constructors
+    
+  /// Uninitialized dimension lengths
+  Node() {};
+
+  /// copy-constructor
+  //Node(const Node& /*other*/) {};
+  
+  /// move constructor
+  //Node(Node&& /*other*/) {}; // use std::move()
+   
+  /// set dimensions during construction time
+  template<
+    typename... DimensionLength,
+    typename = corgi_internals::enable_if_t<
+      (sizeof...(DimensionLength) == D) && 
+      corgi_internals::are_integral<DimensionLength...>::value, void
+    >
+  > 
+  Node(DimensionLength... dimensionLengths) :
+    _lengths {{static_cast<size_type>(dimensionLengths)...}}
+  {
+
+    // HACK to make this compile
+    std::array<size_type, D> indices = 
+    {{static_cast<size_type>(dimensionLengths)...}};
+    mpiGrid.resize( indices[0], indices[1] );
+  }
+  
+
+
+  public:
+  
+  // --------------------------------------------------
+  // assignments
+    
+  /// copy assignment
+  Node& operator=(const Node& other)
+  {
+    _lengths = other._lengths;
+
+    return *this;
+  }
+
+
+  /// move assignment
+  Node& operator=(const Node&& other)
+  {
+    _lengths   = std::move(other._lengths);
+
+    return *this;
+  }
+
+
+
+
+  //public:
+  // --------------------------------------------------
+  // iterators
+  /*
+          iterator         begin()         noexcept { return iterator(data());                }
+    const_iterator         begin()   const noexcept { return const_iterator(data());          }
+          iterator         end()           noexcept { return iterator(data() + size());       }
+    const_iterator         end()     const noexcept { return const_iterator(data() + size()); }
+          reverse_iterator rbegin()        noexcept { return reverse_iterator(end());         }
+    const_reverse_iterator rbegin()  const noexcept { return const_reverse_iterator(end());   }
+          reverse_iterator rend()          noexcept { return reverse_iterator(begin());       }
+    const_reverse_iterator rend()    const noexcept { return const_reverse_iterator(begin()); }
+    const_iterator         cbegin()  const noexcept { return const_iterator(data());          }
+    const_iterator         cend()    const noexcept { return const_iterator(data() + size()); }
+    const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(end());   }
+    const_reverse_iterator crend()   const noexcept { return const_reverse_iterator(begin()); }
+  */
+
+
+
+
+  public:
+  // --------------------------------------------------
+  // access grid configuration
+
+  /// number of dimension
+  static constexpr size_type dims() noexcept { return D; }
+
+  /// length (run-time)
+  size_type len(const size_type i) const
+  {
+    assert(i < D);
+    return _lengths[i];
+  }
+
+  /// reference to the _lengths array
+  const ::std::array<size_type, D>& lens() const noexcept
+  {
+    return _lengths;
+  }
+  
+  /// starting location of i:th dimension (run-time)
+  float_type min(const size_type i) const
+  {
+    assert(i < D);
+    return _mins[i];
+  }
+    
+  /// ending location of i:th dimension (run-time)
+  float_type max(const size_type i) const
+  {
+    assert(i < D);
+    return _maxs[i];
+  }
+
+  /// reference to the _mins array
+  const ::std::array<float_type, D>& mins() const noexcept
+  {
+    return _mins;
+  }
+    
+  /// reference to the _maxs array
+  const ::std::array<float_type, D>& maxs() const noexcept
+  {
+    return _maxs;
+  }
+
+
+  // --------------------------------------------------
+  // indexing
+  private:
+  
+  template <typename... Indices>
+  corgi_internals::enable_if_t<
+        (sizeof...(Indices) == D) && corgi_internals::are_integral<Indices...>::value,
+        ::std::array<index_type, D>>
+    _validate_index_range(Indices... indices) const
+  {
+    ::std::array<index_type, D> index_array = {{static_cast<index_type>(indices)...}};
+
+    // check all indices and prepare an exhaustive report (in oss)
+    // if some of them are out of bounds
+    std::ostringstream oss;
+    for (index_type i = 0; i < D; ++i)
+    {
+      if ((index_array[i] >= _lengths[i]) || (index_array[i] < 0))
+      {
+        oss << "Index #" << i << " [== " << index_array[i] << "]"
+          << " is out of the [0, " << (_lengths[i]-1) << "] range. ";
+      }
+    }
+
+    // if nothing has been written to oss then all indices are valid
+    assert(oss.str().empty());
+    return index_array;
+  }
+
+  /*! Computes the index coefficients assuming row-major order
+   *
+   *  what we compute:
+   *        \f[
+   *            \begin{cases}
+   *            C_i = \prod_{j=i+1}^{n-1} L_j
+   *            \\
+   *            \begin{cases}
+   *                i   &\in [0, \text{Dimensions - 1}] \\
+   *                C_i &: \text{\_coeffs[i]}           \\
+   *                L_j &: \text{\_lengths[j]}
+   *            \end{cases}
+   *            \end{cases}
+   *        \f]
+   */
+  ::std::array<size_type, D>
+  compute_index_coeffs(const ::std::array<size_type, D>& dimensionLengths) noexcept
+  {
+      ::std::array<size_type, D> coeffs;
+      for (size_type i = 0; i < D; ++i)
+      {
+          coeffs[i] = ct_accumulate(dimensionLengths,
+                                    i + 1,
+                                    D - i - 1,
+                                    static_cast<size_type>(1),
+                                    corgi_internals::ct_prod<size_type>);
+      }
+      return coeffs;
+  }
+
+
+  /// Actual Morton Z-ordering from index list
+  // 
+  // what we compute: coeff . indices
+  //
+  // i.e., inner product of accumulated coefficients vector and index vector
+  constexpr index_type 
+  _compute_index(
+      const ::std::array<index_type, D>& index_array) const noexcept
+  {
+    return corgi_internals::ct_inner_product(
+        compute_index_coeffs(_lengths), 0,
+        index_array, 0,
+        D,
+        static_cast<index_type>(0),
+        corgi_internals::ct_plus<index_type>,
+        corgi_internals::ct_prod<index_type>);
+  }
+
+  public:
+    
+  /// cell IDs
+  template<typename... Indices>
+  corgi_internals::enable_if_t<
+      (sizeof...(Indices) == D) && corgi_internals::are_integral<Indices...>::value, index_type > 
+  id(Indices... indices) const
+  {
+    return _compute_index( _validate_index_range(indices...) );
+  }
+
+
+
+  // --------------------------------------------------
+  //TODO: remove
+  public:
+    
+  /// Create unique cell ids based on Morton z ordering
+  uint64_t cellId(size_t i, size_t j) {
+    //return uint64_t( j*Nx + i );
+    return uint64_t( j*_lengths[0] + i );
+  }
+
+
+
+  public:
+
+  // --------------------------------------------------
+  // apply SFINAE to create some shortcuts (when appropriate) 
+  // NOTE: valid up to D=3 with x/y/z
+
+  // return global grid sizes
+  template<typename T = size_type>
+  corgi_internals::enable_if_t< (D>=1), T> 
+  getNx() { return _lengths[0]; }
+
+  template<typename T = size_type>
+  corgi_internals::enable_if_t< (D>=2), T> 
+  getNy() { return _lengths[1]; }
+
+  template<typename T = size_type>
+  corgi_internals::enable_if_t< (D>=3), T> 
+  getNz() { return _lengths[2]; }
+
+
+  // return global grid limits
+  template<typename T = size_type>
+  corgi_internals::enable_if_t< (D>=1), T> 
+  getXmin() { return _mins[0]; }
+
+  template<typename T = size_type>
+  corgi_internals::enable_if_t< (D>=2), T> 
+  getYmin() { return _mins[1]; }
+
+  template<typename T = size_type>
+  corgi_internals::enable_if_t< (D>=3), T> 
+  getZmin() { return _mins[2]; }
+
+
+  template<typename T = size_type>
+  corgi_internals::enable_if_t< (D>=1), T> 
+  getXmax() { return _maxs[0]; }
+
+  template<typename T = size_type>
+  corgi_internals::enable_if_t< (D>=2), T> 
+  getYmax() { return _maxs[1]; }
+
+  template<typename T = size_type>
+  corgi_internals::enable_if_t< (D>=3), T> 
+  getZmax() { return _maxs[2]; }
+
+
+
+  // --------------------------------------------------
+  /// Global grid dimensions
+  //size_t Nx = 0;
+  //size_t Ny = 0;
+
+  /// Global simulation box size
+  //double xmin = 0.0;
+  //double xmax = 0.0;
+  //double ymin = 0.0;
+  //double ymax = 0.0;
+
+  /// Return global grid sizes
+  //size_t getNx() { return Nx; };
+  //size_t getNy() { return Ny; };
+
+  /// Return global grid dimensions
+  //double getXmin() { return xmin; };
+  //double getXmax() { return xmax; };
+  //double getYmin() { return ymin; };
+  //double getYmax() { return ymax; };
+
+
+  /// Set physical grid size
+  //void setGridLims(double _xmin, double _xmax, 
+  //                 double _ymin, double _ymax) {
+  //  xmin = _xmin;
+  //  xmax = _xmax;
+
+  //  ymin = _ymin;
+  //  ymax = _ymax;
+  //}
+
+  /// Set physical grid size
+  void setGridLims(
+      const ::std::array<float_type, D>& mins,
+      const ::std::array<float_type, D>& maxs
+      )
+  {
+    //_mins = std::move(mins);
+    //_maxs = std::move(maxs);
+
+    // explicitly avoid move semantics and copy
+    // this is to make sure that python garbage collector
+    // does not mess things up
+    _mins = mins;
+    _maxs = maxs;
+  }
+
 
 
   public:
