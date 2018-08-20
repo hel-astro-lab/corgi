@@ -107,7 +107,8 @@ PYBIND11_MODULE(pycorgi, m) {
           })
          */
 
-        .def("cellId",               &Node::cellId)
+        //.def("cellId",               &Node::cellId)
+        .def("cellId", [](const Node &n, const size_t i, const size_t j){ return n.id(i,j);})
         .def("addCell",              &Node::addCell)
         .def("getCellIds",           &Node::getCellIds,
                 py::arg("criteria") = std::vector<int>(),

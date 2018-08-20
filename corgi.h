@@ -51,12 +51,6 @@ class Node {
   /// number of elements in each dimension
   ::std::array<size_type, D> _lengths;
 
-  /// coefficients to use to compute the index
-  //::std::array<size_type, D> _coeffs;
-
-  /// total (imaginary) number of elements
-  //size_type _size;
-
   /// start coordinates of each dimension
   ::std::array<float_type, D> _mins;
     
@@ -114,22 +108,6 @@ class Node {
   }
 
 
-  public:
-  // --------------------------------------------------
-  // Cell constructors & destructors
-    
-  /// Constructor
-  //Node(size_t nx, size_t ny) : Nx(nx), Ny(ny) {
-  //  // fmt::print("initializing node ({} {})...\n", Nx, Ny);
-  //    
-  //  // allocating _mpiGrid
-  //  mpiGrid.resize(Nx, Ny);
-  //}
-
-
-
-  /// Deallocate and free everything
-  ~Node() = default;
 
   public:
 
@@ -163,7 +141,8 @@ class Node {
     mpiGrid.resize( indices[0], indices[1] );
   }
   
-
+  /// Deallocate and free everything
+  ~Node() = default;
 
   public:
   
@@ -287,7 +266,7 @@ class Node {
     return index_array;
   }
 
-  /*! Computes the index coefficients assuming row-major order
+  /*! Computes the index coefficients assuming column-major order
    *
    *  what we compute:
    *        \f[
@@ -301,18 +280,25 @@ class Node {
    *            \end{cases}
    *            \end{cases}
    *        \f]
+   *
+   *  For row-major switch to:
+   *  coeffs[i] = ct_accumulate(dimensionLengths, i + 1, Dimensions - i - 1,
+   *                                        static_cast<size_type>(1),
+   *                                        ct_prod<size_type>);
+   *
    */
-  ::std::array<size_type, D>
-  compute_index_coeffs(const ::std::array<size_type, D>& dimensionLengths) noexcept
+  std::array<size_type, D>
+  compute_index_coeffs(const ::std::array<size_type, D>& dimensionLengths) const noexcept
   {
-      ::std::array<size_type, D> coeffs;
+      std::array<size_type, D> coeffs;
       for (size_type i = 0; i < D; ++i)
       {
-          coeffs[i] = ct_accumulate(dimensionLengths,
-                                    i + 1,
-                                    D - i - 1,
-                                    static_cast<size_type>(1),
-                                    corgi_internals::ct_prod<size_type>);
+          coeffs[i] = corgi_internals::ct_accumulate(
+              dimensionLengths,
+              0,
+              i,
+              static_cast<size_type>(1),
+              corgi_internals::ct_prod<size_type>);
       }
       return coeffs;
   }
@@ -329,8 +315,7 @@ class Node {
   {
     return corgi_internals::ct_inner_product(
         compute_index_coeffs(_lengths), 0,
-        index_array, 0,
-        D,
+        index_array, 0, D,
         static_cast<index_type>(0),
         corgi_internals::ct_plus<index_type>,
         corgi_internals::ct_prod<index_type>);
@@ -345,18 +330,6 @@ class Node {
   id(Indices... indices) const
   {
     return _compute_index( _validate_index_range(indices...) );
-  }
-
-
-
-  // --------------------------------------------------
-  //TODO: remove
-  public:
-    
-  /// Create unique cell ids based on Morton z ordering
-  uint64_t cellId(size_t i, size_t j) {
-    //return uint64_t( j*Nx + i );
-    return uint64_t( j*_lengths[0] + i );
   }
 
 
@@ -408,39 +381,6 @@ class Node {
   getZmax() { return _maxs[2]; }
 
 
-
-  // --------------------------------------------------
-  /// Global grid dimensions
-  //size_t Nx = 0;
-  //size_t Ny = 0;
-
-  /// Global simulation box size
-  //double xmin = 0.0;
-  //double xmax = 0.0;
-  //double ymin = 0.0;
-  //double ymax = 0.0;
-
-  /// Return global grid sizes
-  //size_t getNx() { return Nx; };
-  //size_t getNy() { return Ny; };
-
-  /// Return global grid dimensions
-  //double getXmin() { return xmin; };
-  //double getXmax() { return xmax; };
-  //double getYmin() { return ymin; };
-  //double getYmax() { return ymax; };
-
-
-  /// Set physical grid size
-  //void setGridLims(double _xmin, double _xmax, 
-  //                 double _ymin, double _ymax) {
-  //  xmin = _xmin;
-  //  xmax = _xmax;
-
-  //  ymin = _ymin;
-  //  ymax = _ymax;
-  //}
-
   /// Set physical grid size
   void setGridLims(
       const ::std::array<float_type, D>& mins,
@@ -472,7 +412,7 @@ class Node {
     // CellPtr cellptr = std::make_unique<CellType>(cell);
     
     // calculate unique global cell ID
-    uint64_t cid = cellId(cellptr->my_i, cellptr->my_j);
+    uint64_t cid = id(cellptr->my_i, cellptr->my_j);
 
     // Erase any existing cells to avoid emplace of doing nothing TODO: is this correct?
     cells.erase(cid);
@@ -537,7 +477,7 @@ class Node {
   }
 
   CellType& getCell(const size_t i, const size_t j) {
-    uint64_t cid = cellId(i, j);
+    uint64_t cid = id(i, j);
     return getCell(cid);
   }
 
@@ -556,7 +496,7 @@ class Node {
 
 
   CellPtr getCellPtr(const size_t i, const size_t j) {
-    uint64_t cid = cellId(i, j);
+    uint64_t cid = id(i, j);
     return getCellPtr(cid);
   }
 
@@ -672,7 +612,7 @@ class Node {
   //     // Get cell id from index notation
   //     size_t i = std::get<0>(indx);
   //     size_t j = std::get<1>(indx);
-  //     uint64_t cid = cellId(i, j);
+  //     uint64_t cid = id(i, j);
 
   //     if (!isLocal( cid )) {
   //       int whoami = _mpiGrid(indx); 
