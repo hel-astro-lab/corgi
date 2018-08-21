@@ -15,7 +15,7 @@
 #include <sstream>
 
 #include "internals.h"
-#include "toolbox/SparseGrid.h"
+#include "toolbox/sparse_grid.h"
 #include "tile.h"
 
 
@@ -60,7 +60,7 @@ class Node {
   /*! Global large scale block grid where information
    * of all the mpi processes are stored
    */
-  tools::sparse_grid<int, D> _mpiGrid;
+  corgi::tools::sparse_grid<int, D> _mpiGrid;
 
   // --------------------------------------------------
   private:
@@ -86,8 +86,8 @@ class Node {
 
   // get element
   template<typename... Indices>
-  corgi_internals::enable_if_t<
-      (sizeof...(Indices) == D) && corgi_internals::are_integral<Indices...>::value, int > 
+  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+  corgi::internals::are_integral<Indices...>::value, int > 
   pyGetMpiGrid(Indices... indices)  /*const*/
   {
     //return mpiGrid( _validate_index_range(indices...) );
@@ -102,8 +102,8 @@ class Node {
 
   // set element
   template<typename... Indices>
-  corgi_internals::enable_if_t<
-      (sizeof...(Indices) == D) && corgi_internals::are_integral<Indices...>::value, void > 
+  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+  corgi::internals::are_integral<Indices...>::value, void > 
   pySetMpiGrid(int val, Indices... indices) {
     //mpiGrid( _validate_index_range(indices...) ) = val;
 
@@ -134,9 +134,8 @@ class Node {
   /// set dimensions during construction time
   template<
     typename... DimensionLength,
-    typename = corgi_internals::enable_if_t<
-      (sizeof...(DimensionLength) == D) && 
-      corgi_internals::are_integral<DimensionLength...>::value, void
+    typename = corgi::internals::enable_if_t< (sizeof...(DimensionLength) == D) && 
+               corgi::internals::are_integral<DimensionLength...>::value, void
     >
   > 
   Node(DimensionLength... dimensionLengths) :
@@ -251,8 +250,8 @@ class Node {
   private:
   
   template <typename... Indices>
-  corgi_internals::enable_if_t<
-        (sizeof...(Indices) == D) && corgi_internals::are_integral<Indices...>::value,
+  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+  corgi::internals::are_integral<Indices...>::value,
         ::std::array<index_type, D>>
     _validate_index_range(Indices... indices) const
   {
@@ -302,12 +301,12 @@ class Node {
       std::array<size_type, D> coeffs;
       for (size_type i = 0; i < D; ++i)
       {
-          coeffs[i] = corgi_internals::ct_accumulate(
+          coeffs[i] = corgi::internals::ct_accumulate(
               dimensionLengths,
               0,
               i,
               static_cast<size_type>(1),
-              corgi_internals::ct_prod<size_type>);
+              corgi::internals::ct_prod<size_type>);
       }
       return coeffs;
   }
@@ -322,20 +321,20 @@ class Node {
   _compute_index(
       const ::std::array<index_type, D>& index_array) const noexcept
   {
-    return corgi_internals::ct_inner_product(
+    return corgi::internals::ct_inner_product(
         compute_index_coeffs(_lengths), 0,
         index_array, 0, D,
         static_cast<index_type>(0),
-        corgi_internals::ct_plus<index_type>,
-        corgi_internals::ct_prod<index_type>);
+        corgi::internals::ct_plus<index_type>,
+        corgi::internals::ct_prod<index_type>);
   }
 
   public:
     
   /// tile IDs
   template<typename... Indices>
-  corgi_internals::enable_if_t<
-      (sizeof...(Indices) == D) && corgi_internals::are_integral<Indices...>::value, index_type > 
+  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+  corgi::internals::are_integral<Indices...>::value, index_type > 
   id(Indices... indices) const
   {
     return _compute_index( _validate_index_range(indices...) );
@@ -351,42 +350,42 @@ class Node {
 
   // return global grid sizes
   template<typename T = size_type>
-  corgi_internals::enable_if_t< (D>=1), T> 
+  corgi::internals::enable_if_t< (D>=1), T> 
   getNx() { return _lengths[0]; }
 
   template<typename T = size_type>
-  corgi_internals::enable_if_t< (D>=2), T> 
+  corgi::internals::enable_if_t< (D>=2), T> 
   getNy() { return _lengths[1]; }
 
   template<typename T = size_type>
-  corgi_internals::enable_if_t< (D>=3), T> 
+  corgi::internals::enable_if_t< (D>=3), T> 
   getNz() { return _lengths[2]; }
 
 
   // return global grid limits
   template<typename T = size_type>
-  corgi_internals::enable_if_t< (D>=1), T> 
+  corgi::internals::enable_if_t< (D>=1), T> 
   getXmin() { return _mins[0]; }
 
   template<typename T = size_type>
-  corgi_internals::enable_if_t< (D>=2), T> 
+  corgi::internals::enable_if_t< (D>=2), T> 
   getYmin() { return _mins[1]; }
 
   template<typename T = size_type>
-  corgi_internals::enable_if_t< (D>=3), T> 
+  corgi::internals::enable_if_t< (D>=3), T> 
   getZmin() { return _mins[2]; }
 
 
   template<typename T = size_type>
-  corgi_internals::enable_if_t< (D>=1), T> 
+  corgi::internals::enable_if_t< (D>=1), T> 
   getXmax() { return _maxs[0]; }
 
   template<typename T = size_type>
-  corgi_internals::enable_if_t< (D>=2), T> 
+  corgi::internals::enable_if_t< (D>=2), T> 
   getYmax() { return _maxs[1]; }
 
   template<typename T = size_type>
-  corgi_internals::enable_if_t< (D>=3), T> 
+  corgi::internals::enable_if_t< (D>=3), T> 
   getZmax() { return _maxs[2]; }
 
 
