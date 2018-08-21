@@ -75,7 +75,10 @@ class Node {
   /*! Global large scale block grid where information
    * of all the mpi processes are stored
    */
-  SparseGrid<int, D> mpiGrid;
+  tools::SparseGrid<int> mpiGrid;
+
+  tools::sparse_grid<int, D> mpiGrid2;
+
 
 
   public:
@@ -91,8 +94,10 @@ class Node {
     //return mpiGrid( _validate_index_range(indices...) );
     
     // hack
-    auto indx = _validate_index_range(indices...);
-    return mpiGrid(indx[0], indx[1]);
+    //auto indx = _validate_index_range(indices...);
+    //return mpiGrid(indx[0], indx[1]);
+
+    return mpiGrid2(indices...);
   }
 
 
@@ -104,8 +109,11 @@ class Node {
     //mpiGrid( _validate_index_range(indices...) ) = val;
 
     // hack
-    auto indx = _validate_index_range(indices...);
-    mpiGrid(indx[0], indx[1]) = val;
+    //auto indx = _validate_index_range(indices...);
+    //mpiGrid(indx[0], indx[1]) = val;
+
+
+    mpiGrid2(indices...) = val;
   }
 
 
@@ -127,6 +135,7 @@ class Node {
   /// set dimensions during construction time
   template<
     typename... DimensionLength,
+    //typename corgi_internals::check_index_length_t<D, DimensionLength...>
     typename = corgi_internals::enable_if_t<
       (sizeof...(DimensionLength) == D) && 
       corgi_internals::are_integral<DimensionLength...>::value, void

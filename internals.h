@@ -147,7 +147,14 @@ T ct_inner_product(const ::std::array<T_1, N_1>& arr_1,  ///< calc the inner pro
 //}
 
 
+//template<std::size_t Dim, typename... Args>
+//using check_index_length_t = 
+//  typename  corgi_internals::enable_if_t<(sizeof...(Args) == Dim) &&
+//            corgi_internals::are_integral<Args...>::value, void>;
 
+template<std::size_t Dim, typename... Args>
+using check_index_length_t = 
+  typename  corgi_internals::enable_if_t<(sizeof...(Args) == Dim), void>::type;
 
 
 }

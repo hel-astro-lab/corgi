@@ -4,19 +4,25 @@
 #include <vector>
 #include <stdexcept>
 
+#include "../internals.h"
+
+
+namespace tools {
 
 
 /// Simple sparse matrix class
 //template <class T, std::size_t D>
-template <class T, std::size_t D>
+template < typename T >
 class SparseGrid{
 
   private:
+    
+    template<typename ... Vals>
+    using tuple_pack = typename std::tuple<Vals...>;
 
 
   public:
     std::map<std::pair<size_t, size_t>, T> mat;
-
 
     size_t Nx;
     size_t Ny;
@@ -112,6 +118,126 @@ class SparseGrid{
       mat.clear();
     }
 
+};
+
+
+//--------------------------------------------------
+// try 1
+
+template<typename T, typename... Args>
+struct storage{
+  std::map<std::tuple<Args...>, T> data;
+};
+
+//--------------------------------------------------
+// try 2
+//
+// n-length tuple of type T, i.e., tuple_of<3, int> = tuple<int, int, int>
+// see: 
+//  - https://stackoverflow.com/questions/38885406/produce-stdtuple-of-same-type-in-compile-time-given-its-length-by-a-template-a
+template <size_t I,typename T> 
+struct tuple_n{
+    template< typename...Args> using type = typename tuple_n<I-1, T>::template type<T, Args...>;
+};
+
+template <typename T> 
+struct tuple_n<0, T> {
+    template<typename...Args> using type = std::tuple<Args...>;   
+};
+template <size_t I,typename T>  using tuple_of = typename tuple_n<I,T>::template type<>;
+
+
+
+//--------------------------------------------------
+template< typename T, int D>
+class sparse_grid {
+
+  /*
+  template<
+    typename... Dlen,
+    typename = corgi_internals::enable_if_t<(sizeof...(Dlen) == D) &&
+               corgi_internals::are_integral<Dlen...>::value , void> 
+  >
+  using tuple_map = std::map< std::tuple<Dlen...>, T>;
+  */
+
+  // works but does not accomplish anything
+  //template<typename... Args>
+  //using tuple_map = std::map<std::tuple<Args...>, T>;
+
+  //---
+
+  template<int Dim, typename... Args>
+  using check_index_length_t = 
+    typename  corgi_internals::enable_if_t<(sizeof...(Args) == Dim) &&
+              corgi_internals::are_integral<Args...>::value, void>::type;
+
+  template<typename... Dlen, check_index_length_t<D, Dlen...>>
+  storage<T, Dlen...> data2();
+
+  //---
+
+  /*
+  template<
+    typename... Dlen,
+    typename = corgi_internals::enable_if_t<(sizeof...(Dlen) == D) &&
+               corgi_internals::are_integral<Dlen...>::value , void> 
+  >
+  using tuple_map2 = std::map<std::tuple<Dlen...>, T>;
+  */
+
+
+
+  template<
+    typename... Dlen,
+    typename = corgi_internals::enable_if_t<(sizeof...(Dlen) == D) &&
+               corgi_internals::are_integral<Dlen...>::value , void> 
+  >
+  storage<T, Dlen...> data();
+
+
+  //--------------------------------------------------
+  // try 2
+
+  std::map<tuple_of<D, size_t>, int> data3;
+
+
+  //--------------------------------------------------
+  public:
+
+  template<
+    typename... Dlen,
+    //check_index_length_t<D, Dlen...>
+    typename = corgi_internals::enable_if_t<(sizeof...(Dlen) == D) &&
+               corgi_internals::are_integral<Dlen...>::value , void> 
+  >
+  //T& operator()(std::tuple<Dlen...>& indices)
+  T& operator()(Dlen... indices)
+  {
+    //return (*this->data2).data[indices];
+    //return *(this->data2).data[ std::tuple<Dlen...>(indices...) ];
+    //return *(this->data2).data->operator[]( std::tuple<Dlen...>(indices...) );
+    return data3[ std::tuple<Dlen...>(indices...) ];
+  }
+
+  template<
+    typename... Dlen,
+    //check_index_length_t<D, Dlen...>
+    typename = corgi_internals::enable_if_t<(sizeof...(Dlen) == D) &&
+               corgi_internals::are_integral<Dlen...>::value , void> 
+  >
+  //const T& operator()(std::tuple<Dlen...>& indices) const
+  const T& operator()(Dlen... indices) const
+  {
+    //return (*this->data2).data[indices];
+    //return *(this->data2).data->operator[]( std::tuple<Dlen...>(indices...) );
+    return data3[ std::tuple<Dlen...>(indices...) ];
+  }
 
 
 };
+
+
+
+
+}
