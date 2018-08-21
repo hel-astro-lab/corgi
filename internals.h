@@ -147,14 +147,39 @@ T ct_inner_product(const ::std::array<T_1, N_1>& arr_1,  ///< calc the inner pro
 //}
 
 
-//template<std::size_t Dim, typename... Args>
-//using check_index_length_t = 
-//  typename  corgi_internals::enable_if_t<(sizeof...(Args) == Dim) &&
-//            corgi_internals::are_integral<Args...>::value, void>;
+//--------------------------------------------------
+// tyepdef shortcut for checking indicies
+//
+// TODO: does not work; complains about <anonymous> type?
+//
+// template<std::size_t Dim, typename... Args>
+// using check_index_length_t = 
+//   typename  corgi_internals::enable_if_t<(sizeof...(Args) == Dim) &&
+//             corgi_internals::are_integral<Args...>::value, void>;
 
 template<std::size_t Dim, typename... Args>
 using check_index_length_t = 
   typename  corgi_internals::enable_if_t<(sizeof...(Args) == Dim), void>::type;
+
+
+
+//--------------------------------------------------
+// N-length tuple of type T, i.e., tuple_of<3, int> = tuple<int, int, int>
+// see: 
+//  - https://stackoverflow.com/questions/38885406/produce-stdtuple-of-same-type-in-compile-time-given-its-length-by-a-template-a
+
+template <size_t I,typename T> 
+struct tuple_n{
+    template< typename...Args> using type = typename tuple_n<I-1, T>::template type<T, Args...>;
+};
+
+template <typename T> 
+struct tuple_n<0, T> {
+    template<typename...Args> using type = std::tuple<Args...>;   
+};
+template <size_t I,typename T>  using tuple_of = typename tuple_n<I,T>::template type<>;
+
+
 
 
 }

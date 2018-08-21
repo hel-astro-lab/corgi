@@ -57,6 +57,10 @@ class Node {
   /// ending coordinates of each dimension
   ::std::array<float_type, D> _maxs;
 
+  /*! Global large scale block grid where information
+   * of all the mpi processes are stored
+   */
+  tools::sparse_grid<int, D> _mpiGrid;
 
   // --------------------------------------------------
   private:
@@ -68,16 +72,11 @@ class Node {
   using TileMap  = std::unordered_map<TileID_t, TilePtr>;
 
 
+
+
   public:
   /// Map with tileID & tile data
   TileMap tiles;
-
-  /*! Global large scale block grid where information
-   * of all the mpi processes are stored
-   */
-  tools::SparseGrid<int> mpiGrid;
-
-  tools::sparse_grid<int, D> mpiGrid2;
 
 
 
@@ -97,7 +96,7 @@ class Node {
     //auto indx = _validate_index_range(indices...);
     //return mpiGrid(indx[0], indx[1]);
 
-    return mpiGrid2(indices...);
+    return _mpiGrid(indices...);
   }
 
 
@@ -113,7 +112,7 @@ class Node {
     //mpiGrid(indx[0], indx[1]) = val;
 
 
-    mpiGrid2(indices...) = val;
+    _mpiGrid(indices...) = val;
   }
 
 
@@ -135,20 +134,21 @@ class Node {
   /// set dimensions during construction time
   template<
     typename... DimensionLength,
-    //typename corgi_internals::check_index_length_t<D, DimensionLength...>
     typename = corgi_internals::enable_if_t<
       (sizeof...(DimensionLength) == D) && 
       corgi_internals::are_integral<DimensionLength...>::value, void
     >
   > 
   Node(DimensionLength... dimensionLengths) :
-    _lengths {{static_cast<size_type>(dimensionLengths)...}}
+    _lengths {{static_cast<size_type>(dimensionLengths)...}},
+    _mpiGrid(dimensionLengths...)
   {
 
     // HACK to make this compile
-    std::array<size_type, D> indices = 
-    {{static_cast<size_type>(dimensionLengths)...}};
-    mpiGrid.resize( indices[0], indices[1] );
+    //std::array<size_type, D> indices = 
+    //{{static_cast<size_type>(dimensionLengths)...}};
+    //mpiGrid.resize( indices[0], indices[1] );
+
   }
   
   /// Deallocate and free everything
