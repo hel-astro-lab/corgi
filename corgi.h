@@ -90,12 +90,6 @@ class Node {
   corgi::internals::are_integral<Indices...>::value, int > 
   pyGetMpiGrid(Indices... indices)  /*const*/
   {
-    //return mpiGrid( _validate_index_range(indices...) );
-    
-    // hack
-    //auto indx = _validate_index_range(indices...);
-    //return mpiGrid(indx[0], indx[1]);
-
     return _mpiGrid(indices...);
   }
 
@@ -105,13 +99,6 @@ class Node {
   corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
   corgi::internals::are_integral<Indices...>::value, void > 
   pySetMpiGrid(int val, Indices... indices) {
-    //mpiGrid( _validate_index_range(indices...) ) = val;
-
-    // hack
-    //auto indx = _validate_index_range(indices...);
-    //mpiGrid(indx[0], indx[1]) = val;
-
-
     _mpiGrid(indices...) = val;
   }
 
@@ -141,14 +128,7 @@ class Node {
   Node(DimensionLength... dimensionLengths) :
     _lengths {{static_cast<size_type>(dimensionLengths)...}},
     _mpiGrid(dimensionLengths...)
-  {
-
-    // HACK to make this compile
-    //std::array<size_type, D> indices = 
-    //{{static_cast<size_type>(dimensionLengths)...}};
-    //mpiGrid.resize( indices[0], indices[1] );
-
-  }
+  { }
   
   /// Deallocate and free everything
   ~Node() = default;
