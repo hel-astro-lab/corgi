@@ -64,18 +64,6 @@ class Tile {
     std::array<double, D> mins;
     std::array<double, D> maxs;
 
-
-    /// initalize tile according to its location (i,j) and owner (o)
-    /*
-    Tile(size_t i, size_t j, int o, size_t Nx, size_t Ny) {
-      this->my_i     = i;
-      this->my_j     = j;
-      this->owner = o;
-
-      this->Nx    = Nx;
-      this->Ny    = Ny;
-    }
-    */
       
     // using default ctor
     // TODO: are there side effects?
@@ -87,11 +75,6 @@ class Tile {
      */
     virtual ~Tile() = default;
 
-
-    /// return mpiGrid index
-    //const std::tuple<size_t, size_t> index() {
-    //  return std::make_tuple( my_i, my_j );
-    //}
 
     /// default periodic x boundary condition
     size_t xwrap(int iw) {

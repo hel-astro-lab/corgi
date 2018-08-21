@@ -237,7 +237,10 @@ decltype(auto) apply( F&& f, Tuple&& tup ) {
 }
 
 
-
+// C++-14 index_sequence (maybe?); toggle to get C++-11 compatibility
+// used together with tuple unpacking in corgi::Node::id()
+//template <size_t... Is>
+//struct index_sequence;
 
 
 

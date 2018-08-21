@@ -76,6 +76,7 @@ class Node {
 
 
   public:
+
   /// Map with tileID & tile data
   TileMap tiles;
 
@@ -322,19 +323,7 @@ class Node {
   }
 
 
-  // try1
-  //index_type id(corgi::internals::tuple_of<D, size_t> indices) 
-  //{
-  //  //return id(indices...);
-  //  //return corgi::internals::apply(*(this)->id, indices);
-  //  return corgi::internals::apply( *(this->id), indices);
-  //}
-
-  // try2
-  //template <size_t... Is>
-  //struct index_sequence;
-
-  /// unpack tuple into variadic argument list
+  /// auxiliary function to unpack tuples
   template <size_t... Is>
   index_type id_impl(
       corgi::internals::tuple_of<D, size_t>& tuple, 
@@ -343,6 +332,7 @@ class Node {
     return id( std::get<Is>(tuple)... );
   }
 
+  /// unpack tuple into variadic argument list
   template<typename Indices = std::make_index_sequence<D>>
   index_type id( corgi::internals::tuple_of<D, size_t>& indices)
   {

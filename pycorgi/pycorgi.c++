@@ -52,15 +52,6 @@ PYBIND11_MODULE(pycorgi, m) {
 
         .def_readwrite("cid",                         &Tile::cid)
         .def_readwrite("communication",               &Tile::communication)
-          
-        //.def_readwrite("owner",                       [](Tile& tile){return tile.communication.owner;                       })
-        //.def_readwrite("top_virtual_owner",           [](Tile& tile){return tile.communication.top_virtual_owner;           })
-        //.def_readwrite("communications",              [](Tile& tile){return tile.communication.communications;              }) 
-        //.def_readwrite("number_of_virtual_neighbors", [](Tile& tile){return tile.communication.number_of_virtual_neighbors; })
-        //.def_readwrite("local",                       [](Tile& tile){return tile.communication.local;                       })  
-
-        //.def_readwrite("i",   [](Tile& tile) { return std::get<0>(tile.index); })
-        //.def_readwrite("j",   [](Tile& tile) { return std::get<1>(tile.index); })
         .def_readwrite("mins",                        &Tile::mins)
         .def_readwrite("maxs",                        &Tile::maxs)
         .def_readwrite("index",                       &Tile::index)
@@ -73,7 +64,6 @@ PYBIND11_MODULE(pycorgi, m) {
     py::class_<Node> corgiNode(m, "Node" );
     corgiNode
         .def(py::init<size_t, size_t>())
-        //.def(py::init([](size_t i, size_t j) { return Node(i,j); }))
         .def_readwrite("rank",       &Node::rank)
         .def_readwrite("Nrank",      &Node::Nrank)
         .def_readwrite("master",     &Node::master)
