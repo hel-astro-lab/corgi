@@ -100,8 +100,8 @@ class Parallel(unittest.TestCase):
         k = 0
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
-                c = pycorgi.Tile(i, j, 0, self.node.getNx(), self.node.getNy() )
-                self.node.addTile(c) 
+                c = pycorgi.Tile()
+                self.node.addTile(c, (i,j) ) 
                 k += 1
         self.assertEqual( k, self.Nx*self.Ny )
 
@@ -113,8 +113,8 @@ class Parallel(unittest.TestCase):
             c = self.node.getTilePtr(cid)
 
             self.assertEqual(c.cid,   cid)
-            self.assertEqual(c.owner, self.node.rank)
-            self.assertEqual(c.local, True)
+            self.assertEqual(c.communication.owner, self.node.rank)
+            self.assertEqual(c.communication.local, True)
 
             #ci = c.i
             #cj = c.j

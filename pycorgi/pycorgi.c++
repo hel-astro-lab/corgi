@@ -37,23 +37,35 @@ PYBIND11_MODULE(pycorgi, m) {
     using Node = corgi::Node<2>;
     using Tile = corgi::Tile<2>;
 
+    py::class_<corgi::Communication> corgiComm(m, "Communication");
+    corgiComm
+        .def_readwrite("owner",                       &corgi::Communication::owner                      )
+        .def_readwrite("top_virtual_owner",           &corgi::Communication::top_virtual_owner          )
+        .def_readwrite("communications",              &corgi::Communication::communications             ) 
+        .def_readwrite("number_of_virtual_neighbors", &corgi::Communication::number_of_virtual_neighbors)
+        .def_readwrite("local",                       &corgi::Communication::local                      );
+
 
     py::class_<Tile, std::shared_ptr<Tile>> corgiTile(m, "Tile" );
     corgiTile
-        .def(py::init<size_t, size_t, int, size_t, size_t>())
+        .def(py::init<>())
+
         .def_readwrite("cid",                         &Tile::cid)
-        .def_readwrite("owner",                       &Tile::owner)
-        .def_readwrite("top_virtual_owner",           &Tile::top_virtual_owner)
-        .def_readwrite("number_of_virtual_neighbors", &Tile::number_of_virtual_neighbors)
-        .def_readwrite("communications",              &Tile::communications)
-        .def_readwrite("i",                           &Tile::my_i)
-        .def_readwrite("j",                           &Tile::my_j)
-        .def_readwrite("local",                       &Tile::local)
+        .def_readwrite("communication",               &Tile::communication)
+          
+        //.def_readwrite("owner",                       [](Tile& tile){return tile.communication.owner;                       })
+        //.def_readwrite("top_virtual_owner",           [](Tile& tile){return tile.communication.top_virtual_owner;           })
+        //.def_readwrite("communications",              [](Tile& tile){return tile.communication.communications;              }) 
+        //.def_readwrite("number_of_virtual_neighbors", [](Tile& tile){return tile.communication.number_of_virtual_neighbors; })
+        //.def_readwrite("local",                       [](Tile& tile){return tile.communication.local;                       })  
+
+        //.def_readwrite("i",   [](Tile& tile) { return std::get<0>(tile.index); })
+        //.def_readwrite("j",   [](Tile& tile) { return std::get<1>(tile.index); })
         .def_readwrite("mins",                        &Tile::mins)
         .def_readwrite("maxs",                        &Tile::maxs)
+        .def_readwrite("index",                       &Tile::index)
         .def("set_tile_mins",                         &Tile::set_tile_mins)
         .def("set_tile_maxs",                         &Tile::set_tile_maxs)
-        .def("index",                                 &Tile::index)
         .def("neighs",                                &Tile::neighs)
         .def("nhood",                                 &Tile::nhood);
 

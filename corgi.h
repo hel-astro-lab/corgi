@@ -13,6 +13,7 @@
 #include <cassert>
 #include <initializer_list>
 #include <sstream>
+#include <utility>
 
 #include "internals.h"
 #include "toolbox/sparse_grid.h"
@@ -321,6 +322,33 @@ class Node {
   }
 
 
+  // try1
+  //index_type id(corgi::internals::tuple_of<D, size_t> indices) 
+  //{
+  //  //return id(indices...);
+  //  //return corgi::internals::apply(*(this)->id, indices);
+  //  return corgi::internals::apply( *(this->id), indices);
+  //}
+
+  // try2
+  //template <size_t... Is>
+  //struct index_sequence;
+
+  /// unpack tuple into variadic argument list
+  template <size_t... Is>
+  index_type id_impl(
+      corgi::internals::tuple_of<D, size_t>& tuple, 
+      std::index_sequence<Is...>)
+  {
+    return id( std::get<Is>(tuple)... );
+  }
+
+  template<typename Indices = std::make_index_sequence<D>>
+  index_type id( corgi::internals::tuple_of<D, size_t>& indices)
+  {
+      return id_impl(indices, Indices{} );
+  }
+  
 
   public:
 
@@ -393,21 +421,26 @@ class Node {
     
   /// Add local tile to the node
   // void addTile(Tile& tile) {
-  void addTile(TilePtr tileptr) {
+  void addTile(
+    TilePtr tileptr,
+    corgi::internals::tuple_of<D, size_t> indices
+    )
+  {
 
     // claim unique ownership of the tile (for unique_ptr)
     // std::unique_ptr<corgi::Tile> tileptr = std::make_unique<corgi:Tile>(tile);
     // TilePtr tileptr = std::make_unique<Tile_t>(tile);
     
     // calculate unique global tile ID
-    uint64_t cid = id(tileptr->my_i, tileptr->my_j);
+    uint64_t cid = id( indices );
 
     // Erase any existing tiles to avoid emplace of doing nothing TODO: is this correct?
     tiles.erase(cid);
 
-    tileptr->cid   = cid;
-    tileptr->owner = rank;
-    tileptr->local = true; //TODO Catch error if tile is not already mine?
+    tileptr->index               = indices;
+    tileptr->cid                 = cid;
+    tileptr->communication.owner = rank;
+    tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
 
     // tiles.emplace(cid, std::move(tileptr)); // unique_ptr needs to be moved
     tiles.emplace(cid, tileptr); // NOTE using c++14 emplace to avoid copying

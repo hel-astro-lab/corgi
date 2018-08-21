@@ -20,11 +20,11 @@ PYBIND11_MODULE(pycorgitest, m) {
   // py::class_<Derived, Base, std::shared_ptr<Derived>>(...);
     
   py::class_<corgitest::Welsh, corgi::Tile<2>, std::shared_ptr<corgitest::Welsh>>(m, "Welsh")
-    .def(py::init<size_t, size_t, int, size_t, size_t>())
+    .def(py::init<>())
     .def("bark",     &corgitest::Welsh::bark);
 
   py::class_<corgitest::Pembroke, corgi::Tile<2>, std::shared_ptr<corgitest::Pembroke>>(m, "Pembroke")
-    .def(py::init<size_t, size_t, int, size_t, size_t>())
+    .def(py::init<>())
     .def("howl",     &corgitest::Pembroke::howl)
     .def("bark",     &corgitest::Pembroke::bark);
 
@@ -52,7 +52,7 @@ PYBIND11_MODULE(pycorgitest, m) {
              corgitest::Swede, 
              corgitest::Viking, 
              std::shared_ptr<corgitest::Vallhund>>(m, "Vallhund") 
-    .def(py::init<size_t, size_t, int, size_t, size_t, int>())
+    .def(py::init<int>())
     .def("bark",     &corgitest::Vallhund::bark);
 
 

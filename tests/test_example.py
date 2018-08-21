@@ -15,17 +15,23 @@ class Initialization(unittest.TestCase):
     Ny = 20
 
     def setUp(self):
-        self.tile1 = pycorgitest.Welsh(self.i, self.j, self.o, self.Nx, self.Ny)
-        self.tile2 = pycorgitest.Pembroke(self.i, self.j, self.o, self.Nx, self.Ny)
+        self.tile1 = pycorgitest.Welsh()
+        self.tile2 = pycorgitest.Pembroke()
+
+        self.tile1.index = (self.i, self.j)
+        self.tile1.communication.owner = self.o
+
+        self.tile2.index = (self.i, self.j)
+        self.tile2.communication.owner = self.o
 
     #test that derived classes can inherit base class methods
     def test_inheritance(self):
 
-        (i,j) = self.tile1.index()
+        (i,j) = self.tile1.index
         self.assertEqual(i, self.i)
         self.assertEqual(j, self.j)
 
-        (i,j) = self.tile2.index()
+        (i,j) = self.tile2.index
         self.assertEqual(i, self.i)
         self.assertEqual(j, self.j)
 
@@ -54,8 +60,7 @@ class MultipleInheritance(unittest.TestCase):
         self.swede  = pycorgitest.Swede(self.soc_num)
         self.viking = pycorgitest.Viking()
 
-        self.vallhund = pycorgitest.Vallhund(self.i, self.j, self.o, self.Nx, self.Ny, 
-                                        self.soc_num)
+        self.vallhund = pycorgitest.Vallhund(self.soc_num)
 
     def test_extending(self):
         self.assertEqual( self.vallhund.bark(), "ruf ruf ruf" )
@@ -132,11 +137,11 @@ class ParallelGrid(unittest.TestCase):
             for i in range(self.node.getNx()):
 
                 #initialize heterogeneous grid
-                if (i%2 == 0):
-                    c = pycorgitest.Welsh(i, j, 0, self.node.getNx(), self.node.getNy() )
+                if (i % 2 == 0):
+                    c = pycorgitest.Welsh()
                 else:
-                    c = pycorgitest.Pembroke(i, j, 0, self.node.getNx(), self.node.getNy() )
-                self.node.addTile(c) 
+                    c = pycorgitest.Pembroke()
+                self.node.addTile(c, (i,j) ) 
                 k += 1
 
         self.assertEqual( k, self.Nx*self.Ny )
@@ -149,13 +154,14 @@ class ParallelGrid(unittest.TestCase):
             c = self.node.getTilePtr(cid)
 
             self.assertEqual(c.cid,   cid)
-            self.assertEqual(c.owner, self.node.rank)
-            self.assertEqual(c.local, True)
+            self.assertEqual(c.communication.owner, self.node.rank)
+            self.assertEqual(c.communication.local, True)
 
             # we need to be able to bark also after the getting.
             # This tests that operator slicing is not acting
 
-            if (c.i % 2 == 0): #Welsh
+            (i,j) = c.index
+            if (i % 2 == 0): #Welsh
                 self.assertEqual( c.bark(), "Woof!" )
             else:              #Pembroke
                 self.assertEqual( c.bark(), "Ruff!" )

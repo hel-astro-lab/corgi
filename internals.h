@@ -180,5 +180,68 @@ template <size_t I,typename T>  using tuple_of = typename tuple_n<I,T>::template
 
 
 
+
+//--------------------------------------------------
+// implementations of std::apply (from c++-17)
+// See:
+//  - https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
+//
+// ver1
+/*
+template<typename Function, typename Tuple, size_t ... I>
+auto apply(Function f, Tuple t, std::index_sequence<I ...>)
+{
+     return f(std::get<I>(t) ...);
+}
+
+template<typename Function, typename Tuple>
+auto apply(Function f, Tuple t)
+{
+    static constexpr auto size = std::tuple_size<Tuple>::value;
+    return apply(f, t, std::make_index_sequence<size>{});
+}
+*/
+
+//--------------------------------------------------
+// ver2
+  
+template<std::size_t...Is>
+auto index_over(std::index_sequence<Is...>){
+  return [](auto&&f)->decltype(auto){
+    return decltype(f)(f)( std::integral_constant<std::size_t, Is>{}... );
+  };
+}
+template<std::size_t N>
+auto index_upto(std::integral_constant<std::size_t, N> ={}){
+  return index_over( std::make_index_sequence<N>{} );
+}
+
+//template< class T >
+//constexpr std::size_t tuple_size_v = tuple_size<T>::value;
+//typename std::tuple_size<std::remove_reference_t<Tuple>::value>()
+
+template<class T>
+constexpr auto tuple_size_v = std::tuple_size<T>::value;
+template<class F, class Tuple>
+decltype(auto) apply( F&& f, Tuple&& tup ) {
+  auto indexer = index_upto<
+    tuple_size_v<std::remove_reference_t<Tuple>>
+  >();
+  return indexer(
+    [&](auto...Is)->decltype(auto) {
+      return std::forward<F>(f)(
+        std::get<Is>(std::forward<Tuple>(tup))...
+      );
+    }
+  );
+}
+
+
+
+
+
+
+
+
   } // end of namespace internals
 } // end of corgi

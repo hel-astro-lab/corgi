@@ -10,10 +10,7 @@ namespace corgitest {
 class Welsh : public corgi::Tile<2> {
 
   public:
-    Welsh(size_t i, size_t j, 
-             int o, 
-             size_t nx, size_t ny
-             ) : corgi::Tile<2>(i, j, o, nx, ny) { }
+    Welsh() : corgi::Tile<2>() { }
 
     ~Welsh() override = default;
 
@@ -26,17 +23,14 @@ class Welsh : public corgi::Tile<2> {
 class Pembroke : public corgi::Tile<2> {
 
   public:
-    Pembroke(size_t i, size_t j, 
-             int o, 
-             size_t nx, size_t ny
-             ) : corgi::Tile<2>(i, j, o, nx, ny) { }
+    Pembroke( ) : corgi::Tile<2>() { }
 
     ~Pembroke() override = default;
 
     // extend the base class
     std::string bark();
 
-    // specialize the this class
+    // specialize this class
     std::string howl();
 
 };
@@ -93,13 +87,9 @@ class Vallhund : public Swede,
 
   public:
                    
-    Vallhund(size_t i, size_t j, 
-             int o, 
-             size_t nx, size_t ny,
-             int social_number
-             ) : 
+    Vallhund(int social_number) : 
       Swede(social_number),
-      corgi::Tile<2>(i, j, o, nx, ny) 
+      corgi::Tile<2>() 
     { }
 
     ~Vallhund() override = default;
