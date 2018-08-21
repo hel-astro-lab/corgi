@@ -15,27 +15,33 @@ class Initialization(unittest.TestCase):
     Ny = 20
 
     def setUp(self):
-        self.cell1 = pycorgitest.Welsh(self.i, self.j, self.o, self.Nx, self.Ny)
-        self.cell2 = pycorgitest.Pembroke(self.i, self.j, self.o, self.Nx, self.Ny)
+        self.tile1 = pycorgitest.Welsh()
+        self.tile2 = pycorgitest.Pembroke()
+
+        self.tile1.index = (self.i, self.j)
+        self.tile1.communication.owner = self.o
+
+        self.tile2.index = (self.i, self.j)
+        self.tile2.communication.owner = self.o
 
     #test that derived classes can inherit base class methods
     def test_inheritance(self):
 
-        (i,j) = self.cell1.index()
+        (i,j) = self.tile1.index
         self.assertEqual(i, self.i)
         self.assertEqual(j, self.j)
 
-        (i,j) = self.cell2.index()
+        (i,j) = self.tile2.index
         self.assertEqual(i, self.i)
         self.assertEqual(j, self.j)
 
     #tests that dserived classes can be extended
     def test_extending(self):
 
-        self.assertEqual( self.cell1.bark(), "Woof!" )
-        self.assertEqual( self.cell2.bark(), "Ruff!" )
+        self.assertEqual( self.tile1.bark(), "Woof!" )
+        self.assertEqual( self.tile2.bark(), "Ruff!" )
 
-        self.assertEqual( self.cell2.howl(), "Auuuuuu!" )
+        self.assertEqual( self.tile2.howl(), "Auuuuuu!" )
 
 
 # Testing multiple inheritance bindings
@@ -54,8 +60,7 @@ class MultipleInheritance(unittest.TestCase):
         self.swede  = pycorgitest.Swede(self.soc_num)
         self.viking = pycorgitest.Viking()
 
-        self.vallhund = pycorgitest.Vallhund(self.i, self.j, self.o, self.Nx, self.Ny, 
-                                        self.soc_num)
+        self.vallhund = pycorgitest.Vallhund(self.soc_num)
 
     def test_extending(self):
         self.assertEqual( self.vallhund.bark(), "ruf ruf ruf" )
@@ -69,7 +74,7 @@ class MultipleInheritance(unittest.TestCase):
 
 
 
-def cellID(i,j,Nx,Ny):
+def tileID(i,j,Nx,Ny):
     return j*Nx + i
 
 
@@ -96,8 +101,8 @@ class ParallelGrid(unittest.TestCase):
     def test_cid(self):
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
-                cid = self.node.cellId(i, j)
-                cidr = cellID( i, j, self.node.getNx(), self.node.getNy() )
+                cid = self.node.tileId(i, j)
+                cidr = tileID( i, j, self.node.getNx(), self.node.getNy() )
                 self.assertEqual(cid, cidr)
 
     def mpiInitialization(self):
@@ -132,30 +137,31 @@ class ParallelGrid(unittest.TestCase):
             for i in range(self.node.getNx()):
 
                 #initialize heterogeneous grid
-                if (i%2 == 0):
-                    c = pycorgitest.Welsh(i, j, 0, self.node.getNx(), self.node.getNy() )
+                if (i % 2 == 0):
+                    c = pycorgitest.Welsh()
                 else:
-                    c = pycorgitest.Pembroke(i, j, 0, self.node.getNx(), self.node.getNy() )
-                self.node.addCell(c) 
+                    c = pycorgitest.Pembroke()
+                self.node.addTile(c, (i,j) ) 
                 k += 1
 
         self.assertEqual( k, self.Nx*self.Ny )
 
-        cids = self.node.getCellIds() 
+        cids = self.node.getTileIds() 
         self.assertEqual( len(cids), self.Nx*self.Ny )
 
         #now try and get them back
         for cid in cids:
-            c = self.node.getCellPtr(cid)
+            c = self.node.getTilePtr(cid)
 
             self.assertEqual(c.cid,   cid)
-            self.assertEqual(c.owner, self.node.rank)
-            self.assertEqual(c.local, True)
+            self.assertEqual(c.communication.owner, self.node.rank)
+            self.assertEqual(c.communication.local, True)
 
             # we need to be able to bark also after the getting.
             # This tests that operator slicing is not acting
 
-            if (c.i % 2 == 0): #Welsh
+            (i,j) = c.index
+            if (i % 2 == 0): #Welsh
                 self.assertEqual( c.bark(), "Woof!" )
             else:              #Pembroke
                 self.assertEqual( c.bark(), "Ruff!" )

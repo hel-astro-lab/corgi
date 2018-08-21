@@ -1,32 +1,26 @@
 #pragma once
 
 
+#include <array>
 #include <vector>
 #include <tuple>
 #include <iostream>
 #include <algorithm>
 
 #include "common.h"
-
+#include "internals.h"
 
 
 namespace corgi {
 
-class Cell {
 
-  public:
-    // Order here is fixed for mpi_cell_t
-
-    /// unique cell ID
-    uint64_t cid;
+// Data storage struct for communication members
+struct Communication {
 
     /// MPI rank of who owns me
     int owner;
 
-    /// coarse mpiGrid grid indices
-    size_t my_i, my_j;
-
-    /// If I am a virtual cell, who do I share the values the most.
+    /// If I am a virtual tile, who do I share the values the most.
     int top_virtual_owner;
 
     /// how many times do I have to be sent to others
@@ -35,69 +29,77 @@ class Cell {
     /// How many virtual neighbors do I have
     size_t number_of_virtual_neighbors = 0;
 
-    /// Cell type listing
+    /// tile type listing
     bool local;
 
     std::vector<int> types;
+};
+
+
+
+/*! \brief Tile oject 
+ *
+ * This is the smallest storage unit of the framework. Internally this should host 
+ * a mesh/grid/particles/etc.
+ */
+template<std::size_t D>
+class Tile {
+
+  public:
+
+    /// unique tile ID
+    uint64_t cid;
+
+
+    // Order here is fixed for mpi_tile_t
+    Communication communication;
+
+    /// coarse mpiGrid grid indices
+    corgi::internals::tuple_of<D, size_t> index;
 
     /// Global grid dimensions (needed for wrapping boundaries)
-    size_t Nx = 0;
-    size_t Ny= 0;
+    std::array<size_t, D> lengths;
 
     /// tile boundaries
-    std::vector<double> mins = {0.0, 0.0, 0.0};
-    std::vector<double> maxs = {1.0, 1.0, 1.0};
+    std::array<double, D> mins;
+    std::array<double, D> maxs;
 
-
-    /// initalize cell according to its location (i,j) and owner (o)
-    Cell(size_t i, size_t j, int o, size_t Nx, size_t Ny) {
-      this->my_i     = i;
-      this->my_j     = j;
-      this->owner = o;
-
-      this->Nx    = Nx;
-      this->Ny    = Ny;
-    }
+      
+    // using default ctor
+    // TODO: are there side effects?
+    Tile() = default;
 
     /*! \brief *virtual* base class destructor 
      * NOTE: this needs to be virtual so that child classes can be 
      * destroyed.
      */
-    virtual ~Cell() = default;
+    virtual ~Tile() = default;
 
-    /// return mpiGrid index
-    const std::tuple<size_t, size_t> index() {
-      return std::make_tuple( my_i, my_j );
-    }
 
     /// default periodic x boundary condition
     size_t xwrap(int iw) {
-        while (iw < 0) {
-            iw += Nx;
-        }
-        while (iw >= (int)Nx) {
-            iw -= Nx;
-        }
-        return size_t(iw);
+      auto Nx = static_cast<int>(lengths[0]);
+
+      while (iw < 0) { iw += Nx; }
+      while (iw >= Nx) { iw -= Nx; }
+      return size_t(iw);
     }
 
 
     /// default periodic y boundary condition
-    size_t ywrap( int jw ) {
-        while (jw < 0) {
-            jw += Ny;
-        }
-        while (jw >= (int)Ny) {
-            jw -= Ny;
-        }
-        return size_t(jw);
+    size_t ywrap(int jw) {
+      auto Ny = static_cast<int>(lengths[1]);
+
+      while (jw < 0) { jw += Ny; }
+      while (jw >= Ny) { jw -= Ny; }
+      return size_t(jw);
     }
 
 
-    /// return index of cells in relative to my position
+    /// return index of tiles in relative to my position
     const std::tuple<size_t, size_t> neighs(int ir, int jr) {
-      size_t ii = xwrap( (int)my_i + ir );
-      size_t jj = ywrap( (int)my_j + jr );
+      size_t ii = xwrap( (int)std::get<0>(index) + ir );
+      size_t jj = ywrap( (int)std::get<1>(index) + jr );
       return std::make_tuple( ii, jj );
     }
 
@@ -116,20 +118,20 @@ class Cell {
     }
 
 
-    /// Check if cell fulfills a single criteria
+    /// Check if tile fulfills a single criteria
     bool is_type( int criteria ) {
       if( std::find(
-            types.begin(), 
-            types.end(), 
+            communication.types.begin(), 
+            communication.types.end(), 
             criteria) 
-          == types.end() 
+          == communication.types.end() 
         ) {
         return false;
       } 
       return true;
     }
 
-    /// Vectorized version requiring cell to fulfill every criteria
+    /// Vectorized version requiring tile to fulfill every criteria
     bool is_types( std::vector<int> criteria ) {
       for (auto crit: criteria) {
         if (is_type(crit))  {
@@ -147,21 +149,18 @@ class Cell {
     // (optional) tile geometry 
 
     /// set tile minimum limits
-    void set_tile_mins(std::vector<double> bbox)
+    void set_tile_mins(std::array<double, D> bbox)
     {
-      // TODO assert size
       mins = std::move(bbox);
     }
 
     /// set tile minimum limits
-    void set_tile_maxs(std::vector<double> bbox)
+    void set_tile_maxs(std::array<double, D> bbox)
     {
-      // TODO assert size
       maxs = std::move(bbox);
     }
 
 
+}; // end of Tile class
 
-}; // end of Cell class
-
-}
+} // end of namespace corgi

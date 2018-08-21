@@ -2,19 +2,15 @@
 
 #include <iostream>
 
-#include "../cell.h"
 #include "../corgi.h"
 
 
 namespace corgitest {
 
-class Welsh : public corgi::Cell {
+class Welsh : public corgi::Tile<2> {
 
   public:
-    Welsh(size_t i, size_t j, 
-             int o, 
-             size_t nx, size_t ny
-             ) : corgi::Cell(i, j, o, nx, ny) { }
+    Welsh() : corgi::Tile<2>() { }
 
     ~Welsh() override = default;
 
@@ -24,20 +20,17 @@ class Welsh : public corgi::Cell {
 };
 
 
-class Pembroke : public corgi::Cell {
+class Pembroke : public corgi::Tile<2> {
 
   public:
-    Pembroke(size_t i, size_t j, 
-             int o, 
-             size_t nx, size_t ny
-             ) : corgi::Cell(i, j, o, nx, ny) { }
+    Pembroke( ) : corgi::Tile<2>() { }
 
     ~Pembroke() override = default;
 
     // extend the base class
     std::string bark();
 
-    // specialize the this class
+    // specialize this class
     std::string howl();
 
 };
@@ -90,17 +83,13 @@ class Swede {
 //
 class Vallhund : public Swede, 
                  public Viking, 
-                 public corgi::Cell {
+                 public corgi::Tile<2> {
 
   public:
                    
-    Vallhund(size_t i, size_t j, 
-             int o, 
-             size_t nx, size_t ny,
-             int social_number
-             ) : 
+    Vallhund(int social_number) : 
       Swede(social_number),
-      corgi::Cell(i, j, o, nx, ny) 
+      corgi::Tile<2>() 
     { }
 
     ~Vallhund() override = default;
@@ -112,14 +101,14 @@ class Vallhund : public Swede,
 
 
 
-class Grid : public corgi::Node {
+class Grid : public corgi::Node<2> {
 
   public:
-    Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
+    Grid(size_t nx, size_t ny) : corgi::Node<2>(nx, ny) { }
 
     ~Grid() = default;
 
-    // std::unordered_map< uint64_t, std::shared_ptr<corgi::Cell>> cells;
+    // std::unordered_map< uint64_t, std::shared_ptr<corgi::Tile>> cells;
 
     std::string petShop();
 
