@@ -51,9 +51,9 @@ namespace conf {
     size_t Nx = 10;
     size_t Ny = 10;
 
-    /// block size inside spatial cell
-    size_t NxCell = 2;
-    size_t NyCell = 2;
+    /// block size inside spatial tile
+    size_t NxTile = 2;
+    size_t NyTile = 2;
 
     /// physical grid dimensions
     double xmin = 0.0;
@@ -94,13 +94,13 @@ namespace BC {
 */
 
 
-/*! Contains different cell boundary types. Type of computation will depend on 
+/*! Contains different tile boundary types. Type of computation will depend on 
  * what this type is.
-namespace cellType {
+namespace tileType {
     enum {
-        LOCAL,    //! Default type indicating that cell is owned by the current process
-        VIRTUAL,  //! virtual cell (owned by other process)
-        OUTFLOW,  //! outflow cell
+        LOCAL,    //! Default type indicating that tile is owned by the current process
+        VIRTUAL,  //! virtual tile (owned by other process)
+        OUTFLOW,  //! outflow tile
         N_CELLTYPES
     };
 }
@@ -108,8 +108,8 @@ namespace cellType {
 
 namespace commType {
     enum {
-        NCELLS,   //! Number of incoming cells,
-        CELLDATA, //! Cell data array
+        NTILES,   //! Number of incoming tiles,
+        TILEDATA, //! Tile data array
         N_COMMTYPES
     };
 }

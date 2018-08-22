@@ -241,7 +241,9 @@ decltype(auto) apply( F&& f, Tuple&& tup ) {
 // used together with tuple unpacking in corgi::Node::id()
 //template <size_t... Is>
 //struct index_sequence;
-
+// See also: 
+//  - https://stackoverflow.com/questions/17424477/implementation-c14-make-integer-sequence/17426611#17426611
+//  - http://aherrmann.github.io/programming/2016/02/28/unpacking-tuples-in-cpp14/
 
 
 

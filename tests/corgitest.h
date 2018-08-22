@@ -108,7 +108,7 @@ class Grid : public corgi::Node<2> {
 
     ~Grid() = default;
 
-    // std::unordered_map< uint64_t, std::shared_ptr<corgi::Tile>> cells;
+    // std::unordered_map< uint64_t, std::shared_ptr<corgi::Tile>> tiles;
 
     std::string petShop();
 

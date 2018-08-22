@@ -46,7 +46,7 @@ class Node {
   using float_type = double;
 
 
-  private:
+  protected:
 
   // --------------------------------------------------
   /// number of elements in each dimension
