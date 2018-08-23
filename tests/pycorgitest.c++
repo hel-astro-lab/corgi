@@ -9,7 +9,7 @@ PYBIND11_MODULE(pycorgitest, m) {
 
   // --------------------------------------------------
   // Loading tile bindings from corgi library
-  py::object corgiTile = (py::object) py::module::import("pycorgi").attr("Tile");
+  py::object corgiTile = (py::object) py::module::import("pycorgi").attr("Tile2D");
 
   // Welsh and Pembroke inherit grid infrastructure from base class and then extend it.
   // NOTE: they must be defined with a special shared container (shared_ptr) in order
@@ -59,7 +59,7 @@ PYBIND11_MODULE(pycorgitest, m) {
 
   // --------------------------------------------------
   // Grid bindings
-  py::object corgiNode = (py::object) py::module::import("pycorgi").attr("Node");
+  py::object corgiNode = (py::object) py::module::import("pycorgi").attr("Node2D");
   py::class_<corgitest::Grid>(m, "Grid", corgiNode)
     .def(py::init<size_t, size_t>())
     .def("petShop",   &corgitest::Grid::petShop);

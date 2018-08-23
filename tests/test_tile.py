@@ -20,7 +20,7 @@ class Initialization(unittest.TestCase):
     Ny = 20
 
     def setUp(self):
-        self.tile = pycorgi.Tile()
+        self.tile = pycorgi.Tile2D()
         self.tile.index = (self.i, self.j)
         self.tile.communication.owner = self.o
 

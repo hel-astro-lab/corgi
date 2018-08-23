@@ -7,7 +7,9 @@
 
 namespace corgitest {
 
-class Welsh : public corgi::Tile<2> {
+class Welsh : 
+  virtual public corgi::Tile<2> 
+{
 
   public:
     Welsh() : corgi::Tile<2>() { }
@@ -20,7 +22,9 @@ class Welsh : public corgi::Tile<2> {
 };
 
 
-class Pembroke : public corgi::Tile<2> {
+class Pembroke : 
+  virtual public corgi::Tile<2> 
+{
 
   public:
     Pembroke( ) : corgi::Tile<2>() { }

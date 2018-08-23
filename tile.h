@@ -144,17 +144,17 @@ class Tile {
 
 
     /// Return full neighborhood around me
-    std::vector< std::tuple<size_t, size_t> > nhood() {
-      std::vector< std::tuple<size_t, size_t> > nh;
-      for (int ir=-1; ir<=1; ir++) {
-        for (int jr=-1; jr<=1; jr++) {
-          if (!( ir == 0 && jr == 0 )) {
-            nh.push_back( neighs(ir, jr) );
-          }
-        }
-      }
-      return nh;
-    }
+    //std::vector< std::tuple<size_t, size_t> > nhood() {
+    //  std::vector< std::tuple<size_t, size_t> > nh;
+    //  for (int ir=-1; ir<=1; ir++) {
+    //    for (int jr=-1; jr<=1; jr++) {
+    //      if (!( ir == 0 && jr == 0 )) {
+    //        nh.push_back( neighs(ir, jr) );
+    //      }
+    //    }
+    //  }
+    //  return nh;
+    //}
 
 
     /// Check if tile fulfills a single criteria

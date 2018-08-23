@@ -101,7 +101,7 @@ class ParallelGrid(unittest.TestCase):
     def test_cid(self):
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
-                cid = self.node.tileId(i, j)
+                cid = self.node.id(i, j)
                 cidr = tileID( i, j, self.node.getNx(), self.node.getNy() )
                 self.assertEqual(cid, cidr)
 
