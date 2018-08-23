@@ -75,32 +75,71 @@ class Tile {
      */
     virtual ~Tile() = default;
 
+    /*
 
     /// default periodic x boundary condition
-    size_t xwrap(int iw) {
+    corgi::internals::enable_if_t< (D>=1), size_t>
+    xwrap(int iw) {
       auto Nx = static_cast<int>(lengths[0]);
 
       while (iw < 0) { iw += Nx; }
       while (iw >= Nx) { iw -= Nx; }
-      return size_t(iw);
+      return static_cast<size_t>(iw);
     }
 
 
     /// default periodic y boundary condition
-    size_t ywrap(int jw) {
+    corgi::internals::enable_if_t< (D>=2), size_t>
+    ywrap(int jw) {
       auto Ny = static_cast<int>(lengths[1]);
 
       while (jw < 0) { jw += Ny; }
       while (jw >= Ny) { jw -= Ny; }
-      return size_t(jw);
+      return static_cast<size_t>(jw);
+    }
+
+    /// default periodic z boundary condition
+    corgi::internals::enable_if_t< (D>=3), size_t>
+    zwrap(int kw) {
+      auto Nz = static_cast<int>(lengths[2]);
+
+      while (kw < 0) { kw += Nz; }
+      while (kw >= Nz) { kw -= Nz; }
+      return static_cast<size_t>(kw);
+    }
+
+    */
+
+    /// general N-dim implementation of wrap
+    size_t wrap(int ind, size_t d)
+    {
+      auto N = static_cast<int>(lengths[d]);
+      while (ind < 0) { ind += N; }
+      while (ind >= N) { ind -= N; }
+      return static_cast<size_t>(ind);
     }
 
 
     /// return index of tiles in relative to my position
-    const std::tuple<size_t, size_t> neighs(int ir, int jr) {
-      size_t ii = xwrap( (int)std::get<0>(index) + ir );
-      size_t jj = ywrap( (int)std::get<1>(index) + jr );
-      return std::make_tuple( ii, jj );
+    template<typename... Indices>
+    corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+    corgi::internals::are_integral<Indices...>::value, 
+    const corgi::internals::tuple_of<D, size_t> > 
+    neighs(Indices... indices_rel)
+    {
+        std::array<int, D>    rel = {{static_cast<int>(indices_rel)...}};
+        //std::array<size_t, D> cur = {{index}};
+        auto cur = corgi::internals::into_array(index);
+
+        for(size_t i=0; i<D; i++) {
+          cur[i] = static_cast<size_t>(
+            wrap( static_cast<int>(rel[i]) + 
+                  static_cast<int>(cur[i]), i)
+          );
+        }
+
+        auto ret = corgi::internals::into_tuple(cur);
+        return ret;
     }
 
 

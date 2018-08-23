@@ -57,7 +57,8 @@ PYBIND11_MODULE(pycorgi, m) {
         .def_readwrite("index",                       &Tile::index)
         .def("set_tile_mins",                         &Tile::set_tile_mins)
         .def("set_tile_maxs",                         &Tile::set_tile_maxs)
-        .def("neighs",                                &Tile::neighs)
+        //.def("neighs",                                &Tile::neighs)
+        .def("neighs", [](Tile &t, size_t i, size_t j){ return t.neighs(i,j); })
         .def("nhood",                                 &Tile::nhood);
 
 
@@ -105,7 +106,7 @@ PYBIND11_MODULE(pycorgi, m) {
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
         .def("getTilePtr", py::overload_cast<const uint64_t>(&Node::getTilePtr))
-        .def("getTilePtr", py::overload_cast<const size_t, const size_t>(&Node::getTilePtr));
+        .def("getTile", [](Node &n, const size_t i, const size_t j){ return n.getTileInd(i,j); });
 
         // .def("getTiles",             &Node::getTiles,
         //         py::arg("criteria") = std::vector<int>(),

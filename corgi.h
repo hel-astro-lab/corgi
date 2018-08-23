@@ -133,7 +133,7 @@ class Node {
   { }
   
   /// Deallocate and free everything
-  ~Node() = default;
+  virtual ~Node() = default;
 
   public:
   
@@ -487,16 +487,20 @@ class Node {
     return *(it->second);
   }
 
-  Tile_t& getTile(const size_t i, const size_t j) {
-    uint64_t cid = id(i, j);
+  template<typename... Indices>
+    corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+    corgi::internals::are_integral<Indices...>::value, 
+  Tile_t&>
+  getTileInd(const Indices... indices) {
+    uint64_t cid = id(indices...);
     return getTile(cid);
   }
 
-  Tile_t& getTile(const std::tuple<size_t, size_t> ind) {
-    size_t i = std::get<0>(ind);
-    size_t j = std::get<1>(ind);
-    return getTile(i, j);
-  }
+  //Tile_t& getTile(const std::tuple<size_t, size_t> ind) {
+  //  size_t i = std::get<0>(ind);
+  //  size_t j = std::get<1>(ind);
+  //  return getTile(i, j);
+  //}
 
   /// \brief Get individual tile (as a pointer)
   TilePtr getTilePtr(const uint64_t cid) {
@@ -505,18 +509,33 @@ class Node {
     return it->second;
   }
 
-
-  TilePtr getTilePtr(const size_t i, const size_t j) {
-    uint64_t cid = id(i, j);
+  template<typename... Indices>
+    corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+    corgi::internals::are_integral<Indices...>::value, 
+  TilePtr>
+  getTilePtrInd(const Indices... indices)
+  {
+    uint64_t cid = id(indices...);
     return getTilePtr(cid);
+  }
+
+  TilePtr getTilePtr(const std::tuple<size_t> ind) {
+    size_t i = std::get<0>(ind);
+    return getTilePtrInd(i);
   }
 
   TilePtr getTilePtr(const std::tuple<size_t, size_t> ind) {
     size_t i = std::get<0>(ind);
     size_t j = std::get<1>(ind);
-    return getTilePtr(i, j);
+    return getTilePtrInd(i, j);
   }
 
+  TilePtr getTilePtr(const std::tuple<size_t, size_t, size_t> ind) {
+    size_t i = std::get<0>(ind);
+    size_t j = std::get<1>(ind);
+    size_t k = std::get<2>(ind);
+    return getTilePtrInd(i, j, k);
+  }
 
   // /// Return pointer to the actual tile data
   // corgi::Tile* getTileData(const uint64_t cid) const {
