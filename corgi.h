@@ -34,7 +34,8 @@ namespace corgi {
 */
 
 template<std::size_t D>
-class Node {
+class Node
+{
 
 
   public:
@@ -141,21 +142,21 @@ class Node {
   // assignments
     
   /// copy assignment
-  Node& operator=(const Node& other)
-  {
-    _lengths = other._lengths;
+  //Node& operator=(const Node& other)
+  //{
+  //  _lengths = other._lengths;
 
-    return *this;
-  }
+  //  return *this;
+  //}
 
 
   /// move assignment
-  Node& operator=(const Node&& other)
-  {
-    _lengths   = std::move(other._lengths);
+  //Node& operator=(const Node&& other)
+  //{
+  //  _lengths   = std::move(other._lengths);
 
-    return *this;
-  }
+  //  return *this;
+  //}
 
 
 
@@ -431,9 +432,16 @@ class Node {
     tileptr->cid                 = cid;
     tileptr->communication.owner = rank;
     tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
+    tileptr->lengths             = _lengths;
 
     // tiles.emplace(cid, std::move(tileptr)); // unique_ptr needs to be moved
     tiles.emplace(cid, tileptr); // NOTE using c++14 emplace to avoid copying
+    //tiles.insert( std::make_pair(cid, tileptr) ); // NOTE using c++14 emplace to avoid copying
+    //tiles[cid] = tileptr;
+    //tiles[cid] = tileptr;
+      
+    // add to my internal listing
+    _mpiGrid( indices ) = rank;
   }
 
 
