@@ -43,7 +43,8 @@ struct Communication {
  * a mesh/grid/particles/etc.
  */
 template<std::size_t D>
-class Tile {
+class Tile
+{
 
   public:
 
@@ -67,7 +68,7 @@ class Tile {
       
     // using default ctor
     // TODO: are there side effects?
-    Tile() = default;
+    //Tile() = default;
 
     /*! \brief *virtual* base class destructor 
      * NOTE: this needs to be virtual so that child classes can be 
