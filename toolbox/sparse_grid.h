@@ -42,8 +42,15 @@ class sparse_grid {
   >
   T& operator()(Dlen... indices)
   {
-    return _data[ std::tuple<Dlen...>(indices...) ];
+    //return _data.at( std::tuple<Dlen...>(indices...) );
+    return this->operator()( std::tuple<Dlen...>(indices...) );
   }
+
+  T& operator()(corgi::internals::tuple_of<D,size_t> ind)
+  {
+    return _data[ ind ];
+  }
+
 
   /// const () referencing
   template<
@@ -53,7 +60,13 @@ class sparse_grid {
   >
   const T& operator()(Dlen... indices) const
   {
-    return _data[ std::tuple<Dlen...>(indices...) ];
+    //return _data.at( std::tuple<Dlen...>(indices...) );
+    return this->operator()( std::tuple<Dlen...>(indices...) );
+  }
+
+  const T& operator()(corgi::internals::tuple_of<D,size_t> ind) const
+  {
+    return _data[ ind ];
   }
 
 
@@ -71,6 +84,8 @@ class sparse_grid {
 
   // ctor without grid size
   sparse_grid() {};
+
+  virtual ~sparse_grid() = default;
 
 
   /// resize the assumed size
