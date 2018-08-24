@@ -2,8 +2,14 @@
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
+#include "tuple"
+
 #include "../common.h"
 #include "../corgi.h"
+
+
+
+PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>, true);
 
 
 template<size_t D>
@@ -12,7 +18,8 @@ auto declare_tile(
     const std::string& pyclass_name) 
 {
 
-    py::class_<corgi::Tile<D>, std::shared_ptr<corgi::Tile<D> >> corgiTile(m, pyclass_name.c_str());
+    py::class_<corgi::Tile<D>, 
+              std::shared_ptr<corgi::Tile<D> >> corgiTile(m, pyclass_name.c_str());
 
     corgiTile
         .def(py::init<>())
@@ -57,11 +64,12 @@ auto declare_node(
           })
          */
 
-        .def("addTile",              &corgi::Node<D>::addTile)
+        .def("addTile",              &corgi::Node<D>::addTile, py::keep_alive<1,2>())
         .def("getTileIds",           &corgi::Node<D>::getTileIds,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        .def("getTilePtr", py::overload_cast<const uint64_t>(&corgi::Node<D>::getTilePtr));
+        .def("getTile", 
+            py::overload_cast<const uint64_t>(&corgi::Node<D>::getTilePtr));
 
         // .def("getTiles",             &Node::getTiles,
         //         py::arg("criteria") = std::vector<int>(),
@@ -112,7 +120,8 @@ PYBIND11_MODULE(pycorgi, m) {
     n1.def("getNx",   [](corgi::Node<1> &n){ return n.getNx(); })
       .def("getXmin", [](corgi::Node<1> &n){ return n.getXmin(); })
       .def("getXmax", [](corgi::Node<1> &n){ return n.getXmax(); })
-      .def("getTile", [](corgi::Node<1> &n, const size_t i){ return n.getTileInd(i); })
+      //.def("getTile", [](corgi::Node<1> &n, size_t i){ 
+      //    return n.getTilePtr( std::make_tuple<size_t>(i) ); })
 
       .def("setGridLims", [](corgi::Node<1> &n, double xmin, double xmax)
           { n.setGridLims({{xmin}}, {{xmax}}); })
@@ -137,8 +146,9 @@ PYBIND11_MODULE(pycorgi, m) {
       .def("getYmin", [](corgi::Node<2> &n){ return n.getYmin(); })
       .def("getYmax", [](corgi::Node<2> &n){ return n.getYmax(); })
 
-      .def("getTile", [](corgi::Node<2> &n, const size_t i, const size_t j){ return n.getTileInd(i,j); })
 
+      .def("getTile", [](corgi::Node<2> &n, size_t i, size_t j){ 
+          return n.getTilePtr( std::make_tuple(i,j) ); })
       .def("setGridLims", [](corgi::Node<2> &n, double xmin, double xmax, 
                                       double ymin, double ymax)
           { n.setGridLims({{xmin,ymin}}, {{xmax, ymax}}); })

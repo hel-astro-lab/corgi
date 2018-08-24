@@ -110,7 +110,7 @@ class Parallel(unittest.TestCase):
 
         #now try and get then back
         for cid in cids:
-            c = self.node.getTilePtr(cid)
+            c = self.node.getTile(cid)
 
             self.assertEqual(c.cid,   cid)
             self.assertEqual(c.communication.owner, self.node.rank)
