@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 import sys
-import pycorgi 
+import pycorgi.twoD as pycorgi
 
 
 class Params:
@@ -21,7 +21,7 @@ class Initialization(unittest.TestCase):
     ymax = 3.0
 
     def setUp(self):
-        self.node = pycorgi.Node2D(self.Nx, self.Ny)
+        self.node = pycorgi.Node(self.Nx, self.Ny)
 
         self.node.setGridLims(self.xmin, self.xmax,
                               self.ymin, self.ymax
@@ -58,7 +58,7 @@ class Parallel(unittest.TestCase):
 
 
     def setUp(self):
-        self.node = pycorgi.Node2D(self.Nx, self.Ny)
+        self.node = pycorgi.Node(self.Nx, self.Ny)
         self.node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
 
     def mpiInitialization(self):
@@ -100,7 +100,7 @@ class Parallel(unittest.TestCase):
         k = 0
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
-                c = pycorgi.Tile2D()
+                c = pycorgi.Tile()
                 self.node.addTile(c, (i,j) ) 
                 k += 1
         self.assertEqual( k, self.Nx*self.Ny )

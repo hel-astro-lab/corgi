@@ -1,7 +1,7 @@
 import unittest
 import sys
 
-import pycorgi
+import pycorgi.twoD
 import pycorgitest
 
 

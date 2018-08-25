@@ -132,7 +132,24 @@ class Node
     _lengths {{static_cast<size_type>(dimensionLengths)...}},
     _mpiGrid(dimensionLengths...)
   { }
+
+
+  /*
+   * try specializing handy shortcuts to symmetrize construction always assuming 3D input
+  template< typename = corgi::internals::enable_if_t< (D == 1), void > > 
+  Node(size_t i, size_t j, size_t k) :
+    _lengths {{i}},
+    _mpiGrid({{i}})
+  { }
+
+  template< typename = corgi::internals::enable_if_t< (D == 2), void > > 
+  Node(size_t i, size_t j, size_t k) :
+    _lengths {{i, j}},
+    _mpiGrid({{i, j}})
+  { }
+  */
   
+
   /// Deallocate and free everything
   virtual ~Node() = default;
 
