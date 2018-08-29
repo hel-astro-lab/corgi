@@ -67,8 +67,10 @@ auto declare_node(
         .def("getTileIds",           &corgi::Node<D>::getTileIds,
                 py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        .def("getTile", 
-            py::overload_cast<const uint64_t>(&corgi::Node<D>::getTilePtr));
+        //.def("getTile", 
+        //    py::overload_cast<const uint64_t>(&corgi::Node<D>::getTilePtr));
+        .def("getTile", (std::shared_ptr<corgi::Tile<D>> (corgi::Node<D>::*)(const uint64_t)) &corgi::Node<D>::getTilePtr);
+            
 
         // .def("getTiles",             &Node::getTiles,
         //         py::arg("criteria") = std::vector<int>(),
