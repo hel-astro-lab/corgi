@@ -134,6 +134,10 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
     //n1.def(py::init([](size_t i, size_t j) {
     //    return std::unique_ptr<Example>(new Example(arg));
+    n1.def("getTile", [](corgi::Node<1> &n, size_t i, size_t /*j*/){
+        return n.getTilePtrInd(i); });
+    n1.def("getTile", [](corgi::Node<1> &n, size_t i, size_t /*j*/, size_t /*k*/){
+        return n.getTilePtrInd(i); });
 
     n1.def("getNx",   [](corgi::Node<1> &n){ return n.getNx(); })
       .def("getXmin", [](corgi::Node<1> &n){ return n.getXmin(); })
@@ -162,7 +166,12 @@ PYBIND11_MODULE(pycorgi, m_base) {
           const auto val = n.pyGetMpiGrid(i); 
           return val;
           })
+      .def("getMpiGrid", [](corgi::Node<1> &n, const size_t i, const size_t ){ 
+          const auto val = n.pyGetMpiGrid(i); 
+          return val;
+          })
       .def("setMpiGrid", [](corgi::Node<1> &n, size_t i, int val){ n.pySetMpiGrid(val, i); })
+      .def("setMpiGrid", [](corgi::Node<1> &n, size_t i, size_t /*j*/, int val){ n.pySetMpiGrid(val, i); })
       .def("id", [](const corgi::Node<1> &n, const size_t i){ return n.id(i);});
       
 
