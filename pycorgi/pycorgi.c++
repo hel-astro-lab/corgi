@@ -209,6 +209,8 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
     n2.def("getTile", [](corgi::Node<2> &n, size_t i, size_t j){ 
           return n.getTilePtr( std::make_tuple(i,j) ); })
+      .def("getTile", [](corgi::Node<2> &n, size_t i, size_t j, size_t /*k*/){
+        return n.getTilePtrInd(i,j); })
       .def("setGridLims", [](corgi::Node<2> &n, double xmin, double xmax, 
                                       double ymin, double ymax)
           { n.setGridLims({{xmin,ymin}}, {{xmax, ymax}}); })
