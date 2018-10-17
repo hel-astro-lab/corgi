@@ -19,8 +19,7 @@
 #include "toolbox/sparse_grid.h"
 #include "tile.h"
 
-
-#include "mpi.h"
+//#include "mpi.h"
 
 
 namespace corgi {
@@ -778,7 +777,7 @@ class Node
   // /// MPI communication related stuff
   int rank  = 0;
   int Nrank = 0;
-  MPI_Comm comm;
+  //MPI_Comm comm;
 
   // indicate master node
   bool master = false;
