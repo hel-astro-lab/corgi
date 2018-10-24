@@ -1,3 +1,4 @@
+from mpi4py import MPI
 import unittest
 import sys
 import pycorgi.twoD as pycorgi

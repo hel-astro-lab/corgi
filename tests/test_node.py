@@ -1,8 +1,12 @@
+from mpi4py import MPI
+
 import unittest
 
 import numpy as np
 import sys
 import pycorgi.twoD as pycorgi
+
+sys.path.append('../lib')
 
 
 class Params:

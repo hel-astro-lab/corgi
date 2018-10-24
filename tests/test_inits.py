@@ -1,3 +1,5 @@
+from mpi4py import MPI
+
 import unittest
 
 import numpy as np
