@@ -19,6 +19,4 @@ std::string Swede::fika() { return "---: It is fika time, get the kanelbullas"; 
 std::string Vallhund::bark() { return "ruf ruf ruf"; }
 
 // Grid methods
-std::string Grid::petShop() { return "No Corgis for sale."; }
-
-
+//std::string Grid::petShop() { return "No Corgis for sale."; }

@@ -67,8 +67,6 @@ class Parallel(unittest.TestCase):
 
     def mpiInitialization(self):
 
-        self.node.initMpi()
-
         self.refGrid = np.zeros((self.Nx, self.Ny), np.int)
         self.refGrid[0:5,   0:10] = 0
         self.refGrid[0:5,  10:15] = 1
@@ -87,7 +85,6 @@ class Parallel(unittest.TestCase):
                 val = self.node.getMpiGrid(i,j)
                 self.assertEqual(val, self.refGrid[i,j])
 
-        self.node.finalizeMpi()
 
 
     def test_cid(self):
@@ -117,7 +114,7 @@ class Parallel(unittest.TestCase):
             c = self.node.getTile(cid)
 
             self.assertEqual(c.cid,   cid)
-            self.assertEqual(c.communication.owner, self.node.rank)
+            self.assertEqual(c.communication.owner, self.node.rank())
             self.assertEqual(c.communication.local, True)
 
             #ci = c.i

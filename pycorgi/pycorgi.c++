@@ -46,9 +46,9 @@ auto declare_node(
     py::class_<corgi::Node<D> > corgiNode(m, pyclass_name.c_str());
 
     corgiNode
-        .def_readwrite("rank",       &corgi::Node<D>::rank)
-        .def_readwrite("Nrank",      &corgi::Node<D>::Nrank)
-        .def_readwrite("master",     &corgi::Node<D>::master)
+        .def("rank",      [](corgi::Node<D>& n) { return n.comm.rank(); })
+        .def("size",      [](corgi::Node<D>& n) { return n.comm.size(); })
+        .def("master",    [](corgi::Node<D>& n) { return n.comm.rank() == 0; })
 
         /*
         .def("getMpiGrid",              [](SparseGrid<int> &s, const size_t i, const size_t j) {
@@ -69,7 +69,7 @@ auto declare_node(
                 py::arg("sorted") = true)
         //.def("getTile", 
         //    py::overload_cast<const uint64_t>(&corgi::Node<D>::getTilePtr));
-        .def("getTile", (std::shared_ptr<corgi::Tile<D>> (corgi::Node<D>::*)(const uint64_t)) &corgi::Node<D>::getTilePtr);
+        .def("getTile", (std::shared_ptr<corgi::Tile<D>> (corgi::Node<D>::*)(const uint64_t)) &corgi::Node<D>::getTilePtr)
             
 
         // .def("getTiles",             &Node::getTiles,
@@ -88,7 +88,7 @@ auto declare_node(
         // .def_readwrite("send_queue_address", &Node::send_queue_address)
         // .def("setMpiGrid",           &Node::setMpiGrid)
         // .def("initMpi",              &Node::initMpi)
-        // .def("bcastMpiGrid",         &Node::bcastMpiGrid)
+        .def("bcastMpiGrid",            &corgi::Node<D>::bcastMpiGrid);
         // .def("communicateSendTiles", &Node::communicateSendTiles)
         // .def("communicateRecvTiles", &Node::communicateRecvTiles)
         // .def("finalizeMpi",          &Node::finalizeMpi);
@@ -211,8 +211,9 @@ PYBIND11_MODULE(pycorgi, m_base) {
           return n.getTilePtr( std::make_tuple(i,j) ); })
       .def("getTile", [](corgi::Node<2> &n, size_t i, size_t j, size_t /*k*/){
         return n.getTilePtrInd(i,j); })
-      .def("setGridLims", [](corgi::Node<2> &n, double xmin, double xmax, 
-                                      double ymin, double ymax)
+      .def("setGridLims", [](corgi::Node<2> &n, 
+            double xmin, double xmax, 
+            double ymin, double ymax)
           { n.setGridLims({{xmin,ymin}}, {{xmax, ymax}}); })
 
       .def("getMpiGrid", [](corgi::Node<2> &n, const size_t i, const size_t j){ 

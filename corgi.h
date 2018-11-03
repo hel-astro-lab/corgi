@@ -20,9 +20,12 @@
 #include "tile.h"
 
 //#include "mpi.h"
+#include <mpi4cpp/mpi.h>
 
 
 namespace corgi {
+
+namespace mpi = mpi4cpp::mpi;
 
 
 /*! Individual node object that stores patches of grid in it.
@@ -110,9 +113,18 @@ class Node
 
   // --------------------------------------------------
   // constructors
+
+  /// mpi environment
+  mpi::environment env;
+
+  /// mpi communicator
+  mpi::communicator comm;
     
   /// Uninitialized dimension lengths
-  Node() {};
+  Node() :
+    env(),
+    comm()
+  {};
 
   /// copy-constructor
   //Node(const Node& /*other*/) {};
@@ -129,7 +141,9 @@ class Node
   > 
   Node(DimensionLength... dimensionLengths) :
     _lengths {{static_cast<size_type>(dimensionLengths)...}},
-    _mpiGrid(dimensionLengths...)
+    _mpiGrid(dimensionLengths...),
+    env(),
+    comm()
   { }
 
 
@@ -446,7 +460,7 @@ class Node
 
     tileptr->index               = indices;
     tileptr->cid                 = cid;
-    tileptr->communication.owner = rank;
+    tileptr->communication.owner = comm.rank();
     tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
     tileptr->lengths             = _lengths;
 
@@ -457,7 +471,7 @@ class Node
     //tiles[cid] = tileptr;
       
     // add to my internal listing
-    _mpiGrid( indices ) = rank;
+    _mpiGrid( indices ) = comm.rank();
   }
 
 
@@ -474,10 +488,10 @@ class Node
       }
 
       // criteria checking
-      auto& c = it.second;
-      if (!c->is_types( criteria ) ) {
-        continue;
-      }
+      //auto& c = it.second;
+      //if (!c->is_types( criteria ) ) {
+      //  continue;
+      //}
 
       ret.push_back( it.first );
     }
@@ -601,6 +615,10 @@ class Node
   //   return tile_list;
   // }
 
+
+  // HERE
+    
+    
 
   // /// Return all tiles that are of VIRTUAL type.
   // std::vector<uint64_t> getVirtuals(
@@ -771,18 +789,10 @@ class Node
   // std::vector< std::vector<int> > send_queue_address;
 
 
-
   // public:
   // // -------------------------------------------------- 
-  // /// MPI communication related stuff
-  int rank  = 0;
-  int Nrank = 0;
-  //MPI_Comm comm;
-
-  // indicate master node
-  bool master = false;
-
-  // MPI_Datatype mpi_tile_t;
+  // /// MPI communicator
+  //mpi::communicator comm;
 
   // std::vector<MPI_Request> sent_info_messages;
   // std::vector<MPI_Request> sent_tile_messages;
@@ -852,30 +862,32 @@ class Node
 
 
   // /// Broadcast master ranks mpiGrid to everybody
-  // void bcastMpiGrid() {
+  void bcastMpiGrid() {
 
-  //   std::vector<int> tmp;
-  //   if (master) {
-  //     tmp = _mpiGrid.serialize();
-  //   } else {
-  //     tmp.resize(Nx * Ny);
-  //     for(size_t k=0; k<Nx*Ny; k++) {tmp[k] = -1.0;};
-  //   }
+    // total size
+    int N = 1;
+    for (size_t i = 0; i<D; i++) N *= _lengths[i];
+    std::vector<int> tmp;
 
+    if (comm.rank() == 0) {
+      tmp = _mpiGrid.serialize();
+    } else {
+      tmp.resize(N);
+      for(int k=0; k<N; k++) {tmp[k] = -1.0;};
+    }
 
-  //   MPI_Bcast(&tmp[0],
-  //       Nx*Ny, 
-  //       MPI_INT, 
-  //       MASTER_RANK, 
-  //       MPI_COMM_WORLD
-  //       );
+    MPI_Bcast(&tmp[0],
+        N, 
+        MPI_INT, 
+        0, 
+        MPI_COMM_WORLD
+        );
 
-  //   // unpack
-  //   if(!master) {
-  //     _mpiGrid.unpack(tmp, Nx, Ny);
-  //   }
-
-  // }
+    // unpack
+    if(comm.rank() != 0) {
+      _mpiGrid.deserialize(tmp, _lengths);
+    }
+  }
 
   // /// Issue isends to everywhere
   // // First we send a warning message of how many tiles to expect.
@@ -931,6 +943,21 @@ class Node
   //   }
 
   // }
+
+  /// Send individual tile to dest
+  // NOTE: we bounce sending back to tile members,
+  //       this way they can be extended for different types of send.
+  mpi::request send_tile(uint64_t cid, int dest)
+  {
+    auto& tile = getTile(cid);
+    return comm.isend(tile.communicator, dest);
+  }
+
+  mpi::request recv_tile(int orig)
+  {
+    Communication recv_comm;
+    return comm.irecv(comm, orig);
+  }
 
 
   // /// Pack tile and send to everybody on the dests list

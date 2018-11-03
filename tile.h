@@ -17,23 +17,33 @@ namespace corgi {
 // Data storage struct for communication members
 struct Communication {
 
-    /// MPI rank of who owns me
-    int owner;
+  /// my index
+  int cid;
 
-    /// If I am a virtual tile, who do I share the values the most.
-    int top_virtual_owner;
+  /// (i,j,k) indices
+  std::array<int, 3> indices;
 
-    /// how many times do I have to be sent to others
-    size_t communications;
+  /// MPI rank of who owns me
+  int owner;
 
-    /// How many virtual neighbors do I have
-    size_t number_of_virtual_neighbors = 0;
+  /// If I am a virtual tile, who do I share the values the most.
+  int top_virtual_owner;
 
-    /// tile type listing
-    bool local;
+  /// how many times do I have to be sent to others
+  int communications = 0;
 
-    std::vector<int> types;
+  /// How many virtual neighbors do I have
+  int number_of_virtual_neighbors = 0;
+
+  /// tile type listing
+  bool local = false;
+
 };
+
+
+
+
+
 
 
 
@@ -50,7 +60,6 @@ class Tile
 
     /// unique tile ID
     uint64_t cid;
-
 
     // Order here is fixed for mpi_tile_t
     Communication communication;
@@ -159,31 +168,31 @@ class Tile
 
 
     /// Check if tile fulfills a single criteria
-    bool is_type( int criteria ) {
-      if( std::find(
-            communication.types.begin(), 
-            communication.types.end(), 
-            criteria) 
-          == communication.types.end() 
-        ) {
-        return false;
-      } 
-      return true;
-    }
+    //bool is_type( int criteria ) {
+    //  if( std::find(
+    //        communication.types.begin(), 
+    //        communication.types.end(), 
+    //        criteria) 
+    //      == communication.types.end() 
+    //    ) {
+    //    return false;
+    //  } 
+    //  return true;
+    //}
 
     /// Vectorized version requiring tile to fulfill every criteria
-    bool is_types( std::vector<int> criteria ) {
-      for (auto crit: criteria) {
-        if (is_type(crit))  {
-          continue;
-        } else {
-          return false;
-        }
-      }
+    //bool is_types( std::vector<int> criteria ) {
+    //  for (auto crit: criteria) {
+    //    if (is_type(crit))  {
+    //      continue;
+    //    } else {
+    //      return false;
+    //    }
+    //  }
 
-      // passed all criteria
-      return true;
-    }
+    //  // passed all criteria
+    //  return true;
+    //}
 
     // --------------------------------------------------
     // (optional) tile geometry 
@@ -199,6 +208,20 @@ class Tile
     {
       maxs = std::move(bbox);
     }
+
+    // --------------------------------------------------
+
+    /// send basic information of this (corgi::Tile) to dest
+    //mpi::request send(mpi::communicator& comm, int dest)
+    //{
+    //  return comm.isend(this->communicator, dest);
+    //}
+
+    ///// receive basic information of this (corgi::Tile) from orig
+    //mpi::request recv(mpi::communicator& comm, int orig)
+    //{
+    //  return comm.irecv(this->communicator, orig);
+    //}
 
 
 }; // end of Tile class

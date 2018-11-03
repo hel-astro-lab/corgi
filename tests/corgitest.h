@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../corgi.h"
+#include "../tile.h"
 
 
 namespace corgitest {
@@ -105,19 +105,16 @@ class Vallhund : public Swede,
 
 
 
-class Grid : public corgi::Node<2> {
-
-  public:
-    Grid(size_t nx, size_t ny) : corgi::Node<2>(nx, ny) { }
-
-    ~Grid() = default;
-
-    // std::unordered_map< uint64_t, std::shared_ptr<corgi::Tile>> tiles;
-
-    std::string petShop();
-
-
-};
+//class Grid : public corgi::Node<2> {
+//  public:
+//    Grid(size_t nx, size_t ny) : corgi::Node<2>(nx, ny) { }
+//
+//    ~Grid() = default;
+//
+//    // std::unordered_map< uint64_t, std::shared_ptr<corgi::Tile>> tiles;
+//
+//    std::string petShop();
+//};
 
 
 
