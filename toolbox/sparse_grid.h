@@ -118,18 +118,6 @@ namespace internal {
     }
     }
   }
-
-    // TODO: implementation
-    // XXX: how to recursively loop over _length?
-    //  size_t k=0;
-    //  for(size_t j=0; j<Ny; j++) {
-    //    for(size_t i=0; i<Nx; i++) {
-    //      if(vec[k] != 0.0) {
-    //        mat[ std::make_pair(i,j) ] = vec[k];
-    //      }
-    //      k++;
-    //    }
-    //  }
 }
 
 //--------------------------------------------------
@@ -256,13 +244,7 @@ class sparse_grid {
     // clear before actually unpacking
     clear();
 
-
-    std::cout << "deserial is: ";
-    for(auto e : vec) std::cout << " " << e;
-    std::cout << "\n";
-
     internal::deserialize(_data, vec, _lengths);
-
   }
 
 
