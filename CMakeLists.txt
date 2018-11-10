@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.0)
 
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_CXX_EXTENSIONS OFF)
 
@@ -11,6 +11,7 @@ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_subdirectory(pybind11)
 add_subdirectory(mpi4cpp)
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/mpi4cpp/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/mpi4cpp/tools/optional-lite/include )
 
 
 ##################################################
