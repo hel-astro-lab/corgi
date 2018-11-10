@@ -84,6 +84,8 @@ auto declare_node(
 
 
         // // communication wrappers
+        .def("send_tile",               &corgi::Node<D>::send_tile)
+        .def("recv_tile",               &corgi::Node<D>::recv_tile)
         // .def_readwrite("send_queue",         &ode::send_queue)
         // .def_readwrite("send_queue_address", &Node::send_queue_address)
         // .def("setMpiGrid",           &Node::setMpiGrid)

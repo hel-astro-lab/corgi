@@ -38,9 +38,10 @@ struct Communication {
   /// tile type listing
   bool local = false;
 
+  /// tile boundaries
+  std::array<double, 3> mins;
+  std::array<double, 3> maxs;
 };
-
-
 
 
 
@@ -77,13 +78,33 @@ class Tile
       
     // using default ctor
     // TODO: are there side effects?
-    //Tile() = default;
+    Tile() = default;
 
     /*! \brief *virtual* base class destructor 
      * NOTE: this needs to be virtual so that child classes can be 
      * destroyed.
      */
     virtual ~Tile() = default;
+
+    /// load tile metainfo from Communication object
+    void load_metainfo(Communication cm)
+    {
+      communication = cm;
+
+      cid = cm.cid; 
+
+      // create temporary array of correct size
+      std::array<size_t, D> ind2;
+      for(size_t i=0; i<D; i++) ind2[i] = static_cast<size_t>(cm.indices[i]);
+
+      // cast into tuple
+      index = corgi::internals::into_tuple(ind2);
+
+      for(size_t i=0; i<D; i++) mins[i] = cm.mins[i];
+      for(size_t i=0; i<D; i++) maxs[i] = cm.maxs[i];
+
+    }
+
 
     /*
 

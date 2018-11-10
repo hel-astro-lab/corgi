@@ -476,6 +476,25 @@ class Node
   }
 
 
+  /// Shortcut for creating raw tiles with only the internal meta info.
+  // to be used with message passing (w.r.t addTile that is for use with initialization)
+  void createTile(Communication cm)
+  {
+    auto tileptr = std::make_shared<Tile_t>();
+    tileptr->load_metainfo(cm);
+
+    // additional node info
+    tileptr->lengths = _lengths;
+    // owner
+    // local
+
+    // add
+    tiles.emplace(cm.cid, tileptr); // NOTE using c++14 emplace to avoid copying
+    _mpiGrid( tileptr->index ) = cm.owner;
+  }
+
+
+
   /*! Return a vector of tile indices that fulfill a given criteria.  */
   std::vector<uint64_t> getTileIds(
       const std::vector<int>& criteria = std::vector<int>(),
@@ -802,9 +821,6 @@ class Node
   // std::vector<MPI_Request> recv_tile_messages;
 
 
-
-
-
   // /// Initialize MPI and related auxiliary variables
   // void initMpi() {
 
@@ -852,13 +868,6 @@ class Node
 
   //   //--------------------------------------------------
 
-  // }
-
-
-  // /// Finalize MPI environment 
-  // void finalizeMpi() {
-  //   MPI_Type_free(&mpi_tile_t);
-  //   MPI_Finalize();
   // }
 
 
@@ -948,16 +957,33 @@ class Node
   /// Send individual tile to dest
   // NOTE: we bounce sending back to tile members,
   //       this way they can be extended for different types of send.
-  mpi::request send_tile(uint64_t cid, int dest)
+  void send_tile(uint64_t cid, int dest)
   {
+    mpi::request req;
+
     auto& tile = getTile(cid);
-    return comm.isend(tile.communicator, dest);
+    req = comm.isend(tile.communication, dest);
+
+    // FIXME and make non-blocking
+    req.wait();
+
+    return;
   }
 
-  mpi::request recv_tile(int orig)
+  void recv_tile(int orig)
   {
-    Communication recv_comm;
-    return comm.irecv(comm, orig);
+    mpi::request req;
+
+    Communication rcom;
+    req = comm.irecv(rcom, orig);
+
+    // FIXME and make non-blocking
+    req.wait();
+
+    // next need to build tile
+    createTile(rcom);
+
+    return;
   }
 
 
@@ -971,6 +997,10 @@ class Node
   //     MPI_Request req;
   //     sent_tile_messages.push_back( req );
 
+  //     // TODO: use internal tile members as
+  //     c.send(dest);
+  //     // c has a switch variable to select MPI msg state
+  //
   //     MPI_Isend(
   //         c,
   //         1,

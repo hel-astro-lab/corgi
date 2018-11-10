@@ -85,15 +85,12 @@ class Parallel(unittest.TestCase):
                 val = self.node.getMpiGrid(i,j)
                 self.assertEqual(val, self.refGrid[i,j])
 
-
-
     def test_cid(self):
         for j in range(self.node.getNy()):
             for i in range(self.node.getNx()):
                 cid = self.node.id(i, j)
                 cidr = tileID( i, j, self.node.getNx(), self.node.getNy() )
                 self.assertEqual(cid, cidr)
-
 
     def test_loading(self):
 
@@ -114,7 +111,7 @@ class Parallel(unittest.TestCase):
             c = self.node.getTile(cid)
 
             self.assertEqual(c.cid,   cid)
-            self.assertEqual(c.communication.owner, self.node.rank())
+            self.assertEqual(c.communication.owner, self.node.rank)
             self.assertEqual(c.communication.local, True)
 
             #ci = c.i
@@ -123,6 +120,62 @@ class Parallel(unittest.TestCase):
             #self.assertEqual(cj, rj)
 
 
+# advanced parallel tests
+class Parallel2(unittest.TestCase):
+    
+    Nx = 10
+    Ny = 2
+
+    xmin = 0.0
+    xmax = 1.0
+    ymin = 2.0
+    ymax = 3.0
+
+
+    def test_send_recv(self):
+
+        #set up
+        node = pycorgi.Node(self.Nx, self.Ny)
+        node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
+
+        # divide into upper and lower halfs
+        refGrid = np.zeros((self.Nx, self.Ny), np.int)
+        refGrid[:, 0] = 0
+        refGrid[:, 1] = 1
+
+        if node.master():
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    val = refGrid[i,j]
+                    node.setMpiGrid(i, j, val )
+        node.bcastMpiGrid()
+
+        #load tiles
+        for j in range(node.getNy()):
+            for i in range(node.getNx()):
+                if node.getMpiGrid(i,j) == 0:
+                    c = pycorgi.Tile()
+                    self.node.addTile(c, (i,j) ) 
+
+        #0 sends
+        if node.rank() == 0:
+            cid = self.node.id(0, 0)
+            node.send_tile(cid, 1)
+
+        #1 receives
+        if node.rank() == 1:
+            node.recv_tile(0)
+        
+        #node.wait()
+
+        #assert that we received the tile properly
+        if node.rank() == 1:
+            cid = node.id(0,0)
+            c = node.getTile(cid)
+
+            self.assertEqual(c.cid, cid)
+            self.assertEqual(c.communication.owner, self.node.rank())
+            #self.assertEqual(c.communication.local, True)
 
 
 
