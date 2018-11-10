@@ -65,7 +65,7 @@ class Parallel(unittest.TestCase):
         self.node = pycorgi.Node(self.Nx, self.Ny)
         self.node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
 
-    def mpiInitialization(self):
+    def test_mpiInitialization(self):
 
         self.refGrid = np.zeros((self.Nx, self.Ny), np.int)
         self.refGrid[0:5,   0:10] = 0
@@ -73,7 +73,7 @@ class Parallel(unittest.TestCase):
         self.refGrid[5:10,  0:10] = 2
         self.refGrid[5:10, 10:15] = 3
 
-        if self.node.master:
+        if self.node.master():
             for j in range(self.node.getNy()):
                 for i in range(self.node.getNx()):
                     val = self.refGrid[i,j]

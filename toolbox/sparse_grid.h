@@ -68,6 +68,68 @@ namespace internal {
   }
 
 
+  // 1D
+  template<typename T>
+  void deserialize( 
+    std::map< corgi::internals::tuple_of<1, size_t>, T>& data,
+    std::vector<T>& inc,
+    std::array<size_t, 1>& lengths)
+  {
+    for(size_t i=0; i<lengths[0]; i++) {
+      data[ std::make_tuple( i ) ] = inc[i];
+    }
+  }
+    
+  // 2D
+  template<typename T>
+  void deserialize( 
+    std::map< corgi::internals::tuple_of<2, size_t>, T>& data,
+    std::vector<T>& inc,
+    std::array<size_t, 2>& lengths)
+  {
+
+    size_t indx;
+    for(size_t j=0; j<lengths[1]; j++) {
+    for(size_t i=0; i<lengths[0]; i++) {
+      indx  = i;
+      indx += lengths[0]*j;
+      data[ std::make_tuple( i,j ) ] = inc[indx];
+    }
+    }
+  }
+
+  // 3D
+  template<typename T>
+  void deserialize( 
+    std::map< corgi::internals::tuple_of<3, size_t>, T>& data,
+    std::vector<T>& inc,
+    std::array<size_t, 3>& lengths)
+  {
+
+    size_t indx;
+    for(size_t k=0; k<lengths[2]; k++) {
+    for(size_t j=0; j<lengths[1]; j++) {
+    for(size_t i=0; i<lengths[0]; i++) {
+      indx  = i;
+      indx += lengths[0]*j;
+      indx += lengths[0]*lengths[1]*k;
+      data[ std::make_tuple( i,j,k ) ] = inc[indx];
+    }
+    }
+    }
+  }
+
+    // TODO: implementation
+    // XXX: how to recursively loop over _length?
+    //  size_t k=0;
+    //  for(size_t j=0; j<Ny; j++) {
+    //    for(size_t i=0; i<Nx; i++) {
+    //      if(vec[k] != 0.0) {
+    //        mat[ std::make_pair(i,j) ] = vec[k];
+    //      }
+    //      k++;
+    //    }
+    //  }
 }
 
 //--------------------------------------------------
@@ -183,24 +245,23 @@ class sparse_grid {
 
   void deserialize(std::vector<T>& vec, std::array<size_t, D> lens)
   {
+
+    // copy new size in
+    _lengths = lens;
+
     int N = 1;
     //std::array<size_t, D> lens = {{static_cast<size_t>(_lens)...}};
-    for (size_t i = 0; i<D; i++) N *= lens[i];
+    for (size_t i = 0; i<D; i++) N *= _lengths[i];
 
     // clear before actually unpacking
     clear();
 
-    // TODO: implementation
-    // XXX: how to recursively loop over _length?
-    //  size_t k=0;
-    //  for(size_t j=0; j<Ny; j++) {
-    //    for(size_t i=0; i<Nx; i++) {
-    //      if(vec[k] != 0.0) {
-    //        mat[ std::make_pair(i,j) ] = vec[k];
-    //      }
-    //      k++;
-    //    }
-    //  }
+
+    std::cout << "deserial is: ";
+    for(auto e : vec) std::cout << " " << e;
+    std::cout << "\n";
+
+    internal::deserialize(_data, vec, _lengths);
 
   }
 
