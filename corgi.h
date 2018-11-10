@@ -77,12 +77,13 @@ class Node
 
 
 
-
   public:
 
   /// Map with tileID & tile data
   TileMap tiles;
 
+  // XXX: FIXME: compatibility
+  int rank = 0;
 
 
   public:
