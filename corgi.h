@@ -828,56 +828,6 @@ class Node
   // std::vector<MPI_Request> recv_tile_messages;
 
 
-  // /// Initialize MPI and related auxiliary variables
-  // void initMpi() {
-
-  //   //--------------------------------------------------
-  //   // Start MPI
-  //   //
-  //   // TODO do this in main program with arg and argv
-  //   MPI_Init(NULL, NULL);
-
-  //   comm = MPI_COMM_WORLD;
-  //   MPI_Comm_rank(comm, &rank);
-  //   MPI_Comm_size(comm, &Nrank);
-
-  //   // detect master
-  //   if (rank == MASTER_RANK) { master = true; };
-
-  //   // fmt::print("Hi from rank {}\n", rank);
-  //   // if (master) { fmt::print("master is {}\n", rank); };
-
-
-  //   //--------------------------------------------------
-  //   // Initialize the tile frame type
-  //   int count = 7;
-  //   int blocklens[] = { 1, 1, 1, 1, 1, 1, 1 };
-  //   MPI_Aint indices[7];
-  //   indices[0] = (MPI_Aint)offsetof( Tile, cid);
-  //   indices[1] = (MPI_Aint)offsetof( Tile, owner);
-  //   indices[2] = (MPI_Aint)offsetof( Tile, i);
-  //   indices[3] = (MPI_Aint)offsetof( Tile, j);
-  //   indices[4] = (MPI_Aint)offsetof( Tile, top_virtual_owner);
-  //   indices[5] = (MPI_Aint)offsetof( Tile, communications);
-  //   indices[6] = (MPI_Aint)offsetof( Tile, number_of_virtual_neighbors);
-
-  //   MPI_Datatype types[] = {
-  //     MPI_UINT64_T,  // cid
-  //     MPI_INT,       // owner
-  //     MPI_SIZE_T,    // i
-  //     MPI_SIZE_T,    // j
-  //     MPI_INT,       // top_virtual_owner
-  //     MPI_SIZE_T,    // communications
-  //     MPI_SIZE_T     // num. of virt. owners.
-  //   };
-  //   MPI_Type_create_struct(count, blocklens, indices, types, &mpi_tile_t);
-  //   MPI_Type_commit(&mpi_tile_t);
-
-  //   //--------------------------------------------------
-
-  // }
-
-
   // /// Broadcast master ranks mpiGrid to everybody
   void bcastMpiGrid() {
 
