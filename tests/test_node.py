@@ -111,7 +111,7 @@ class Parallel(unittest.TestCase):
             c = self.node.getTile(cid)
 
             self.assertEqual(c.cid,   cid)
-            self.assertEqual(c.communication.owner, self.node.rank)
+            self.assertEqual(c.communication.owner, self.node.rank())
             self.assertEqual(c.communication.local, True)
 
             #ci = c.i
@@ -139,44 +139,88 @@ class Parallel2(unittest.TestCase):
         node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
 
         # divide into upper and lower halfs
-        refGrid = np.zeros((self.Nx, self.Ny), np.int)
-        refGrid[:, 0] = 0
-        refGrid[:, 1] = 1
+        #refGrid = np.zeros((self.Nx, self.Ny), np.int)
+        #refGrid[:, 0] = 0
+        #refGrid[:, 1] = 1
 
-        if node.master():
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    val = refGrid[i,j]
-                    node.setMpiGrid(i, j, val )
-        node.bcastMpiGrid()
+        #if node.master():
+        #    for j in range(node.getNy()):
+        #        for i in range(node.getNx()):
+        #            val = refGrid[i,j]
+        #            node.setMpiGrid(i, j, val )
+        #node.bcastMpiGrid()
 
         #load tiles
-        for j in range(node.getNy()):
-            for i in range(node.getNx()):
-                if node.getMpiGrid(i,j) == 0:
+        if node.rank() == 0:
+            for j in range(node.getNy()):
+                for i in range(node.getNx()):
+                    #if node.getMpiGrid(i,j) == 0:
                     c = pycorgi.Tile()
-                    self.node.addTile(c, (i,j) ) 
+                    node.addTile(c, (i,j) ) 
 
         #0 sends
-        if node.rank() == 0:
-            cid = self.node.id(0, 0)
+        if node.rank() == 0 and node.size() > 1:
+            #load cell with info
+            cid = node.id(2, 1)
+            #print("0:  send............cid:", cid)
+            c = node.getTile(cid)
+
+            #communication object
+            c.communication.top_virtual_owner           = 10
+            c.communication.communications              = 11
+            c.communication.number_of_virtual_neighbors = 12
+
+            c.set_tile_mins([1.0,2.0])
+            c.set_tile_maxs([1.1,2.1])
+
+
+
+            #get the same cell and send
             node.send_tile(cid, 1)
 
-        #1 receives
-        if node.rank() == 1:
+
+        #1 does nothing but receives
+        if node.rank() == 1 and node.size() > 1:
             node.recv_tile(0)
+            #print("1 recv............")
         
         #node.wait()
 
         #assert that we received the tile properly
-        if node.rank() == 1:
-            cid = node.id(0,0)
+        if node.rank() == 1 and node.size() > 1:
+            cid = node.id(2, 1)
             c = node.getTile(cid)
+            #print("1:  cid=", cid)
 
+            #cid
+            #owner
+            #top_virtual_owner
+            #communications
+            #number_of_virtual_neighbors
+
+            self.assertEqual(c.communication.cid, cid)
+            self.assertEqual(c.communication.owner, 0)
+            self.assertEqual(c.communication.top_virtual_owner, 10)
+            self.assertEqual(c.communication.communications,    11)
+            self.assertEqual(c.communication.number_of_virtual_neighbors, 12)
+
+            #indices
+            #mins
+            #maxs
+            self.assertEqual(c.communication.indices, [2, 1, 0] )
+            self.assertEqual(c.communication.mins,    [1.0, 2.0, 0.0] )
+            self.assertEqual(c.communication.maxs,    [1.1, 2.1, 0.0] )
+
+            #tile variables
+            self.assertEqual(c.cid,     cid)
+            self.assertEqual(c.mins,    [1.0, 2.0] )
+            self.assertEqual(c.maxs,    [1.1, 2.1] )
+            self.assertEqual(c.index,   (2,1) )
+
+
+
+            #check that cell is reconstructed correctly from Communication obj
             self.assertEqual(c.cid, cid)
-            self.assertEqual(c.communication.owner, self.node.rank())
-            #self.assertEqual(c.communication.local, True)
-
 
 
 if __name__ == '__main__':

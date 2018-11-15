@@ -110,10 +110,14 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
     py::class_<corgi::Communication> corgiComm(m_base, "Communication");
     corgiComm
+        .def_readwrite("cid",                         &corgi::Communication::cid                        )
+        .def_readwrite("indices",                     &corgi::Communication::indices                    )
         .def_readwrite("owner",                       &corgi::Communication::owner                      )
         .def_readwrite("top_virtual_owner",           &corgi::Communication::top_virtual_owner          )
         .def_readwrite("communications",              &corgi::Communication::communications             ) 
         .def_readwrite("number_of_virtual_neighbors", &corgi::Communication::number_of_virtual_neighbors)
+        .def_readwrite("mins",                        &corgi::Communication::mins                       )
+        .def_readwrite("maxs",                        &corgi::Communication::maxs                       )
         .def_readwrite("local",                       &corgi::Communication::local                      );
       
 

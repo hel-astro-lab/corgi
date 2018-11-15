@@ -21,6 +21,7 @@
 
 //#include "mpi.h"
 #include <mpi4cpp/mpi.h>
+#include "communication.h"
 
 
 namespace corgi {
@@ -461,9 +462,15 @@ class Node
 
     tileptr->index               = indices;
     tileptr->cid                 = cid;
+    tileptr->communication.cid   = cid;
     tileptr->communication.owner = comm.rank();
     tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
     tileptr->lengths             = _lengths;
+
+
+    // copy indices from tuple into D=3 array in Communication obj
+    auto tmp = corgi::internals::into_array(indices);
+    for(size_t i=0; i<D; i++) tileptr->communication.indices[i] = tmp[i];
 
     // tiles.emplace(cid, std::move(tileptr)); // unique_ptr needs to be moved
     tiles.emplace(cid, tileptr); // NOTE using c++14 emplace to avoid copying
@@ -478,7 +485,7 @@ class Node
 
   /// Shortcut for creating raw tiles with only the internal meta info.
   // to be used with message passing (w.r.t addTile that is for use with initialization)
-  void createTile(Communication cm)
+  void createTile(Communication& cm)
   {
     auto tileptr = std::make_shared<Tile_t>();
     tileptr->load_metainfo(cm);
@@ -962,7 +969,8 @@ class Node
     mpi::request req;
 
     auto& tile = getTile(cid);
-    req = comm.isend(tile.communication, dest);
+    //std::cout << comm.rank() << ": sending cid" << cid << "/" << tile.communication.cid << "\n";
+    req = comm.isend(dest, 0, tile.communication);
 
     // FIXME and make non-blocking
     req.wait();
@@ -975,10 +983,21 @@ class Node
     mpi::request req;
 
     Communication rcom;
-    req = comm.irecv(rcom, orig);
+    req = comm.irecv(orig, 0, rcom);
 
     // FIXME and make non-blocking
     req.wait();
+
+    //std::cout << comm.rank() << ":"
+    //  << "cid: " << rcom.cid
+    //  << "ind: " << rcom.indices[0] << " " << rcom.indices[1] << " " << rcom.indices[2]
+    //  << "owner: " << rcom.owner
+    //  << "topo: " << rcom.top_virtual_owner
+    //  << "comms: " << rcom.communications
+    //  << "numv: " << rcom.number_of_virtual_neighbors
+    //  << "mins: " << rcom.mins[0] << " " << rcom.mins[1] << " " << rcom.mins[2]
+    //  << "maxs: " << rcom.maxs[0] << " " << rcom.maxs[1] << " " << rcom.maxs[2]
+    //  << "\n";
 
     // next need to build tile
     createTile(rcom);

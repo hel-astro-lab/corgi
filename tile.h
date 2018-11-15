@@ -15,6 +15,10 @@ namespace corgi {
 
 
 // Data storage struct for communication members
+//
+// This is a general D-independent class to make MPI communications
+// easier so that we always communicate only this object and use it
+// to reconstruct the back.
 struct Communication {
 
   /// my index
@@ -35,12 +39,12 @@ struct Communication {
   /// How many virtual neighbors do I have
   int number_of_virtual_neighbors = 0;
 
-  /// tile type listing
-  bool local = false;
-
   /// tile boundaries
   std::array<double, 3> mins;
   std::array<double, 3> maxs;
+    
+  /// tile type listing
+  bool local = false;
 };
 
 
@@ -90,7 +94,6 @@ class Tile
     void load_metainfo(Communication cm)
     {
       communication = cm;
-
       cid = cm.cid; 
 
       // create temporary array of correct size
@@ -222,12 +225,14 @@ class Tile
     void set_tile_mins(std::array<double, D> bbox)
     {
       mins = std::move(bbox);
+      for(size_t i=0; i<D; i++) communication.mins[i] = bbox[i];
     }
 
     /// set tile minimum limits
     void set_tile_maxs(std::array<double, D> bbox)
     {
       maxs = std::move(bbox);
+      for(size_t i=0; i<D; i++) communication.maxs[i] = bbox[i];
     }
 
     // --------------------------------------------------
