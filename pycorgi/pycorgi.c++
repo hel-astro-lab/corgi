@@ -49,51 +49,28 @@ auto declare_node(
         .def("rank",      [](corgi::Node<D>& n) { return n.comm.rank(); })
         .def("size",      [](corgi::Node<D>& n) { return n.comm.size(); })
         .def("master",    [](corgi::Node<D>& n) { return n.comm.rank() == 0; })
-
-        /*
-        .def("getMpiGrid",              [](SparseGrid<int> &s, const size_t i, const size_t j) {
-          // size_t i = indx[0].cast<size_t>();
-          // size_t j = indx[1].cast<size_t>();
-          return s(i,j);
-          })
-        .def("setMpiGrid",              [](SparseGrid<int> &s, const size_t i, const size_t j, int val) {
-          // size_t i = indx[0].cast<size_t>();
-          // size_t j = indx[1].cast<size_t>();
-          s(i,j) = val;
-          })
-         */
-
         .def("addTile",              &corgi::Node<D>::addTile, py::keep_alive<1,2>())
         .def("getTileIds",           &corgi::Node<D>::getTileIds,
-                py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        //.def("getTile", 
-        //    py::overload_cast<const uint64_t>(&corgi::Node<D>::getTilePtr));
         .def("getTile", (std::shared_ptr<corgi::Tile<D>> (corgi::Node<D>::*)(const uint64_t)) &corgi::Node<D>::getTilePtr)
-            
 
-        // .def("getTiles",             &Node::getTiles,
-        //         py::arg("criteria") = std::vector<int>(),
-        //         py::arg("sorted") = true)
-        // .def("getVirtuals",          &Node::getVirtuals,
-        //         py::arg("criteria") = std::vector<int>(),
-        //         py::arg("sorted") = true)
+        .def("getLocalTiles",             &corgi::Node<D>::getLocalTiles,
+                 py::arg("sorted") = true)
+        .def("getVirtuals",          &corgi::Node<D>::getVirtuals,
+                 py::arg("sorted") = true)
 
-        // .def("isLocal",              &ode::isLocal)
+        .def("isLocal",              &corgi::Node<D>::isLocal)
         // .def("analyzeBoundaryTiles", &ode::analyzeBoundaryTiles)
 
 
         // // communication wrappers
         .def("send_tile",               &corgi::Node<D>::send_tile)
         .def("recv_tile",               &corgi::Node<D>::recv_tile)
-        // .def_readwrite("send_queue",         &ode::send_queue)
-        // .def_readwrite("send_queue_address", &Node::send_queue_address)
-        // .def("setMpiGrid",           &Node::setMpiGrid)
-        // .def("initMpi",              &Node::initMpi)
+        .def_readwrite("send_queue",         &corgi::Node<D>::send_queue)
+        .def_readwrite("send_queue_address", &corgi::Node<D>::send_queue_address)
         .def("bcastMpiGrid",            &corgi::Node<D>::bcastMpiGrid);
         // .def("communicateSendTiles", &Node::communicateSendTiles)
         // .def("communicateRecvTiles", &Node::communicateRecvTiles)
-        // .def("finalizeMpi",          &Node::finalizeMpi);
 
 
   return corgiNode;

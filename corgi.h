@@ -504,25 +504,10 @@ class Node
 
   /*! Return a vector of tile indices that fulfill a given criteria.  */
   std::vector<uint64_t> getTileIds(
-      const std::vector<int>& criteria = std::vector<int>(),
       const bool sorted=false ) {
     std::vector<uint64_t> ret;
 
-    for (auto& it: tiles) {
-      if (criteria.empty()) {
-        ret.push_back( it.first );
-        continue;
-      }
-
-      // criteria checking
-      //auto& c = it.second;
-      //if (!c->is_types( criteria ) ) {
-      //  continue;
-      //}
-
-      ret.push_back( it.first );
-    }
-
+    for (auto& it: tiles) ret.push_back( it.first );
 
     // optional sort based on the tile id
     if (sorted && !ret.empty()) {
@@ -561,12 +546,6 @@ class Node
     return getTile(cid);
   }
 
-  //Tile_t& getTile(const std::tuple<size_t, size_t> ind) {
-  //  size_t i = std::get<0>(ind);
-  //  size_t j = std::get<1>(ind);
-  //  return getTile(i, j);
-  //}
-
   /// \brief Get individual tile (as a pointer)
   TilePtr getTilePtr(const uint64_t cid) {
     auto it = tiles.find(cid);
@@ -602,95 +581,68 @@ class Node
     return getTilePtrInd(i, j, k);
   }
 
-  // /// Return pointer to the actual tile data
-  // corgi::Tile* getTileData(const uint64_t cid) const {
-  //   if (this->tiles.count(cid) > 0) {
-  //     return (corgi::Tile*) &(this->tiles.at(cid));
-  //   } else {
-  //     return NULL;
-  //   }
-  // }
 
-  // /// Same as get_tile_data but with additional syntax sugar 
-  // corgi::Tile* operator [] (const uint64_t cid) const {
-  //   return getTileData(cid);
-  // }
+  /// Return all local tiles
+  std::vector<uint64_t> getLocalTiles(
+      const bool sorted=false ) {
 
-  // /// Get a *copy* of the full tile; this is not what one usually wants
-  // corgi::Tile getTile( uint64_t cid ) {
-  //   return *tiles.at(cid);
-  // }
+    std::vector<uint64_t> tile_list = getTileIds(sorted);
 
-  // /// Return all local tiles
-  // std::vector<uint64_t> getTiles(
-  //     const std::vector<int>& criteria = std::vector<int>(),
-  //     const bool sorted=false ) {
+    size_t i = 0, len = tile_list.size();
+    while (i < len) {
+      if (!tiles.at( tile_list[i] )->communication.local) {
+        std::swap(tile_list[i], tile_list.back());
+        tile_list.pop_back();
+        len -= 1;
+      } else {
+        i++;
+      }
+    }
 
-  //   std::vector<uint64_t> tile_list = getAllTiles(criteria, sorted);
-
-  //   size_t i = 0, len = tile_list.size();
-  //   while (i < len) {
-  //     if (!tiles.at( tile_list[i] )->local) {
-  //       std::swap(tile_list[i], tile_list.back());
-  //       tile_list.pop_back();
-  //       len -= 1;
-  //     } else {
-  //       i++;
-  //     }
-  //   }
-
-  //   return tile_list;
-  // }
+    return tile_list;
+  }
 
 
-  // HERE
-    
-    
+  /// Return all tiles that are of VIRTUAL type.
+  std::vector<uint64_t> getVirtuals(
+      const bool sorted=false ) {
+    std::vector<uint64_t> tile_list = getTileIds(sorted);
 
-  // /// Return all tiles that are of VIRTUAL type.
-  // std::vector<uint64_t> getVirtuals(
-  //     const std::vector<int>& criteria = std::vector<int>(),
-  //     const bool sorted=false ) {
-  //   std::vector<uint64_t> tile_list = getAllTiles(criteria, sorted);
+    size_t i = 0, len = tile_list.size();
+    while (i < len) {
+      if (tiles.at( tile_list[i] )->communication.local) {
+        std::swap(tile_list[i], tile_list.back());
+        tile_list.pop_back();
+        len -= 1;
+      } else {
+        i++;
+      }
+    }
 
-  //   size_t i = 0, len = tile_list.size();
-  //   while (i < len) {
-  //     if (tiles.at( tile_list[i] )->local) {
-  //       std::swap(tile_list[i], tile_list.back());
-  //       tile_list.pop_back();
-  //       len -= 1;
-  //     } else {
-  //       i++;
-  //     }
-  //   }
-
-  //   return tile_list;
-  // }
+    return tile_list;
+  }
 
 
   // /// Check if we have a tile with the given index
-  // // bool is_local(std::tuple<int, int> indx) {
-  // bool isLocal(uint64_t cid) {
-  //   bool local = false;
+  bool isLocal(uint64_t cid) {
+    bool local = false;
 
-  //   // Do we have it on the list=
-  //   if (tiles.count( cid ) > 0) {
-  //     // is it local (i.e., not virtual)
-  //     if ( tiles.at(cid)->local ) {
-  //       local = true;
-  //     }
-  //   }
+    // Do we have it on the list=
+    if (tiles.count( cid ) > 0) {
+      // is it local (i.e., not virtual)
+      if ( tiles.at(cid)->communication.local ) {
+        local = true;
+      }
+    }
 
-  //   return local;
-  // }
+    return local;
+  }
 
   // // TODO: relative indexing w.r.t. given tile
   // // std::tuple<size_t, size_t> get_neighbor_index(corgi::Tile, int i, int j) {
   // //     return c.neighs( std::make_tuple(i,j) );
   // // }
-
   // // TODO: get_neighbor_tile(c, i, j)
-
 
 
   // std::vector<int> virtualNeighborhood(uint64_t cid) {
@@ -799,10 +751,10 @@ class Node
 
 
   // /// Clear send queue, issue this only after the send has been successfully done
-  // void clearSendQueue() {
-  //   send_queue.clear();
-  //   send_queue_address.clear();
-  // }
+  void clear_send_queue() {
+    send_queue.clear();
+    send_queue_address.clear();
+  }
 
 
 
@@ -810,22 +762,20 @@ class Node
   // // Send queues etc.
   //   
   // /// list of tile id's that are to be sent to others
-  // std::vector<uint64_t> send_queue;
+  std::vector<uint64_t> send_queue;
 
   // /// list containing lists to where the aforementioned send_queue tiles are to be sent
-  // std::vector< std::vector<int> > send_queue_address;
+  std::vector< std::vector<int> > send_queue_address;
 
 
   // public:
   // // -------------------------------------------------- 
-  // /// MPI communicator
-  //mpi::communicator comm;
 
-  // std::vector<MPI_Request> sent_info_messages;
-  // std::vector<MPI_Request> sent_tile_messages;
+  std::vector<MPI_Request> sent_info_messages;
+  std::vector<MPI_Request> sent_tile_messages;
 
-  // std::vector<MPI_Request> recv_info_messages;
-  // std::vector<MPI_Request> recv_tile_messages;
+  std::vector<MPI_Request> recv_info_messages;
+  std::vector<MPI_Request> recv_tile_messages;
 
 
   // /// Broadcast master ranks mpiGrid to everybody
@@ -950,6 +900,7 @@ class Node
     //  << "\n";
 
     // next need to build tile
+    rcom.local = false; // received tiles are automatically virtuals
     createTile(rcom);
 
     return;
