@@ -34,6 +34,22 @@ class Conf:
 
     outdir = "out"
 
+def readGrid(n, conf):
+    tmp_grid = np.ones( (n.getNx(), n.getNy()) ) * -1.0
+
+    for cid in n.getTileIds():
+        c = n.getTile( cid )
+
+        try:
+            (i, j) = c.index
+        except:
+            (i,) = c.index
+            j = 0
+        tmp_grid[i,j] = c.communication.owner
+
+    return tmp_grid
+
+
 
 class Neighboords(unittest.TestCase):
 
@@ -91,9 +107,8 @@ class Neighboords(unittest.TestCase):
 
         if node.size() > 1:
             node.analyzeBoundaryTiles()
-            print(node.rank(), ":sq ", node.send_queue)
-            print(node.rank(), ":sqa", node.send_queue_address)
-
+            #print(node.rank(), ":sq ", node.send_queue)
+            #print(node.rank(), ":sqa", node.send_queue_address)
 
         if node.size() > 1:
             node.communicateSendTiles()
@@ -102,7 +117,13 @@ class Neighboords(unittest.TestCase):
         plotNode(axs[0], node, conf)
         saveVisz(1, node, conf)
 
+        cur = readGrid(node, conf)
+        #print(cur)
 
+        if node.size() > 1:
+            for i in range(node.getNx()):
+                for j in range(node.getNy()):
+                    self.assertEqual(refGrid[i,j], cur[i,j])
 
 
 
