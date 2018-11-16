@@ -83,9 +83,6 @@ class Node
   /// Map with tileID & tile data
   TileMap tiles;
 
-  // XXX: FIXME: compatibility
-  int rank = 0;
-
 
   public:
   // --------------------------------------------------
@@ -813,14 +810,15 @@ class Node
     sent_tile_messages.clear();
 
     for (int dest = 0; dest<comm.size(); dest++) {
-      if(dest == rank) { continue; } // do not send to myself
+      if( dest == comm.rank() ) { continue; } // do not send to myself
 
       int i = 0;
       std::vector<int> to_be_sent;
       for (std::vector<int> address: send_queue_address) {
         if( std::find( address.begin(),
               address.end(),
-              dest) != address.end()) {
+              dest) != address.end()) 
+        {
           to_be_sent.push_back( i );
         }
         i++;
@@ -830,6 +828,13 @@ class Node
       // TODO: this whole thing could be avoided by using 
       // MPI_Iprobe in the receiving end. Maybe...
       auto Nincoming_tiles = static_cast<int>(to_be_sent.size());
+
+      std::cout << comm.rank() 
+                << " sending message to " 
+                << dest
+                << " incoming number of tiles " 
+                << Nincoming_tiles
+                << "\n";
 
       mpi::request req;
       req = comm.isend(dest, commType::NTILES, Nincoming_tiles);
@@ -843,8 +848,8 @@ class Node
     // FIXME: not really...
     int i = 0;
     for(auto cid: send_queue) {
+      auto& tile = getTile(cid);
       for(int dest: send_queue_address[i]) {
-        auto& tile = getTile(cid);
 
         mpi::request req;
         req = comm.isend(dest, commType::TILEDATA, tile.communication);
@@ -923,7 +928,7 @@ class Node
 
     size_t i = 0;
     for (int source=0; source<comm.size(); source++) {
-      if (source == rank) continue; // do not receive from myself
+      if (source == comm.rank() ) continue; // do not receive from myself
 
       // communicate with how many tiles there are incoming
 
@@ -935,18 +940,21 @@ class Node
 
       int Nincoming_tiles;
       mpi::request req;
-      comm.irecv(source, commType::NTILES, Nincoming_tiles);
-      recv_info_messages.push_back( req );
+      req = comm.irecv(source, commType::NTILES, Nincoming_tiles);
 
       // TODO: Remove this code block and do in background instead
-      //MPI_Wait(&recv_info_messages[i], MPI_STATUS_IGNORE);
-      //mpi::wait_all( recv_info_messages.begin(), recv_info_messages.end() );
-      recv_info_messages[i].wait();
+      req.wait();
+      recv_info_messages.push_back( req );
 
       /*
          fmt::print("{}: I got a message! Waiting {} tiles from {}\n",
          rank, Nincoming_tiles, source);
          */
+      std::cout << comm.rank()
+                << " I got a message! Waiting " 
+                << Nincoming_tiles << " tiles from " 
+                << source
+                << "\n";
 
       // Now receive the tiles themselves
       size_t j = recv_tile_messages.size();
@@ -955,13 +963,12 @@ class Node
         Communication rcom;
 
         reqc = comm.irecv(source, commType::TILEDATA, rcom);
-        recv_tile_messages.push_back( reqc );
         
         // TODO non blocking
-        recv_tile_messages[j].wait();
+        reqc.wait();
+        recv_tile_messages.push_back( reqc );
 
         //MPI_Request reqc;
-        //recv_tile_messages.push_back( reqc );
         //MPI_Irecv(
         //    &inc_c,
         //    1,
