@@ -60,8 +60,7 @@ auto declare_node(
                  py::arg("sorted") = true)
 
         .def("isLocal",              &corgi::Node<D>::isLocal)
-        // .def("analyzeBoundaryTiles", &ode::analyzeBoundaryTiles)
-
+        .def("analyzeBoundaryTiles", &corgi::Node<D>::analyzeBoundaryTiles)
 
         // // communication wrappers
         .def("send_tile",               &corgi::Node<D>::send_tile)
@@ -69,8 +68,8 @@ auto declare_node(
         .def_readwrite("send_queue",         &corgi::Node<D>::send_queue)
         .def_readwrite("send_queue_address", &corgi::Node<D>::send_queue_address)
         .def("bcastMpiGrid",            &corgi::Node<D>::bcastMpiGrid);
-        // .def("communicateSendTiles", &Node::communicateSendTiles)
-        // .def("communicateRecvTiles", &Node::communicateRecvTiles)
+        // .def("communicateSendTiles", &corgi::Node<D>::communicateSendTiles)
+        // .def("communicateRecvTiles", &corgi::Node<D>::communicateRecvTiles)
 
 
   return corgiNode;

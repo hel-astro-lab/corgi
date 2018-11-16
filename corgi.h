@@ -654,14 +654,6 @@ class Node
     std::vector<int> virtual_owners;
     for (auto& indx: neigs) {
 
-      /* TODO: check boundary tiles here; 
-       * now we assume periodicity in x and y
-       if (std::get<0>(indx) == ERROR_INDEX ||
-       std::get<1>(indx) == ERROR_INDEX) {
-       continue;
-       }
-       */
-
       // Get tile id from index notation
       uint64_t cid = id(indx);
 
@@ -694,59 +686,59 @@ class Node
   //  * together with the tiles and is analyzed there by others inside the
   //  * `rank_virtuals` function.
   //  * */
-  // void analyzeBoundaryTiles() {
+  void analyzeBoundaryTiles() {
 
-  //   for (auto cid: getTiles()) {
-  //     std::vector<int> virtual_owners = virtualNeighborhood(cid);
-  //     size_t N = virtual_owners.size();
+    for (auto cid: getTileIds()) {
+      std::vector<int> virtual_owners = virtualNeighborhood(cid);
+      size_t N = virtual_owners.size();
 
-  //     // If N > 0 then this is a boundary tile.
-  //     // other criteria could also apply but here we assume
-  //     // neighborhood according to spatial distance.
-  //     if (N > 0) {
+      // If N > 0 then this is a boundary tile.
+      // other criteria could also apply but here we assume
+      // neighborhood according to spatial distance.
+      if (N > 0) {
 
-  //       /* Now we analyze `owner` vector as:
-  //        * - sort the vector
-  //        * - compute mode of the list to see who owns most of the
-  //        * - remove repeating elements creating a unique list. */
+        /* Now we analyze `owner` vector as:
+         * - sort the vector
+         * - compute mode of the list to see who owns most of the
+         * - remove repeating elements creating a unique list. */
 
-  //       // sort
-  //       std::sort( virtual_owners.begin(), virtual_owners.end() );
+        // sort
+        std::sort( virtual_owners.begin(), virtual_owners.end() );
 
-  //       // compute mode by creating a frequency array
-  //       // NOTE: in case of same frequency we implicitly pick smaller rank
-  //       int max=0, top_owner = virtual_owners[0];
-  //       for(size_t i=0; i<virtual_owners.size(); i++) {
-  //         int co = (int)count(virtual_owners.begin(), 
-  //             virtual_owners.end(), 
-  //             virtual_owners[i]);
-  //         if(co > max) {      
-  //           max = co;
-  //           top_owner = virtual_owners[i];
-  //         }
-  //       } 
+        // compute mode by creating a frequency array
+        // NOTE: in case of same frequency we implicitly pick smaller rank
+        int max=0, top_owner = virtual_owners[0];
+        for(size_t i=0; i<virtual_owners.size(); i++) {
+          int co = (int)count(virtual_owners.begin(), 
+              virtual_owners.end(), 
+              virtual_owners[i]);
+          if(co > max) {      
+            max = co;
+            top_owner = virtual_owners[i];
+          }
+        } 
 
-  //       // remove duplicates
-  //       virtual_owners.erase( unique( virtual_owners.begin(), 
-  //             virtual_owners.end() 
-  //             ), virtual_owners.end() );
+        // remove duplicates
+        virtual_owners.erase( unique( virtual_owners.begin(), 
+              virtual_owners.end() 
+              ), virtual_owners.end() );
 
 
-  //       // update tile values
-  //       auto c = getTileData(cid);
-  //       c->top_virtual_owner = top_owner;
-  //       c->communications    = virtual_owners.size();
-  //       c->number_of_virtual_neighbors = N;
+        // update tile values
+        auto& c = getTile(cid);
+        c.communication.top_virtual_owner = top_owner;
+        c.communication.communications    = virtual_owners.size();
+        c.communication.number_of_virtual_neighbors = N;
 
-  //       if (std::find( send_queue.begin(), send_queue.end(),
-  //             cid) == send_queue.end()
-  //          ) {
-  //         send_queue.push_back( cid );
-  //         send_queue_address.push_back( virtual_owners );
-  //       }
-  //     }
-  //   }
-  // }
+        if (std::find( send_queue.begin(), send_queue.end(),
+              cid) == send_queue.end()
+           ) {
+          send_queue.push_back( cid );
+          send_queue_address.push_back( virtual_owners );
+        }
+      }
+    }
+  }
 
 
   // /// Clear send queue, issue this only after the send has been successfully done
