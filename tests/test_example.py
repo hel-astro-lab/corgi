@@ -1,3 +1,5 @@
+from mpi4py import MPI
+
 import unittest
 import sys
 
@@ -90,12 +92,12 @@ class ParallelGrid(unittest.TestCase):
 
 
     def setUp(self):
-        self.node = pycorgitest.Grid(self.Nx, self.Ny)
+        self.node = pycorgi.twoD.Node(self.Nx, self.Ny)
         self.node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
 
 
-    def test_extension(self):
-        self.assertEqual( self.node.petShop(), "No Corgis for sale.")
+    #def test_extension(self):
+    #    self.assertEqual( self.node.petShop(), "No Corgis for sale.")
 
 
     def test_cid(self):
@@ -154,7 +156,7 @@ class ParallelGrid(unittest.TestCase):
             c = self.node.getTile(cid)
 
             self.assertEqual(c.cid,   cid)
-            self.assertEqual(c.communication.owner, self.node.rank)
+            self.assertEqual(c.communication.owner, self.node.rank())
             self.assertEqual(c.communication.local, True)
 
             # we need to be able to bark also after the getting.

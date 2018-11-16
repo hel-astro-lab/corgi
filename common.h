@@ -19,9 +19,9 @@
 
 
 // Define uint64_t for MPI
-#ifndef MPI_UINT64_T
-#define MPI_UINT64_T MPI_UNSIGNED_LONG_LONG
-#endif
+//#ifndef MPI_UINT64_T
+//#define MPI_UINT64_T MPI_UNSIGNED_LONG_LONG
+//#endif
 
 // Define size_t for MPI
 #if SIZE_MAX == UCHAR_MAX

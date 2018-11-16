@@ -9,30 +9,44 @@
 
 #include "common.h"
 #include "internals.h"
+#include "cellular_automata.h"
+
 
 
 namespace corgi {
 
 
 // Data storage struct for communication members
+//
+// This is a general D-independent class to make MPI communications
+// easier so that we always communicate only this object and use it
+// to reconstruct the back.
 struct Communication {
 
-    /// MPI rank of who owns me
-    int owner;
+  /// my index
+  int cid;
 
-    /// If I am a virtual tile, who do I share the values the most.
-    int top_virtual_owner;
+  /// (i,j,k) indices
+  std::array<int, 3> indices;
 
-    /// how many times do I have to be sent to others
-    size_t communications;
+  /// MPI rank of who owns me
+  int owner;
 
-    /// How many virtual neighbors do I have
-    size_t number_of_virtual_neighbors = 0;
+  /// If I am a virtual tile, who do I share the values the most.
+  int top_virtual_owner;
 
-    /// tile type listing
-    bool local;
+  /// how many times do I have to be sent to others
+  int communications = 0;
 
-    std::vector<int> types;
+  /// How many virtual neighbors do I have
+  int number_of_virtual_neighbors = 0;
+
+  /// tile boundaries
+  std::array<double, 3> mins;
+  std::array<double, 3> maxs;
+    
+  /// tile type listing
+  bool local = false;
 };
 
 
@@ -51,7 +65,6 @@ class Tile
     /// unique tile ID
     uint64_t cid;
 
-
     // Order here is fixed for mpi_tile_t
     Communication communication;
 
@@ -68,13 +81,32 @@ class Tile
       
     // using default ctor
     // TODO: are there side effects?
-    //Tile() = default;
+    Tile() = default;
 
     /*! \brief *virtual* base class destructor 
      * NOTE: this needs to be virtual so that child classes can be 
      * destroyed.
      */
     virtual ~Tile() = default;
+
+    /// load tile metainfo from Communication object
+    void load_metainfo(Communication cm)
+    {
+      communication = cm;
+      cid = cm.cid; 
+
+      // create temporary array of correct size
+      std::array<size_t, D> ind2;
+      for(size_t i=0; i<D; i++) ind2[i] = static_cast<size_t>(cm.indices[i]);
+
+      // cast into tuple
+      index = corgi::internals::into_tuple(ind2);
+
+      for(size_t i=0; i<D; i++) mins[i] = cm.mins[i];
+      for(size_t i=0; i<D; i++) maxs[i] = cm.maxs[i];
+
+    }
+
 
     /*
 
@@ -122,6 +154,7 @@ class Tile
 
 
     /// return index of tiles in relative to my position
+  public:
     template<typename... Indices>
     corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
     corgi::internals::are_integral<Indices...>::value, 
@@ -143,47 +176,39 @@ class Tile
         return ret;
     }
 
-
-    /// Return full neighborhood around me
-    //std::vector< std::tuple<size_t, size_t> > nhood() {
-    //  std::vector< std::tuple<size_t, size_t> > nh;
-    //  for (int ir=-1; ir<=1; ir++) {
-    //    for (int jr=-1; jr<=1; jr++) {
-    //      if (!( ir == 0 && jr == 0 )) {
-    //        nh.push_back( neighs(ir, jr) );
-    //      }
-    //    }
-    //  }
-    //  return nh;
-    //}
-
-
-    /// Check if tile fulfills a single criteria
-    bool is_type( int criteria ) {
-      if( std::find(
-            communication.types.begin(), 
-            communication.types.end(), 
-            criteria) 
-          == communication.types.end() 
-        ) {
-        return false;
-      } 
-      return true;
+    /// auxiliary function to unpack tuples
+  private:
+    template <size_t... Is>
+    const corgi::internals::tuple_of<D, size_t> neighs_impl(
+        corgi::internals::tuple_of<D, int>& tuple, 
+        std::index_sequence<Is...>)
+    {
+      return neighs( std::get<Is>(tuple)... );
     }
 
-    /// Vectorized version requiring tile to fulfill every criteria
-    bool is_types( std::vector<int> criteria ) {
-      for (auto crit: criteria) {
-        if (is_type(crit))  {
-          continue;
-        } else {
-          return false;
-        }
+  public:
+    /// unpack tuple into variadic argument list
+    template<typename Indices = std::make_index_sequence<D>>
+    const corgi::internals::tuple_of<D, size_t> neighs( 
+        corgi::internals::tuple_of<D, int>& indices)
+    {
+        return neighs_impl(indices, Indices{} );
+    }
+
+    // end of neighs + auxiliary functions
+    //--------------------------------------------------
+
+
+    /// Return full Moore neighborhood around me
+    std::vector< corgi::internals::tuple_of<D, size_t> > nhood()
+    {
+      std::vector< corgi::internals::tuple_of<D, size_t> > nh;
+      for(auto& reli : corgi::ca::moore_neighborhood<D>() ){
+        nh.push_back( neighs(reli) );
       }
-
-      // passed all criteria
-      return true;
+      return nh;
     }
+
 
     // --------------------------------------------------
     // (optional) tile geometry 
@@ -192,13 +217,29 @@ class Tile
     void set_tile_mins(std::array<double, D> bbox)
     {
       mins = std::move(bbox);
+      for(size_t i=0; i<D; i++) communication.mins[i] = bbox[i];
     }
 
     /// set tile minimum limits
     void set_tile_maxs(std::array<double, D> bbox)
     {
       maxs = std::move(bbox);
+      for(size_t i=0; i<D; i++) communication.maxs[i] = bbox[i];
     }
+
+    // --------------------------------------------------
+
+    /// send basic information of this (corgi::Tile) to dest
+    //mpi::request send(mpi::communicator& comm, int dest)
+    //{
+    //  return comm.isend(this->communicator, dest);
+    //}
+
+    ///// receive basic information of this (corgi::Tile) from orig
+    //mpi::request recv(mpi::communicator& comm, int orig)
+    //{
+    //  return comm.irecv(this->communicator, orig);
+    //}
 
 
 }; // end of Tile class

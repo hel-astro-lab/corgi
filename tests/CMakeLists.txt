@@ -1,6 +1,6 @@
 project (pycorgitest)
 
-find_package(pybind11 REQUIRED)
+#find_package(pybind11 REQUIRED) #loaded externally
 
 file (GLOB TEST_SRCS *.c++ *.h *.cpp *.hpp *.c *.cxx)
 

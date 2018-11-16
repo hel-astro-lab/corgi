@@ -9,8 +9,118 @@
 #include "../internals.h"
 
 
+
 namespace corgi {
   namespace tools {
+
+namespace internal {
+
+  //template<typename T, int D>
+  //void serialize( 
+  //  std::map< corgi::internals::tuple_of<D, size_t>, T>& data,
+  //  std::vector<T>& ret,
+  //  std::array<size_t, 1>& lengths
+  //) = delete;
+  
+  // 1D
+  template<typename T>
+  void serialize( 
+    std::map< corgi::internals::tuple_of<1, size_t>, T>& data,
+    std::vector<T>& ret,
+    std::array<size_t, 1>& /*lengths*/)
+  {
+    size_t indx;
+    for(auto const& elem: data) {
+      indx = std::get<0>(elem.first);
+      ret[indx] = elem.second;
+    }
+  }
+
+  // 2D
+  template<typename T>
+  void serialize( 
+    std::map< corgi::internals::tuple_of<2, size_t>, T>& data,
+    std::vector<T>& ret,
+    std::array<size_t, 2>& lengths) 
+  {
+    size_t indx;
+    for(auto const& elem: data) {
+      indx  =            std::get<0>(elem.first);
+      indx += lengths[0]*std::get<1>(elem.first);
+      ret[indx] = elem.second;
+    }
+  }
+
+  // 3D
+  template<typename T>
+  void serialize( 
+    std::map< corgi::internals::tuple_of<2, size_t>, T>& data,
+    std::vector<T>& ret,
+    std::array<size_t, 3>& lengths) 
+  {
+    size_t indx;
+    for(auto const& elem: data) {
+      indx  =                       std::get<0>(elem.first);
+      indx +=            lengths[0]*std::get<1>(elem.first);
+      indx += lengths[0]*lengths[1]*std::get<2>(elem.first);
+      ret[indx] = elem.second;
+    }
+  }
+
+
+  // 1D
+  template<typename T>
+  void deserialize( 
+    std::map< corgi::internals::tuple_of<1, size_t>, T>& data,
+    std::vector<T>& inc,
+    std::array<size_t, 1>& lengths)
+  {
+    for(size_t i=0; i<lengths[0]; i++) {
+      data[ std::make_tuple( i ) ] = inc[i];
+    }
+  }
+    
+  // 2D
+  template<typename T>
+  void deserialize( 
+    std::map< corgi::internals::tuple_of<2, size_t>, T>& data,
+    std::vector<T>& inc,
+    std::array<size_t, 2>& lengths)
+  {
+
+    size_t indx;
+    for(size_t j=0; j<lengths[1]; j++) {
+    for(size_t i=0; i<lengths[0]; i++) {
+      indx  = i;
+      indx += lengths[0]*j;
+      data[ std::make_tuple( i,j ) ] = inc[indx];
+    }
+    }
+  }
+
+  // 3D
+  template<typename T>
+  void deserialize( 
+    std::map< corgi::internals::tuple_of<3, size_t>, T>& data,
+    std::vector<T>& inc,
+    std::array<size_t, 3>& lengths)
+  {
+
+    size_t indx;
+    for(size_t k=0; k<lengths[2]; k++) {
+    for(size_t j=0; j<lengths[1]; j++) {
+    for(size_t i=0; i<lengths[0]; i++) {
+      indx  = i;
+      indx += lengths[0]*j;
+      indx += lengths[0]*lengths[1]*k;
+      data[ std::make_tuple( i,j,k ) ] = inc[indx];
+    }
+    }
+    }
+  }
+}
+
+//--------------------------------------------------
 
 
 /// \brief Sparse adaptive grid
@@ -103,48 +213,38 @@ class sparse_grid {
   /// Return object that is contiguous in memory
   std::vector<T> serialize() 
   {
-    std::vector<T> ret;
+    std::vector<T> ret; 
 
-    // TODO: implementation
-    // XXX: how to recursively loop over _length?
-    //
-    //ret.resize(Nx * Ny);
-    //for(size_t k=0; k<Nx*Ny; k++) {ret[k] = 0.0;};
+    int N = 1;
+    for (size_t i = 0; i<D; i++) N *= _lengths[i];
+    ret.resize(N);
 
-    //// get elements from map
-    //size_t indx;
-    //for(auto const elem: mat) {
-    //  indx = Nx*elem.first.second + elem.first.first;
-    //  ret[indx] = elem.second;
-    //}
+    internal::serialize(_data, ret, _lengths);
 
     return ret;
   }
   
 
-  template< typename... Dlen >
-  corgi::internals::enable_if_t<(sizeof...(Dlen) == D) &&
-  corgi::internals::are_integral<Dlen...>::value , 
-    void> 
-  unpack(std::vector<T>& /*vec*/, Dlen... _lens) 
+  //template< typename... Dlen >
+  //corgi::internals::enable_if_t<(sizeof...(Dlen) == D) &&
+  //corgi::internals::are_integral<Dlen...>::value , 
+  //  void> 
+  //unpack(std::vector<T>& /*vec*/, Dlen... _lens) 
+
+  void deserialize(std::vector<T>& vec, std::array<size_t, D> lens)
   {
-    std::array<size_t, D> lens = {{static_cast<size_t>(_lens)...}};
+
+    // copy new size in
+    _lengths = lens;
+
+    int N = 1;
+    //std::array<size_t, D> lens = {{static_cast<size_t>(_lens)...}};
+    for (size_t i = 0; i<D; i++) N *= _lengths[i];
 
     // clear before actually unpacking
     clear();
 
-    // TODO: implementation
-    // XXX: how to recursively loop over _length?
-    //  size_t k=0;
-    //  for(size_t j=0; j<Ny; j++) {
-    //    for(size_t i=0; i<Nx; i++) {
-    //      if(vec[k] != 0.0) {
-    //        mat[ std::make_pair(i,j) ] = vec[k];
-    //      }
-    //      k++;
-    //    }
-    //  }
-
+    internal::deserialize(_data, vec, _lengths);
   }
 
 

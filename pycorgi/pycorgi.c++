@@ -30,8 +30,8 @@ auto declare_tile(
         .def_readwrite("maxs",                        &corgi::Tile<D>::maxs)
         .def_readwrite("index",                       &corgi::Tile<D>::index)
         .def("set_tile_mins",                         &corgi::Tile<D>::set_tile_mins)
-        .def("set_tile_maxs",                         &corgi::Tile<D>::set_tile_maxs);
-        //.def("nhood",                                 &corgi::Tile<D>::nhood)
+        .def("set_tile_maxs",                         &corgi::Tile<D>::set_tile_maxs)
+        .def("nhood",                                 &corgi::Tile<D>::nhood);
 
     return corgiTile;
 }
@@ -46,52 +46,30 @@ auto declare_node(
     py::class_<corgi::Node<D> > corgiNode(m, pyclass_name.c_str());
 
     corgiNode
-        .def_readwrite("rank",       &corgi::Node<D>::rank)
-        .def_readwrite("Nrank",      &corgi::Node<D>::Nrank)
-        .def_readwrite("master",     &corgi::Node<D>::master)
-
-        /*
-        .def("getMpiGrid",              [](SparseGrid<int> &s, const size_t i, const size_t j) {
-          // size_t i = indx[0].cast<size_t>();
-          // size_t j = indx[1].cast<size_t>();
-          return s(i,j);
-          })
-        .def("setMpiGrid",              [](SparseGrid<int> &s, const size_t i, const size_t j, int val) {
-          // size_t i = indx[0].cast<size_t>();
-          // size_t j = indx[1].cast<size_t>();
-          s(i,j) = val;
-          })
-         */
-
+        .def("rank",      [](corgi::Node<D>& n) { return n.comm.rank(); })
+        .def("size",      [](corgi::Node<D>& n) { return n.comm.size(); })
+        .def("master",    [](corgi::Node<D>& n) { return n.comm.rank() == 0; })
         .def("addTile",              &corgi::Node<D>::addTile, py::keep_alive<1,2>())
         .def("getTileIds",           &corgi::Node<D>::getTileIds,
-                py::arg("criteria") = std::vector<int>(),
                 py::arg("sorted") = true)
-        //.def("getTile", 
-        //    py::overload_cast<const uint64_t>(&corgi::Node<D>::getTilePtr));
-        .def("getTile", (std::shared_ptr<corgi::Tile<D>> (corgi::Node<D>::*)(const uint64_t)) &corgi::Node<D>::getTilePtr);
-            
+        .def("getTile", (std::shared_ptr<corgi::Tile<D>> (corgi::Node<D>::*)(const uint64_t)) &corgi::Node<D>::getTilePtr)
 
-        // .def("getTiles",             &Node::getTiles,
-        //         py::arg("criteria") = std::vector<int>(),
-        //         py::arg("sorted") = true)
-        // .def("getVirtuals",          &Node::getVirtuals,
-        //         py::arg("criteria") = std::vector<int>(),
-        //         py::arg("sorted") = true)
+        .def("getLocalTiles",             &corgi::Node<D>::getLocalTiles,
+                 py::arg("sorted") = true)
+        .def("getVirtuals",          &corgi::Node<D>::getVirtuals,
+                 py::arg("sorted") = true)
 
-        // .def("isLocal",              &ode::isLocal)
-        // .def("analyzeBoundaryTiles", &ode::analyzeBoundaryTiles)
-
+        .def("isLocal",              &corgi::Node<D>::isLocal)
+        .def("analyzeBoundaryTiles", &corgi::Node<D>::analyzeBoundaryTiles)
 
         // // communication wrappers
-        // .def_readwrite("send_queue",         &ode::send_queue)
-        // .def_readwrite("send_queue_address", &Node::send_queue_address)
-        // .def("setMpiGrid",           &Node::setMpiGrid)
-        // .def("initMpi",              &Node::initMpi)
-        // .def("bcastMpiGrid",         &Node::bcastMpiGrid)
-        // .def("communicateSendTiles", &Node::communicateSendTiles)
-        // .def("communicateRecvTiles", &Node::communicateRecvTiles)
-        // .def("finalizeMpi",          &Node::finalizeMpi);
+        .def("send_tile",               &corgi::Node<D>::send_tile)
+        .def("recv_tile",               &corgi::Node<D>::recv_tile)
+        .def_readwrite("send_queue",         &corgi::Node<D>::send_queue)
+        .def_readwrite("send_queue_address", &corgi::Node<D>::send_queue_address)
+        .def("bcastMpiGrid",            &corgi::Node<D>::bcastMpiGrid)
+        .def("communicateSendTiles",    &corgi::Node<D>::communicateSendTiles)
+        .def("communicateRecvTiles",    &corgi::Node<D>::communicateRecvTiles);
 
 
   return corgiNode;
@@ -108,10 +86,14 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
     py::class_<corgi::Communication> corgiComm(m_base, "Communication");
     corgiComm
+        .def_readwrite("cid",                         &corgi::Communication::cid                        )
+        .def_readwrite("indices",                     &corgi::Communication::indices                    )
         .def_readwrite("owner",                       &corgi::Communication::owner                      )
         .def_readwrite("top_virtual_owner",           &corgi::Communication::top_virtual_owner          )
         .def_readwrite("communications",              &corgi::Communication::communications             ) 
         .def_readwrite("number_of_virtual_neighbors", &corgi::Communication::number_of_virtual_neighbors)
+        .def_readwrite("mins",                        &corgi::Communication::mins                       )
+        .def_readwrite("maxs",                        &corgi::Communication::maxs                       )
         .def_readwrite("local",                       &corgi::Communication::local                      );
       
 
@@ -209,8 +191,11 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
     n2.def("getTile", [](corgi::Node<2> &n, size_t i, size_t j){ 
           return n.getTilePtr( std::make_tuple(i,j) ); })
-      .def("setGridLims", [](corgi::Node<2> &n, double xmin, double xmax, 
-                                      double ymin, double ymax)
+      .def("getTile", [](corgi::Node<2> &n, size_t i, size_t j, size_t /*k*/){
+        return n.getTilePtrInd(i,j); })
+      .def("setGridLims", [](corgi::Node<2> &n, 
+            double xmin, double xmax, 
+            double ymin, double ymax)
           { n.setGridLims({{xmin,ymin}}, {{xmax, ymax}}); })
 
       .def("getMpiGrid", [](corgi::Node<2> &n, const size_t i, const size_t j){ 
@@ -227,6 +212,9 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
     //--------------------------------------------------
     // TODO: 3D
+
+
+
 }
 
 
