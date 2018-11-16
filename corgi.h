@@ -642,12 +642,6 @@ class Node
     return local;
   }
 
-  // // TODO: relative indexing w.r.t. given tile
-  // // std::tuple<size_t, size_t> get_neighbor_index(corgi::Tile, int i, int j) {
-  // //     return c.neighs( std::make_tuple(i,j) );
-  // // }
-  // // TODO: get_neighbor_tile(c, i, j)
-
 
   /// return all virtual tiles around the given tile
   std::vector<int> virtualNeighborhood(uint64_t cid) {
@@ -669,14 +663,6 @@ class Node
 
     return virtual_owners;
   }
-
-
-  // // Number of virtual neighbors that the tile might have.
-  // /*
-  //    size_t number_of_virtual_neighborhood(corgi::Tile c) {
-  //    return virtual_neighborhood(c).size();
-  //    }
-  //    */
 
 
   // /*! Analyze my local boundary tiles that will be later on
@@ -829,12 +815,12 @@ class Node
       // MPI_Iprobe in the receiving end. Maybe...
       auto Nincoming_tiles = static_cast<int>(to_be_sent.size());
 
-      std::cout << comm.rank() 
-                << " sending message to " 
-                << dest
-                << " incoming number of tiles " 
-                << Nincoming_tiles
-                << "\n";
+      //std::cout << comm.rank() 
+      //          << " sending message to " 
+      //          << dest
+      //          << " incoming number of tiles " 
+      //          << Nincoming_tiles
+      //          << "\n";
 
       mpi::request req;
       req = comm.isend(dest, commType::NTILES, Nincoming_tiles);
@@ -906,20 +892,6 @@ class Node
     return;
   }
 
-
-  // /// Pack tile and send to everybody on the dests list
-  // FIXME: redundant atm
-  //void issueSends(uint64_t cid, std::vector<int> dests) {
-  //  for (auto dest: dests) {
-  //    mpi::request req;
-  //    req = send_tile(cid, dest);
-
-  //    sent_tile_messages.push_back( req );
-  //  }
-  //}
-
-
-
   /// Receive incoming stuff
   void communicateRecvTiles() {
 
@@ -950,11 +922,11 @@ class Node
          fmt::print("{}: I got a message! Waiting {} tiles from {}\n",
          rank, Nincoming_tiles, source);
          */
-      std::cout << comm.rank()
-                << " I got a message! Waiting " 
-                << Nincoming_tiles << " tiles from " 
-                << source
-                << "\n";
+      //std::cout << comm.rank()
+      //          << " I got a message! Waiting " 
+      //          << Nincoming_tiles << " tiles from " 
+      //          << source
+      //          << "\n";
 
       // Now receive the tiles themselves
       size_t j = recv_tile_messages.size();
@@ -967,46 +939,17 @@ class Node
         // TODO non blocking
         reqc.wait();
         recv_tile_messages.push_back( reqc );
-
-        //MPI_Request reqc;
-        //MPI_Irecv(
-        //    &inc_c,
-        //    1,
-        //    mpi_tile_t,
-        //    source,
-        //    commType::CELLDATA,
-        //    comm,
-        //    &recv_tile_messages[j]
-        //    );
-        //MPI_Wait(&recv_tile_messages[j], MPI_STATUS_IGNORE);
           
         j++;
 
-        if(this->tiles.count(rcom.cid) == 0) {
-          // Tile does not exist yet; create it
+        if(this->tiles.count(rcom.cid) == 0) { // Tile does not exist yet; create it
+
           // TODO: Check validity of the tile better
           rcom.local = false; // received tiles are automatically virtuals
           createTile(rcom);
 
-        } else {
-          // Tile is already on my virtual list; update
+        } else { // Tile is already on my virtual list; update
           updateTile(rcom);  
-            
-          //auto c = getTileData(cid);
-          //if (c->local) {
-          //  // TODO: better error handling; i.e. resolve the conflict
-          //  // TODO: use throw exceptions
-          //  // fmt::print("{}: ERROR trying to add virtual tile that is already local\n", rank);
-          //  exit(1);
-          //}
-
-          //c->owner             = inc_c.owner;
-          //c->i                 = inc_c.i;
-          //c->j                 = inc_c.j;
-          //c->top_virtual_owner = inc_c.top_virtual_owner;
-          //c->communications    = inc_c.communications;
-          //c->number_of_virtual_neighbors = inc_c.number_of_virtual_neighbors;
-
         };
       }
       i++;
