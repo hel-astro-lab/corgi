@@ -505,6 +505,7 @@ class Node
   {
     auto& tile = getTile(cm.cid);
     tile.load_metainfo(cm);
+    _mpiGrid( tile.index ) = cm.owner;
   }
 
 
@@ -694,7 +695,7 @@ class Node
   //  * */
   void analyzeBoundaryTiles() {
 
-    for (auto cid: getTileIds()) {
+    for (auto cid: getLocalTiles()) {
       std::vector<int> virtual_owners = virtualNeighborhood(cid);
       size_t N = virtual_owners.size();
 
