@@ -67,9 +67,9 @@ auto declare_node(
         .def("recv_tile",               &corgi::Node<D>::recv_tile)
         .def_readwrite("send_queue",         &corgi::Node<D>::send_queue)
         .def_readwrite("send_queue_address", &corgi::Node<D>::send_queue_address)
-        .def("bcastMpiGrid",            &corgi::Node<D>::bcastMpiGrid);
-        // .def("communicateSendTiles", &corgi::Node<D>::communicateSendTiles)
-        // .def("communicateRecvTiles", &corgi::Node<D>::communicateRecvTiles)
+        .def("bcastMpiGrid",            &corgi::Node<D>::bcastMpiGrid)
+        .def("communicateSendTiles",    &corgi::Node<D>::communicateSendTiles)
+        .def("communicateRecvTiles",    &corgi::Node<D>::communicateRecvTiles);
 
 
   return corgiNode;
