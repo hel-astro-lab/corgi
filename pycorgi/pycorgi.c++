@@ -30,8 +30,8 @@ auto declare_tile(
         .def_readwrite("maxs",                        &corgi::Tile<D>::maxs)
         .def_readwrite("index",                       &corgi::Tile<D>::index)
         .def("set_tile_mins",                         &corgi::Tile<D>::set_tile_mins)
-        .def("set_tile_maxs",                         &corgi::Tile<D>::set_tile_maxs);
-        //.def("nhood",                                 &corgi::Tile<D>::nhood)
+        .def("set_tile_maxs",                         &corgi::Tile<D>::set_tile_maxs)
+        .def("nhood",                                 &corgi::Tile<D>::nhood);
 
     return corgiTile;
 }
@@ -213,6 +213,9 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
     //--------------------------------------------------
     // TODO: 3D
+
+
+
 }
 
 

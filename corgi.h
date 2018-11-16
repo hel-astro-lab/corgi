@@ -645,34 +645,34 @@ class Node
   // // TODO: get_neighbor_tile(c, i, j)
 
 
-  // std::vector<int> virtualNeighborhood(uint64_t cid) {
+  /// return all virtual tiles around the given tile
+  std::vector<int> virtualNeighborhood(uint64_t cid) {
 
-  //   auto c = getTileData(cid);
-  //   std::vector< std::tuple<size_t, size_t> > neigs = c->nhood();
-  //   std::vector<int> virtual_owners;
-  //   for (auto indx: neigs) {
+    auto& c = getTile(cid);
+    auto neigs = c.nhood();
+    //std::vector< corgi::internals::tuple_of<D, size_t> > neigs = c.nhood();
+    std::vector<int> virtual_owners;
+    for (auto& indx: neigs) {
 
-  //     /* TODO: check boundary tiles here; 
-  //      * now we assume periodicity in x and y
-  //      if (std::get<0>(indx) == ERROR_INDEX ||
-  //      std::get<1>(indx) == ERROR_INDEX) {
-  //      continue;
-  //      }
-  //      */
+      /* TODO: check boundary tiles here; 
+       * now we assume periodicity in x and y
+       if (std::get<0>(indx) == ERROR_INDEX ||
+       std::get<1>(indx) == ERROR_INDEX) {
+       continue;
+       }
+       */
 
-  //     // Get tile id from index notation
-  //     size_t i = std::get<0>(indx);
-  //     size_t j = std::get<1>(indx);
-  //     uint64_t cid = id(i, j);
+      // Get tile id from index notation
+      uint64_t cid = id(indx);
 
-  //     if (!isLocal( cid )) {
-  //       int whoami = _mpiGrid(indx); 
-  //       virtual_owners.push_back( whoami );
-  //     }
-  //   }
+      if (!isLocal( cid )) {
+        int whoami = _mpiGrid(indx); 
+        virtual_owners.push_back( whoami );
+      }
+    }
 
-  //   return virtual_owners;
-  // }
+    return virtual_owners;
+  }
 
 
   // // Number of virtual neighbors that the tile might have.
@@ -738,8 +738,7 @@ class Node
   //       c->communications    = virtual_owners.size();
   //       c->number_of_virtual_neighbors = N;
 
-  //       if (std::find( send_queue.begin(),
-  //             send_queue.end(),
+  //       if (std::find( send_queue.begin(), send_queue.end(),
   //             cid) == send_queue.end()
   //          ) {
   //         send_queue.push_back( cid );
@@ -755,7 +754,6 @@ class Node
     send_queue.clear();
     send_queue_address.clear();
   }
-
 
 
   // // --------------------------------------------------

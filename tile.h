@@ -9,6 +9,8 @@
 
 #include "common.h"
 #include "internals.h"
+#include "cellular_automata.h"
+
 
 
 namespace corgi {
@@ -46,9 +48,6 @@ struct Communication {
   /// tile type listing
   bool local = false;
 };
-
-
-
 
 
 
@@ -155,6 +154,7 @@ class Tile
 
 
     /// return index of tiles in relative to my position
+  public:
     template<typename... Indices>
     corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
     corgi::internals::are_integral<Indices...>::value, 
@@ -176,47 +176,39 @@ class Tile
         return ret;
     }
 
+    /// auxiliary function to unpack tuples
+  private:
+    template <size_t... Is>
+    const corgi::internals::tuple_of<D, size_t> neighs_impl(
+        corgi::internals::tuple_of<D, int>& tuple, 
+        std::index_sequence<Is...>)
+    {
+      return neighs( std::get<Is>(tuple)... );
+    }
 
-    /// Return full neighborhood around me
-    //std::vector< std::tuple<size_t, size_t> > nhood() {
-    //  std::vector< std::tuple<size_t, size_t> > nh;
-    //  for (int ir=-1; ir<=1; ir++) {
-    //    for (int jr=-1; jr<=1; jr++) {
-    //      if (!( ir == 0 && jr == 0 )) {
-    //        nh.push_back( neighs(ir, jr) );
-    //      }
-    //    }
-    //  }
-    //  return nh;
-    //}
+  public:
+    /// unpack tuple into variadic argument list
+    template<typename Indices = std::make_index_sequence<D>>
+    const corgi::internals::tuple_of<D, size_t> neighs( 
+        corgi::internals::tuple_of<D, int>& indices)
+    {
+        return neighs_impl(indices, Indices{} );
+    }
+
+    // end of neighs + auxiliary functions
+    //--------------------------------------------------
 
 
-    /// Check if tile fulfills a single criteria
-    //bool is_type( int criteria ) {
-    //  if( std::find(
-    //        communication.types.begin(), 
-    //        communication.types.end(), 
-    //        criteria) 
-    //      == communication.types.end() 
-    //    ) {
-    //    return false;
-    //  } 
-    //  return true;
-    //}
+    /// Return full Moore neighborhood around me
+    std::vector< corgi::internals::tuple_of<D, size_t> > nhood()
+    {
+      std::vector< corgi::internals::tuple_of<D, size_t> > nh;
+      for(auto& reli : corgi::ca::moore_neighborhood<D>() ){
+        nh.push_back( neighs(reli) );
+      }
+      return nh;
+    }
 
-    /// Vectorized version requiring tile to fulfill every criteria
-    //bool is_types( std::vector<int> criteria ) {
-    //  for (auto crit: criteria) {
-    //    if (is_type(crit))  {
-    //      continue;
-    //    } else {
-    //      return false;
-    //    }
-    //  }
-
-    //  // passed all criteria
-    //  return true;
-    //}
 
     // --------------------------------------------------
     // (optional) tile geometry 

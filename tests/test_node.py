@@ -6,7 +6,7 @@ import numpy as np
 import sys
 import pycorgi.twoD as pycorgi
 
-sys.path.append('../lib')
+#sys.path.append('../lib')
 
 
 class Params:
