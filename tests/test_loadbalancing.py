@@ -91,6 +91,11 @@ class Neighboords(unittest.TestCase):
 
         if node.size() > 1:
             node.analyzeBoundaryTiles()
+            print(node.rank(), ":sq ", node.send_queue)
+            print(node.rank(), ":sqa", node.send_queue_address)
+
+
+        if node.size() > 1:
             node.communicateSendTiles()
             node.communicateRecvTiles()
 
