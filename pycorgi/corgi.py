@@ -17,35 +17,35 @@ Nrank = 4
 def loadMpiRandomly(n):
     np.random.seed(4)
     if n.master:
-        for i in range(n.getNx()):
-            for j in range(n.getNy()):
+        for i in range(n.get_Nx()):
+            for j in range(n.get_Ny()):
                 val = np.random.randint(n.Nrank)
-                n.setMpiGrid(i, j, val)
+                n.set_mpi_grid(i, j, val)
 
 
 #load nodes to be in stripe formation
 def loadMpiStrides(n):
     if n.master: #only master initializes; then sends
-        stride = np.zeros( (n.getNy()), np.int64)
-        dy = np.float(n.getNy()) / np.float(n.Nrank) 
-        for j in range(n.getNy()):
+        stride = np.zeros( (n.get_Ny()), np.int64)
+        dy = np.float(n.get_Ny()) / np.float(n.Nrank) 
+        for j in range(n.get_Ny()):
             val = np.int( j/dy )
             stride[j] = val
 
-        for i in range(n.getNx()):
-            for j in range(n.getNy()):
+        for i in range(n.get_Nx()):
+            for j in range(n.get_Ny()):
                 val = stride[j]
-                n.setMpiGrid(i, j, val)
-    n.bcastMpiGrid()
+                n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
 
 
 #load cells into each node
 def loadCells(n):
-    for i in range(n.getNx()):
-        for j in range(n.getNy()):
-            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.mpiGrid(i,j), ref[j,i]))
-            if n.mpiGrid(i,j) == n.rank:
-                c = pycorgi.Cell(i, j, n.rank, n.getNx, n.getNy)
+    for i in range(n.get_Nx()):
+        for j in range(n.get_Ny()):
+            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.mpi_grid(i,j), ref[j,i]))
+            if n.mpi_grid(i,j) == n.rank:
+                c = pycorgi.Cell(i, j, n.rank, n.get_Nx, n.get_Ny)
                 n.addLocalCell(c) #TODO load data to cell
 
 
@@ -81,11 +81,11 @@ def imshow(ax, grid, xmin, xmax, ymin, ymax):
 
 # Visualize current cell ownership on node
 def plot_node(ax, n, lap):
-    tmp_grid = np.ones( (n.getNx(), n.getNy()) ) * -1.0
+    tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
 
     
-    #for i in range(n.getNx()):
-    #    for j in range(n.getNy()):
+    #for i in range(n.get_Nx()):
+    #    for j in range(n.get_Ny()):
     #        cid = n.cell_id(i,j)
     #        if n.is_local(cid):
     #            tmp_grid[i,j] = 0.5
@@ -101,7 +101,7 @@ def plot_node(ax, n, lap):
         tmp_grid[i,j] = c.owner
 
 
-    for cid in n.getVirtuals():
+    for cid in n.get_virtuals():
         c = n.getCell( cid )
         (i,j) = c.index()
         if tmp_grid[i,j] != -1.0:
@@ -109,19 +109,19 @@ def plot_node(ax, n, lap):
             sys.exit()
         tmp_grid[i,j] = c.owner
 
-    imshow(ax, tmp_grid, n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax() )
+    imshow(ax, tmp_grid, n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax() )
 
 
     # add text label about number of neighbors
     for cid in n.getCells():
         c = n.getCell( cid )
         (j, i) = c.index()
-        dx = n.getXmax() - n.getXmin()
-        dy = n.getYmax() - n.getYmin()
+        dx = n.get_xmax() - n.get_xmin()
+        dy = n.get_ymax() - n.get_ymin()
 
         #NOTE annoying "feature" of swapping Nx and Ny because of imshow transpose
-        ix = n.getXmin() + dx*(i+0.5)/n.getNy()
-        jy = n.getYmin() + dy*(j+0.5)/n.getNx()
+        ix = n.get_xmin() + dx*(i+0.5)/n.get_Ny()
+        jy = n.get_ymin() + dy*(j+0.5)/n.get_Nx()
 
         #Nv = n.number_of_virtual_neighbors(c)
         Nv = c.number_of_virtual_neighbors
@@ -131,15 +131,15 @@ def plot_node(ax, n, lap):
         ax.text(ix, jy, label, ha='center',va='center', size=8)
 
 
-    #for cid in n.getVirtuals():
+    #for cid in n.get_virtuals():
     #    c = n.getCell( cid )
     #    (i,j) = c.index()
-    #    ix = n.getXmin() + n.getXmax()*(i+0.5)/n.getNx()
-    #    jy = n.getYmin() + n.getYmin()*(j+0.5)/n.getNy()
+    #    ix = n.get_xmin() + n.get_xmax()*(i+0.5)/n.get_Nx()
+    #    jy = n.get_ymin() + n.get_ymin()*(j+0.5)/n.get_Ny()
     #    label = "Vir"
     #    ax.text(jy, ix, label, ha='center',va='center')
 
-    ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getCells() )))
+    ax.set_title(str(len(n.get_virtuals() ))+"/"+str(len(n.getCells() )))
 
     #save
     slap = str(lap).rjust(4, '0')
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     ymax =  3.0
 
     pycorgi.setSize(10, 15)
-    pycorgi.setGridLims(xmin, xmax, ymin, ymax)
+    pycorgi.set_grid_lims(xmin, xmax, ymin, ymax)
 
 
     ################################################## 

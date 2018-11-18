@@ -27,26 +27,26 @@ class Initialization(unittest.TestCase):
     def setUp(self):
         self.node = pycorgi.Node(self.Nx, self.Ny)
 
-        self.node.setGridLims(self.xmin, self.xmax,
+        self.node.set_grid_lims(self.xmin, self.xmax,
                               self.ymin, self.ymax
                               )
 
     def test_size(self):
-        nx = self.node.getNx()
-        ny = self.node.getNy()
+        nx = self.node.get_Nx()
+        ny = self.node.get_Ny()
 
-        self.assertEqual(self.node.getNx(), self.Nx)
-        self.assertEqual(self.node.getNy(), self.Ny)
+        self.assertEqual(self.node.get_Nx(), self.Nx)
+        self.assertEqual(self.node.get_Ny(), self.Ny)
 
     def test_physicalSize(self):
-        self.assertEqual( self.node.getXmin(), self.xmin )
-        self.assertEqual( self.node.getXmax(), self.xmax )
+        self.assertEqual( self.node.get_xmin(), self.xmin )
+        self.assertEqual( self.node.get_xmax(), self.xmax )
 
-        self.assertEqual( self.node.getYmin(), self.ymin )
-        self.assertEqual( self.node.getYmax(), self.ymax )
+        self.assertEqual( self.node.get_ymin(), self.ymin )
+        self.assertEqual( self.node.get_ymax(), self.ymax )
 
 
-def tileID(i,j,Nx,Ny):
+def tile_id(i,j,Nx,Ny):
     return j*Nx + i
 
 
@@ -63,7 +63,7 @@ class Parallel(unittest.TestCase):
 
     def setUp(self):
         self.node = pycorgi.Node(self.Nx, self.Ny)
-        self.node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
+        self.node.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
 
     def test_mpiInitialization(self):
 
@@ -74,41 +74,41 @@ class Parallel(unittest.TestCase):
         self.refGrid[5:10, 10:15] = 3
 
         if self.node.master():
-            for j in range(self.node.getNy()):
-                for i in range(self.node.getNx()):
+            for j in range(self.node.get_Ny()):
+                for i in range(self.node.get_Nx()):
                     val = self.refGrid[i,j]
-                    self.node.setMpiGrid(i, j, val )
-        self.node.bcastMpiGrid()
+                    self.node.set_mpi_grid(i, j, val )
+        self.node.bcast_mpi_grid()
 
-        for j in range(self.node.getNy()):
-            for i in range(self.node.getNx()):
-                val = self.node.getMpiGrid(i,j)
+        for j in range(self.node.get_Ny()):
+            for i in range(self.node.get_Nx()):
+                val = self.node.get_mpi_grid(i,j)
                 self.assertEqual(val, self.refGrid[i,j])
 
     def test_cid(self):
-        for j in range(self.node.getNy()):
-            for i in range(self.node.getNx()):
+        for j in range(self.node.get_Ny()):
+            for i in range(self.node.get_Nx()):
                 cid = self.node.id(i, j)
-                cidr = tileID( i, j, self.node.getNx(), self.node.getNy() )
+                cidr = tile_id( i, j, self.node.get_Nx(), self.node.get_Ny() )
                 self.assertEqual(cid, cidr)
 
     def test_loading(self):
 
         #load tiles
         k = 0
-        for j in range(self.node.getNy()):
-            for i in range(self.node.getNx()):
+        for j in range(self.node.get_Ny()):
+            for i in range(self.node.get_Nx()):
                 c = pycorgi.Tile()
-                self.node.addTile(c, (i,j) ) 
+                self.node.add_tile(c, (i,j) ) 
                 k += 1
         self.assertEqual( k, self.Nx*self.Ny )
 
-        cids = self.node.getTileIds() 
+        cids = self.node.get_tile_ids() 
         self.assertEqual( len(cids), self.Nx*self.Ny )
 
         #now try and get then back
         for cid in cids:
-            c = self.node.getTile(cid)
+            c = self.node.get_tile(cid)
 
             self.assertEqual(c.cid,   cid)
             self.assertEqual(c.communication.owner, self.node.rank())
@@ -136,7 +136,7 @@ class Parallel2(unittest.TestCase):
 
         #set up
         node = pycorgi.Node(self.Nx, self.Ny)
-        node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
+        node.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
 
         # divide into upper and lower halfs
         #refGrid = np.zeros((self.Nx, self.Ny), np.int)
@@ -144,26 +144,26 @@ class Parallel2(unittest.TestCase):
         #refGrid[:, 1] = 1
 
         #if node.master():
-        #    for j in range(node.getNy()):
-        #        for i in range(node.getNx()):
+        #    for j in range(node.get_Ny()):
+        #        for i in range(node.get_Nx()):
         #            val = refGrid[i,j]
-        #            node.setMpiGrid(i, j, val )
-        #node.bcastMpiGrid()
+        #            node.set_mpi_grid(i, j, val )
+        #node.bcast_mpi_grid()
 
         #load tiles
         if node.rank() == 0:
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
-                    #if node.getMpiGrid(i,j) == 0:
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
+                    #if node.get_mpi_grid(i,j) == 0:
                     c = pycorgi.Tile()
-                    node.addTile(c, (i,j) ) 
+                    node.add_tile(c, (i,j) ) 
 
         #0 sends
         if node.rank() == 0 and node.size() > 1:
             #load cell with info
             cid = node.id(2, 1)
             #print("0:  send............cid:", cid)
-            c = node.getTile(cid)
+            c = node.get_tile(cid)
 
             #communication object
             c.communication.top_virtual_owner           = 10
@@ -189,7 +189,7 @@ class Parallel2(unittest.TestCase):
         #assert that we received the tile properly
         if node.rank() == 1 and node.size() > 1:
             cid = node.id(2, 1)
-            c = node.getTile(cid)
+            c = node.get_tile(cid)
             #print("1:  cid=", cid)
 
             #cid

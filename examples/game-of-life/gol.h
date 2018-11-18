@@ -43,9 +43,9 @@ class Mesh {
   }
 
 
-  void copyVert(Mesh& rhs, int lhsI, int rhsI);
+  void copy_vert(Mesh& rhs, int lhsI, int rhsI);
 
-  void copyHorz(Mesh& rhs, int lhsJ, int rhsJ);
+  void copy_horz(Mesh& rhs, int lhsJ, int rhsJ);
 
 
 };
@@ -59,12 +59,12 @@ class Grid : public corgi::Node {
 
     ~Grid() { };
 
-    // std::string petShop();
+    // std::string pet_shop();
 
     /// Cycle data containers of each cell forward
     // void cycle() {
     //   for (auto& it: cells) {
-    //     auto cellptr = std::dynamic_pointer_cast<CellularAutomataCell>( it.second );
+    //     auto cellptr = std::dynamic_pointer_cast<CA_tile>( it.second );
     //     cellptr->data.cycle();
     //   }
     // }
@@ -74,32 +74,32 @@ class Grid : public corgi::Node {
 
 
 /// Small local cellular automata patch
-class CellularAutomataCell : public corgi::Cell {
+class CA_tile : public corgi::Cell {
 
   public:
 
-    typedef CellularAutomataCell CellType;
-    typedef std::shared_ptr<CellularAutomataCell> CellPtr;
+    typedef CA_tile Tile_t;
+    typedef std::shared_ptr<CA_tile> Tileptr;
 
-    CellularAutomataCell(size_t i, size_t j, 
+    CA_tile(size_t i, size_t j, 
              int o, 
              size_t nx, size_t ny
              ) : corgi::Cell(i, j, o, nx, ny) { }
 
-    ~CellularAutomataCell() { };
+    ~CA_tile() { };
 
     // extending the base class
     datarotators::DataContainer<Mesh> data;
 
-    void addData(Mesh m);
+    void add_data(Mesh m);
 
-    Mesh& getData();
+    Mesh& get_data();
 
-    Mesh* getDataPtr();
+    Mesh* get_dataptr();
 
-    Mesh& getNewData();
+    Mesh& get_new_data();
 
-    void updateBoundaries(Grid& grid);
+    void update_boundaries(Grid& grid);
 
 
     /// step forward
@@ -113,7 +113,7 @@ class Solver {
 
 
   public:
-    void solve(CellularAutomataCell& cell);
+    void solve(CA_tile& cell);
 
 
 

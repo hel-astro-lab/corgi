@@ -22,9 +22,9 @@ class Neighboords(unittest.TestCase):
         node = pycorgi.oneD.Node(self.Nx)
 
         if node.master():
-            for i in range(node.getNx()):
+            for i in range(node.get_Nx()):
                 c = pycorgi.oneD.Tile()
-                node.addTile(c, (i, ) ) 
+                node.add_tile(c, (i, ) ) 
 
         ref_nhood = [
         [(2,), (1,)],
@@ -32,9 +32,9 @@ class Neighboords(unittest.TestCase):
         [(1,), (0,)],
         ]
 
-        for i in range(node.getNx()):
+        for i in range(node.get_Nx()):
             cid = node.id(i)
-            c = node.getTile(cid)
+            c = node.get_tile(cid)
             self.assertCountEqual( c.nhood(), ref_nhood[i] )
             
 
@@ -44,10 +44,10 @@ class Neighboords(unittest.TestCase):
         node = pycorgi.twoD.Node(self.Nx, self.Ny)
 
         if node.master():
-            for i in range(node.getNx()):
-                for j in range(node.getNy()):
+            for i in range(node.get_Nx()):
+                for j in range(node.get_Ny()):
                     c = pycorgi.twoD.Tile()
-                    node.addTile(c, (i,j) ) 
+                    node.add_tile(c, (i,j) ) 
 
         ref_nhood = [
             [(2, 2), (2, 0), (2, 1), (0, 2), (0, 1), (1, 2), (1, 0), (1, 1)],
@@ -63,11 +63,11 @@ class Neighboords(unittest.TestCase):
 
 
         q = 0
-        for i in range(node.getNx()):
-            for j in range(node.getNy()):
+        for i in range(node.get_Nx()):
+            for j in range(node.get_Ny()):
                 #print("ij", i,j)
                 cid = node.id(i,j)
-                c = node.getTile(cid)
+                c = node.get_tile(cid)
                 #print(c.nhood())
                 self.assertCountEqual( c.nhood(), ref_nhood[q] )
 
@@ -78,23 +78,23 @@ class Neighboords(unittest.TestCase):
         node = pycorgi.threeD.Node(self.Nx, self.Ny, self.Nz)
 
         if node.master():
-            for i in range(node.getNx()):
-                for j in range(node.getNy()):
-                    for k in range(node.getNz()):
+            for i in range(node.get_Nx()):
+                for j in range(node.get_Ny()):
+                    for k in range(node.get_Nz()):
                         c = pycorgi.threeD.Tile()
-                        node.addTile(c, (i,j,k) ) 
+                        node.add_tile(c, (i,j,k) ) 
 
         # TODO: add reference
         #ref_nhood = [
         #]
 
         q = 0
-        for i in range(node.getNx()):
-            for j in range(node.getNy()):
-                for k in range(node.getNz()):
+        for i in range(node.get_Nx()):
+            for j in range(node.get_Ny()):
+                for k in range(node.get_Nz()):
                     print("ijk", i,j,k)
                     cid = node.id(i,j,k)
-                    c = node.getTile(cid)
+                    c = node.get_tile(cid)
                     print(c.nhood())
                     #self.assertCountEqual( c.nhood(), ref_nhood[q] )
 

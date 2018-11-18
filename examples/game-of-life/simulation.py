@@ -48,17 +48,17 @@ def imshow(ax,
 
 # Visualize current cell ownership on node
 def plotNode(ax, n, conf):
-    tmp_grid = np.ones( (n.getNx(), n.getNy()) ) * -1.0
+    tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
     
-    #for i in range(n.getNx()):
-    #    for j in range(n.getNy()):
+    #for i in range(n.get_Nx()):
+    #    for j in range(n.get_Ny()):
     #        cid = n.cell_id(i,j)
     #        if n.is_local(cid):
     #            tmp_grid[i,j] = 0.5
 
 
     for cid in n.getCellIds():
-        c = n.getCellPtr( cid )
+        c = n.get_tileptr( cid )
         (i, j) = c.index()
         #check dublicates
         if tmp_grid[i,j] != -1.0:
@@ -67,7 +67,7 @@ def plotNode(ax, n, conf):
         tmp_grid[i,j] = c.owner
 
     #XXX add back
-    #for cid in n.getVirtuals():
+    #for cid in n.get_virtuals():
     #    c = n.getCell( cid )
     #    (i,j) = c.index()
     #    if tmp_grid[i,j] != -1.0:
@@ -76,7 +76,7 @@ def plotNode(ax, n, conf):
     #    tmp_grid[i,j] = c.owner
 
     imshow(ax, tmp_grid, 
-            n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
+            n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
             cmap = palette,
             vmin = 0.0,
             vmax = conf["Nrank"]-1
@@ -85,13 +85,13 @@ def plotNode(ax, n, conf):
 
     # add text label about number of neighbors
     for cid in n.getCellIds():
-        c = n.getCellPtr( cid )
+        c = n.get_tileptr( cid )
         (i, j) = c.index()
-        dx = n.getXmax() - n.getXmin()
-        dy = n.getYmax() - n.getYmin()
+        dx = n.get_xmax() - n.get_xmin()
+        dy = n.get_ymax() - n.get_ymin()
 
-        ix = n.getXmin() + dx*(i+0.5)/n.getNx()
-        jy = n.getYmin() + dy*(j+0.5)/n.getNy()
+        ix = n.get_xmin() + dx*(i+0.5)/n.get_Nx()
+        jy = n.get_ymin() + dy*(j+0.5)/n.get_Ny()
 
         #Nv = n.number_of_virtual_neighbors(c)
         Nv = c.number_of_virtual_neighbors
@@ -100,16 +100,16 @@ def plotNode(ax, n, conf):
         #label = "({},{})".format(i,j)
         ax.text(ix, jy, label, ha='center',va='center', size=8)
 
-    #for cid in n.getVirtuals():
+    #for cid in n.get_virtuals():
     #    c = n.getCell( cid )
     #    (i,j) = c.index()
-    #    ix = n.getXmin() + n.getXmax()*(i+0.5)/n.getNx()
-    #    jy = n.getYmin() + n.getYmin()*(j+0.5)/n.getNy()
+    #    ix = n.get_xmin() + n.get_xmax()*(i+0.5)/n.get_Nx()
+    #    jy = n.get_ymin() + n.get_ymin()*(j+0.5)/n.get_Ny()
     #    label = "Vir"
     #    ax.text(jy, ix, label, ha='center',va='center')
 
     #XXX add back
-    #ax.set_title(str(len(n.getVirtuals() ))+"/"+str(len(n.getCellIds() )))
+    #ax.set_title(str(len(n.get_virtuals() ))+"/"+str(len(n.getCellIds() )))
 
 
 def plotMesh(ax, n, conf):
@@ -123,10 +123,10 @@ def plotMesh(ax, n, conf):
     data = -1.0 * np.ones( (NxFull, NyFull) )
 
     for cid in n.getCellIds():
-        c = n.getCellPtr( cid )
+        c = n.get_tileptr( cid )
         (i, j) = c.index()
 
-        mesh = c.getData()
+        mesh = c.get_data()
 
         for k in range(NyMesh):
             for q in range(NxMesh):
@@ -134,7 +134,7 @@ def plotMesh(ax, n, conf):
 
 
     imshow(ax, data,
-            n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
+            n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
             cmap = palette,
             vmin = 0.0,
             #vmax = data.max(),
@@ -158,10 +158,10 @@ def plotMesh2(ax, n, conf):
     data = -1.0 * np.ones( (NxFull, NyFull) )
 
     cid = n.cellId(1,1)
-    c = n.getCellPtr( cid )
+    c = n.get_tileptr( cid )
     (i, j) = c.index()
 
-    mesh = c.getData()
+    mesh = c.get_data()
 
     for k in range(-1, NyMesh+1, 1):
         for q in range(-1, NxMesh+1, 1):
@@ -169,7 +169,7 @@ def plotMesh2(ax, n, conf):
 
 
     imshow(ax, data,
-            n.getXmin(), n.getXmax(), n.getYmin(), n.getYmax(),
+            n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
             cmap = palette,
             vmin = 0.0,
             #vmax = data.max(),
@@ -193,35 +193,35 @@ def saveVisz(lap, n, conf):
 def loadMpiRandomly(n):
     np.random.seed(4)
     if n.master:
-        for i in range(n.getNx()):
-            for j in range(n.getNy()):
+        for i in range(n.get_Nx()):
+            for j in range(n.get_Ny()):
                 val = np.random.randint(n.Nrank)
-                n.setMpiGrid(i, j, val)
+                n.set_mpi_grid(i, j, val)
 
 #load nodes to be in stripe formation (splitted in X=horizontal direction)
 def loadMpiXStrides(n):
     if n.master: #only master initializes; then sends
-        stride = np.zeros( (n.getNx()), np.int64)
-        dx = np.float(n.getNx()) / np.float(n.Nrank) 
-        for i in range(n.getNx()):
+        stride = np.zeros( (n.get_Nx()), np.int64)
+        dx = np.float(n.get_Nx()) / np.float(n.Nrank) 
+        for i in range(n.get_Nx()):
             val = np.int( i/dx )
             stride[i] = val
 
-        for j in range(n.getNy()):
-            for i in range(n.getNx()):
+        for j in range(n.get_Ny()):
+            for i in range(n.get_Nx()):
                 val = stride[i]
-                n.setMpiGrid(i, j, val)
-    n.bcastMpiGrid()
+                n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
 
 
 #load cells into each node
 def loadCells(n):
-    for i in range(n.getNx()):
-        for j in range(n.getNy()):
-            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.getMpiGrid(i,j), ref[j,i]))
+    for i in range(n.get_Nx()):
+        for j in range(n.get_Ny()):
+            #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.get_mpi_grid(i,j), ref[j,i]))
 
-            if n.getMpiGrid(i,j) == n.rank:
-                c = pygol.CellularAutomataCell(i, j, n.rank, n.getNx(), n.getNy())
+            if n.get_mpi_grid(i,j) == n.rank:
+                c = pygol.CA_tile(i, j, n.rank, n.get_Nx(), n.get_Ny())
                 n.addCell(c) 
 
 
@@ -229,12 +229,12 @@ def loadCells(n):
 def randomInitialize(n, conf):
 
     val = 0
-    for i in range(n.getNx()):
-        for j in range(n.getNy()):
-            #if n.getMpiGrid(i,j) == n.rank:
+    for i in range(n.get_Nx()):
+        for j in range(n.get_Ny()):
+            #if n.get_mpi_grid(i,j) == n.rank:
             if True:
                 cid = n.cellId(i,j)
-                c = n.getCellPtr(cid) #get cell ptr
+                c = n.get_tileptr(cid) #get cell ptr
 
                 mesh = pygol.Mesh( conf["NxMesh"], conf["NyMesh"] )
 
@@ -256,8 +256,8 @@ def randomInitialize(n, conf):
 
                 #mesh[0,0] = 1
 
-                c.addData(mesh)
-                c.addData(mesh)
+                c.add_data(mesh)
+                c.add_data(mesh)
 
 
 
@@ -292,7 +292,7 @@ if __name__ == "__main__":
             }
     
     node = pygol.Grid( conf["Nx"], conf["Ny"] ) 
-    node.setGridLims(0.0, 1.0, 0.0, 1.0)
+    node.set_grid_lims(0.0, 1.0, 0.0, 1.0)
     
     loadCells(node)
     randomInitialize(node, conf)
@@ -317,21 +317,21 @@ if __name__ == "__main__":
         print "---lap: {}".format(lap)
     
         #update halo regions
-        for i in range(node.getNx()):
-            for j in range(node.getNy()):
-                c = node.getCellPtr(i,j) #get cell ptr
-                c.updateBoundaries(node)
+        for i in range(node.get_Nx()):
+            for j in range(node.get_Ny()):
+                c = node.get_tileptr(i,j) #get cell ptr
+                c.update_boundaries(node)
 
         #progress one time step
-        for i in range(node.getNx()):
-            for j in range(node.getNy()):
-                c = node.getCellPtr(i,j) #get cell ptr
+        for i in range(node.get_Nx()):
+            for j in range(node.get_Ny()):
+                c = node.get_tileptr(i,j) #get cell ptr
                 sol.solve(c)
 
         #cycle everybody in time
-        for i in range(node.getNx()):
-            for j in range(node.getNy()):
-                c = node.getCellPtr(i,j) #get cell ptr
+        for i in range(node.get_Nx()):
+            for j in range(node.get_Ny()):
+                c = node.get_tileptr(i,j) #get cell ptr
                 c.cycle()
 
 

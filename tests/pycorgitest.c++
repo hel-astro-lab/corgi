@@ -9,14 +9,14 @@ PYBIND11_MODULE(pycorgitest, m) {
 
   // --------------------------------------------------
   // Loading tile bindings from corgi library
-  py::object corgiTile = (py::object) py::module::import("pycorgi.twoD").attr("Tile");
+  py::object corgi_tile = (py::object) py::module::import("pycorgi.twoD").attr("Tile");
 
   // Welsh and Pembroke inherit grid infrastructure from base class and then extend it.
   // NOTE: they must be defined with a special shared container (shared_ptr) in order
   // for the python referencing to work correctly.
   //
   // Example structure from pybind:
-  // py::class_<corgitest::Welsh>(m, "Welsh", corgiTile)
+  // py::class_<corgitest::Welsh>(m, "Welsh", corgi_tile)
   // py::class_<Derived, Base, std::shared_ptr<Derived>>(...);
     
   py::class_<corgitest::Welsh, corgi::Tile<2>, std::shared_ptr<corgitest::Welsh>>(m, "Welsh")
@@ -46,7 +46,7 @@ PYBIND11_MODULE(pycorgitest, m) {
   py::class_<corgitest::Viking,
              std::shared_ptr<corgitest::Viking>>(m, "Viking")
     .def(py::init<>())
-    .def("prayForOdin", &corgitest::Viking::prayForOdin);
+    .def("pray_for_odin", &corgitest::Viking::pray_for_odin);
 
   py::class_<corgitest::Vallhund, 
              corgitest::Swede, 
@@ -59,10 +59,10 @@ PYBIND11_MODULE(pycorgitest, m) {
 
   // --------------------------------------------------
   // Grid bindings
-  //py::object corgiNode = (py::object) py::module::import("pycorgi.twoD").attr("Node");
-  //py::class_<corgitest::Grid>(m, "Grid", corgiNode)
+  //py::object corgi_node = (py::object) py::module::import("pycorgi.twoD").attr("Node");
+  //py::class_<corgitest::Grid>(m, "Grid", corgi_node)
   //  .def(py::init<size_t, size_t>())
-  //  .def("petShop",   &corgitest::Grid::petShop);
+  //  .def("pet_shop",   &corgitest::Grid::pet_shop);
 
 
 }

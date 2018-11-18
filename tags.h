@@ -7,15 +7,15 @@
 //
 // Usage: 
 //    Define functions that depend on tags as
-//    func(xx, yy, ..., Mode::TagName)
+//    func(xx, yy, ..., Mode::Tag_name)
 //    and call the function as
-//    yy = func(aa, bb,..., Mode::tagName)
+//    yy = func(aa, bb,..., Mode::tag_name)
 //
 
 namespace corgi { namespace tags {
 
 /// I/O Write modes 
-class WriteMode
+class Write_mode
 {
   public:
 

@@ -63,7 +63,7 @@ constexpr
 T ct_accumulate(const ::std::array<T, N>& arr,  ///< accumulate from this array
                 const size_t first,             ///< starting from this position
                 const size_t length,            ///< accumulate this number of elements
-                const T      initialValue,      ///< let this be the accumulator's initial value
+                const T      initial_value,      ///< let this be the accumulator's initial value
                 const O&     op                 ///< use this binary operation
                )
 {
@@ -73,9 +73,9 @@ T ct_accumulate(const ::std::array<T, N>& arr,  ///< accumulate from this array
               ct_accumulate(arr,
                             first + 1,
                             length - 1,
-                            initialValue,
+                            initial_value,
                             op))
-         : initialValue;
+         : initial_value;
 }
 
 
@@ -95,7 +95,7 @@ T ct_inner_product(const ::std::array<T_1, N_1>& arr_1,  ///< calc the inner pro
                    const ::std::array<T_2, N_2>& arr_2,  ///< with this array
                    const size_t  first_2,        ///< from this position
                    const size_t  length,         ///< using this many elements from both arrays
-                   const T       initialValue,   ///< let this be the summation's initial value
+                   const T       initial_value,   ///< let this be the summation's initial value
                    const O_SUM&  op_sum,         ///< use this as the summation operator
                    const O_PROD& op_prod         ///< use this as the multiplication operator
                   )
@@ -107,9 +107,9 @@ T ct_inner_product(const ::std::array<T_1, N_1>& arr_1,  ///< calc the inner pro
                   ct_inner_product(arr_1, first_1 + 1,
                                    arr_2, first_2 + 1,
                                    length - 1,
-                                   initialValue,
+                                   initial_value,
                                    op_sum, op_prod))
-         : initialValue;
+         : initial_value;
 }
 
 
@@ -132,12 +132,12 @@ T ct_inner_product(const ::std::array<T_1, N_1>& arr_1,  ///< calc the inner pro
  */
 //template <typename size_type, std::size_t D>
 //::std::array<size_type, D>
-//compute_index_coeffs(const ::std::array<size_type, D>& dimensionLengths) noexcept
+//compute_index_coeffs(const ::std::array<size_type, D>& dimension_lengths) noexcept
 //{
 //    ::std::array<size_type, D> coeffs;
 //    for (size_type i = 0; i < D; ++i)
 //    {
-//        coeffs[i] = ct_accumulate(dimensionLengths,
+//        coeffs[i] = ct_accumulate(dimension_lengths,
 //                                  i + 1,
 //                                  D - i - 1,
 //                                  static_cast<size_type>(1),
@@ -292,7 +292,7 @@ constexpr auto into_tuple(const std::array<T, N> &arr) {
 //std::array<First, 1+sizeof...(Rem)>
 //into_array(const std::tuple<First, Rem...>& t) {
 //  std::array<First, 1+sizeof...(Rem)> arr;
-//  ArrayFiller<First, decltype(t), 1+sizeof...(Rem)>::into_array(t, arr);
+//  Array_filler<First, decltype(t), 1+sizeof...(Rem)>::into_array(t, arr);
 //  return arr;
 //}
 

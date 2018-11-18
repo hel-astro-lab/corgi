@@ -52,7 +52,7 @@ class Viking {
     Viking() { std::cout << "...making a Viking()! \n"; };
 
     /// special method only known to real Vikings
-    std::string prayForOdin();
+    std::string pray_for_odin();
 };
 
 
@@ -113,7 +113,7 @@ class Vallhund : public Swede,
 //
 //    // std::unordered_map< uint64_t, std::shared_ptr<corgi::Tile>> tiles;
 //
-//    std::string petShop();
+//    std::string pet_shop();
 //};
 
 
