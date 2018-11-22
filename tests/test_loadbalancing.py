@@ -35,10 +35,10 @@ class Conf:
     outdir = "out"
 
 def readGrid(n, conf):
-    tmp_grid = np.ones( (n.getNx(), n.getNy()) ) * -1.0
+    tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
 
-    for cid in n.getTileIds():
-        c = n.getTile( cid )
+    for cid in n.get_tile_ids():
+        c = n.get_tile( cid )
 
         try:
             (i, j) = c.index
@@ -77,7 +77,7 @@ class Neighboords(unittest.TestCase):
             pass
 
         node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
-        node.setGridLims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         # one tile surrounded by other rank
         refGrid = np.ones((conf.Nx, conf.Ny), np.int)
@@ -85,19 +85,19 @@ class Neighboords(unittest.TestCase):
 
         #setup grid configuration
         if node.master():
-            for j in range(node.getNy()):
-                for i in range(node.getNx()):
+            for j in range(node.get_Ny()):
+                for i in range(node.get_Nx()):
                     val = refGrid[i,j]
-                    node.setMpiGrid(i, j, val )
-        node.bcastMpiGrid()
+                    node.set_mpi_grid(i, j, val )
+        node.bcast_mpi_grid()
 
         # add tiles
         rank = node.rank()
-        for i in range(node.getNx()):
-            for j in range(node.getNy()):
+        for i in range(node.get_Nx()):
+            for j in range(node.get_Ny()):
                 if rank == refGrid[i,j]:
                     c = pycorgi.twoD.Tile()
-                    node.addTile(c, (i,j) ) 
+                    node.add_tile(c, (i,j) ) 
 
         try:
             plotNode(axs[0], node, conf)
@@ -106,13 +106,13 @@ class Neighboords(unittest.TestCase):
             pass
 
         if node.size() > 1:
-            node.analyzeBoundaryTiles()
+            node.analyze_boundaries()
             #print(node.rank(), ":sq ", node.send_queue)
             #print(node.rank(), ":sqa", node.send_queue_address)
 
         if node.size() > 1:
-            node.communicateSendTiles()
-            node.communicateRecvTiles()
+            node.send_tiles()
+            node.recv_tiles()
 
         plotNode(axs[0], node, conf)
         saveVisz(1, node, conf)
@@ -121,8 +121,8 @@ class Neighboords(unittest.TestCase):
         #print(cur)
 
         if node.size() > 1:
-            for i in range(node.getNx()):
-                for j in range(node.getNy()):
+            for i in range(node.get_Nx()):
+                for j in range(node.get_Ny()):
                     self.assertEqual(refGrid[i,j], cur[i,j])
 
 

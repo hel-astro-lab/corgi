@@ -19,9 +19,9 @@ auto declare_tile(
 {
 
     py::class_<corgi::Tile<D>, 
-              std::shared_ptr<corgi::Tile<D> >> corgiTile(m, pyclass_name.c_str());
+              std::shared_ptr<corgi::Tile<D> >> corgi_tile(m, pyclass_name.c_str());
 
-    corgiTile
+    corgi_tile
         .def(py::init<>())
 
         .def_readwrite("cid",                         &corgi::Tile<D>::cid)
@@ -33,7 +33,7 @@ auto declare_tile(
         .def("set_tile_maxs",                         &corgi::Tile<D>::set_tile_maxs)
         .def("nhood",                                 &corgi::Tile<D>::nhood);
 
-    return corgiTile;
+    return corgi_tile;
 }
 
 
@@ -43,36 +43,36 @@ auto declare_node(
     const std::string& pyclass_name) 
 {
 
-    py::class_<corgi::Node<D> > corgiNode(m, pyclass_name.c_str());
+    py::class_<corgi::Node<D> > corgi_node(m, pyclass_name.c_str());
 
-    corgiNode
+    corgi_node
         .def("rank",      [](corgi::Node<D>& n) { return n.comm.rank(); })
         .def("size",      [](corgi::Node<D>& n) { return n.comm.size(); })
         .def("master",    [](corgi::Node<D>& n) { return n.comm.rank() == 0; })
-        .def("addTile",              &corgi::Node<D>::addTile, py::keep_alive<1,2>())
-        .def("getTileIds",           &corgi::Node<D>::getTileIds,
+        .def("add_tile",              &corgi::Node<D>::add_tile, py::keep_alive<1,2>())
+        .def("get_tile_ids",           &corgi::Node<D>::get_tile_ids,
                 py::arg("sorted") = true)
-        .def("getTile", (std::shared_ptr<corgi::Tile<D>> (corgi::Node<D>::*)(const uint64_t)) &corgi::Node<D>::getTilePtr)
+        .def("get_tile", (std::shared_ptr<corgi::Tile<D>> (corgi::Node<D>::*)(const uint64_t)) &corgi::Node<D>::get_tileptr)
 
-        .def("getLocalTiles",             &corgi::Node<D>::getLocalTiles,
+        .def("get_local_tiles",             &corgi::Node<D>::get_local_tiles,
                  py::arg("sorted") = true)
-        .def("getVirtuals",          &corgi::Node<D>::getVirtuals,
+        .def("get_virtuals",          &corgi::Node<D>::get_virtuals,
                  py::arg("sorted") = true)
 
-        .def("isLocal",              &corgi::Node<D>::isLocal)
-        .def("analyzeBoundaryTiles", &corgi::Node<D>::analyzeBoundaryTiles)
+        .def("is_local",              &corgi::Node<D>::is_local)
+        .def("analyze_boundaries", &corgi::Node<D>::analyze_boundaries)
 
         // // communication wrappers
         .def("send_tile",               &corgi::Node<D>::send_tile)
         .def("recv_tile",               &corgi::Node<D>::recv_tile)
         .def_readwrite("send_queue",         &corgi::Node<D>::send_queue)
         .def_readwrite("send_queue_address", &corgi::Node<D>::send_queue_address)
-        .def("bcastMpiGrid",            &corgi::Node<D>::bcastMpiGrid)
-        .def("communicateSendTiles",    &corgi::Node<D>::communicateSendTiles)
-        .def("communicateRecvTiles",    &corgi::Node<D>::communicateRecvTiles);
+        .def("bcast_mpi_grid",            &corgi::Node<D>::bcast_mpi_grid)
+        .def("send_tiles",    &corgi::Node<D>::send_tiles)
+        .def("recv_tiles",    &corgi::Node<D>::recv_tiles);
 
 
-  return corgiNode;
+  return corgi_node;
 }
 
 
@@ -84,8 +84,8 @@ PYBIND11_MODULE(pycorgi, m_base) {
     //--------------------------------------------------
     // dimension independent bindings
 
-    py::class_<corgi::Communication> corgiComm(m_base, "Communication");
-    corgiComm
+    py::class_<corgi::Communication> corgi_comm(m_base, "Communication");
+    corgi_comm
         .def_readwrite("cid",                         &corgi::Communication::cid                        )
         .def_readwrite("indices",                     &corgi::Communication::indices                    )
         .def_readwrite("owner",                       &corgi::Communication::owner                      )
@@ -118,44 +118,44 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
     //n1.def(py::init([](size_t i, size_t j) {
     //    return std::unique_ptr<Example>(new Example(arg));
-    n1.def("getTile", [](corgi::Node<1> &n, size_t i, size_t /*j*/){
-        return n.getTilePtrInd(i); });
-    n1.def("getTile", [](corgi::Node<1> &n, size_t i, size_t /*j*/, size_t /*k*/){
-        return n.getTilePtrInd(i); });
+    n1.def("get_tile", [](corgi::Node<1> &n, size_t i, size_t /*j*/){
+        return n.get_tileptr_ind(i); });
+    n1.def("get_tile", [](corgi::Node<1> &n, size_t i, size_t /*j*/, size_t /*k*/){
+        return n.get_tileptr_ind(i); });
 
-    n1.def("getNx",   [](corgi::Node<1> &n){ return n.getNx(); })
-      .def("getXmin", [](corgi::Node<1> &n){ return n.getXmin(); })
-      .def("getXmax", [](corgi::Node<1> &n){ return n.getXmax(); });
-      //.def("getTile", [](corgi::Node<1> &n, size_t i){ 
-      //    return n.getTilePtr( std::make_tuple<size_t>(i) ); })
+    n1.def("get_Nx",   [](corgi::Node<1> &n){ return n.get_Nx(); })
+      .def("get_xmin", [](corgi::Node<1> &n){ return n.get_xmin(); })
+      .def("get_xmax", [](corgi::Node<1> &n){ return n.get_xmax(); });
+      //.def("get_tile", [](corgi::Node<1> &n, size_t i){ 
+      //    return n.get_tileptr( std::make_tuple<size_t>(i) ); })
 
-    n1.def("getNy",   [](corgi::Node<1> &){ return 1; })
-      .def("getNz",   [](corgi::Node<1> &){ return 1; });
+    n1.def("get_Ny",   [](corgi::Node<1> &){ return 1; })
+      .def("get_Nz",   [](corgi::Node<1> &){ return 1; });
 
-    n1.def("getYmin", [](corgi::Node<1> & ){ return 0.0; })
-      .def("getYmax", [](corgi::Node<1> & ){ return 1.0; });
-
-    n1
-      .def("setGridLims", [](corgi::Node<1> &n, double xmin, double xmax)
-          { n.setGridLims({{xmin}}, {{xmax}}); });
+    n1.def("get_ymin", [](corgi::Node<1> & ){ return 0.0; })
+      .def("get_ymax", [](corgi::Node<1> & ){ return 1.0; });
 
     n1
-      .def("setGridLims", [](corgi::Node<1> &n, double xmin, double xmax,
+      .def("set_grid_lims", [](corgi::Node<1> &n, double xmin, double xmax)
+          { n.set_grid_lims({{xmin}}, {{xmax}}); });
+
+    n1
+      .def("set_grid_lims", [](corgi::Node<1> &n, double xmin, double xmax,
                                                 double /*ymin*/, double /*ymax*/
             )
-          { n.setGridLims({{xmin}}, {{xmax}}); });
+          { n.set_grid_lims({{xmin}}, {{xmax}}); });
 
     n1
-      .def("getMpiGrid", [](corgi::Node<1> &n, const size_t i){ 
-          const auto val = n.pyGetMpiGrid(i); 
+      .def("get_mpi_grid", [](corgi::Node<1> &n, const size_t i){ 
+          const auto val = n.py_get_mpi_grid(i); 
           return val;
           })
-      .def("getMpiGrid", [](corgi::Node<1> &n, const size_t i, const size_t ){ 
-          const auto val = n.pyGetMpiGrid(i); 
+      .def("get_mpi_grid", [](corgi::Node<1> &n, const size_t i, const size_t ){ 
+          const auto val = n.py_get_mpi_grid(i); 
           return val;
           })
-      .def("setMpiGrid", [](corgi::Node<1> &n, size_t i, int val){ n.pySetMpiGrid(val, i); })
-      .def("setMpiGrid", [](corgi::Node<1> &n, size_t i, size_t /*j*/, int val){ n.pySetMpiGrid(val, i); })
+      .def("set_mpi_grid", [](corgi::Node<1> &n, size_t i, int val){ n.py_set_mpi_grid(val, i); })
+      .def("set_mpi_grid", [](corgi::Node<1> &n, size_t i, size_t /*j*/, int val){ n.py_set_mpi_grid(val, i); })
       .def("id", [](const corgi::Node<1> &n, const size_t i){ return n.id(i);});
       
 
@@ -178,31 +178,31 @@ PYBIND11_MODULE(pycorgi, m_base) {
       //assert(nz == 1);
       return new corgi::Node<2>(nx, ny);}));
 
-    n2.def("getNx",   [](corgi::Node<2> &n){ return n.getNx(); })
-      .def("getNy",   [](corgi::Node<2> &n){ return n.getNy(); });
+    n2.def("get_Nx",   [](corgi::Node<2> &n){ return n.get_Nx(); })
+      .def("get_Ny",   [](corgi::Node<2> &n){ return n.get_Ny(); });
 
-    n2.def("getNz",   [](corgi::Node<2> &){  return 1; });
+    n2.def("get_Nz",   [](corgi::Node<2> &){  return 1; });
 
-    n2.def("getXmin", [](corgi::Node<2> &n){ return n.getXmin(); })
-      .def("getXmax", [](corgi::Node<2> &n){ return n.getXmax(); })
-      .def("getYmin", [](corgi::Node<2> &n){ return n.getYmin(); })
-      .def("getYmax", [](corgi::Node<2> &n){ return n.getYmax(); });
+    n2.def("get_xmin", [](corgi::Node<2> &n){ return n.get_xmin(); })
+      .def("get_xmax", [](corgi::Node<2> &n){ return n.get_xmax(); })
+      .def("get_ymin", [](corgi::Node<2> &n){ return n.get_ymin(); })
+      .def("get_ymax", [](corgi::Node<2> &n){ return n.get_ymax(); });
 
 
-    n2.def("getTile", [](corgi::Node<2> &n, size_t i, size_t j){ 
-          return n.getTilePtr( std::make_tuple(i,j) ); })
-      .def("getTile", [](corgi::Node<2> &n, size_t i, size_t j, size_t /*k*/){
-        return n.getTilePtrInd(i,j); })
-      .def("setGridLims", [](corgi::Node<2> &n, 
+    n2.def("get_tile", [](corgi::Node<2> &n, size_t i, size_t j){ 
+          return n.get_tileptr( std::make_tuple(i,j) ); })
+      .def("get_tile", [](corgi::Node<2> &n, size_t i, size_t j, size_t /*k*/){
+        return n.get_tileptr_ind(i,j); })
+      .def("set_grid_lims", [](corgi::Node<2> &n, 
             double xmin, double xmax, 
             double ymin, double ymax)
-          { n.setGridLims({{xmin,ymin}}, {{xmax, ymax}}); })
+          { n.set_grid_lims({{xmin,ymin}}, {{xmax, ymax}}); })
 
-      .def("getMpiGrid", [](corgi::Node<2> &n, const size_t i, const size_t j){ 
-          const auto val = n.pyGetMpiGrid(i,j); 
+      .def("get_mpi_grid", [](corgi::Node<2> &n, const size_t i, const size_t j){ 
+          const auto val = n.py_get_mpi_grid(i,j); 
           return val;
           })
-      .def("setMpiGrid", [](corgi::Node<2> &n, size_t i, size_t j, int val){ n.pySetMpiGrid(val, i, j); })
+      .def("set_mpi_grid", [](corgi::Node<2> &n, size_t i, size_t j, int val){ n.py_set_mpi_grid(val, i, j); })
       .def("id", [](const corgi::Node<2> &n, const size_t i, const size_t j){ return n.id(i,j);});
 
 

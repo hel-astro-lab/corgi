@@ -11,7 +11,7 @@ struct is_mpi_datatype<corgi::Communication>
   : mpl::true_ { };
 
 template <>
-MPI_Datatype get_mpi_datatype<corgi::Communication>(
+inline MPI_Datatype get_mpi_datatype<corgi::Communication>(
     const corgi::Communication& obj) 
 {
     

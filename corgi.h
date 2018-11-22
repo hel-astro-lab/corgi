@@ -65,7 +65,7 @@ class Node
   /*! Global large scale block grid where information
    * of all the mpi processes are stored
    */
-  corgi::tools::sparse_grid<int, D> _mpiGrid;
+  corgi::tools::sparse_grid<int, D> _mpi_grid;
 
   // --------------------------------------------------
   private:
@@ -73,28 +73,28 @@ class Node
   // Mappings
   using TileID_t = uint64_t;
   using Tile_t   = corgi::Tile<D>;
-  using TilePtr  = std::shared_ptr<Tile_t>;
-  using TileMap  = std::unordered_map<TileID_t, TilePtr>;
+  using Tileptr  = std::shared_ptr<Tile_t>;
+  using Tile_map  = std::unordered_map<TileID_t, Tileptr>;
 
 
 
   public:
 
-  /// Map with tileID & tile data
-  TileMap tiles;
+  /// Map with tile_id & tile data
+  Tile_map tiles;
 
 
   public:
   // --------------------------------------------------
-  // Python bindings for mpiGrid
+  // Python bindings for mpi_grid
 
   // get element
   template<typename... Indices>
   corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
   corgi::internals::are_integral<Indices...>::value, int > 
-  pyGetMpiGrid(Indices... indices)  /*const*/
+  py_get_mpi_grid(Indices... indices)  /*const*/
   {
-    return _mpiGrid(indices...);
+    return _mpi_grid(indices...);
   }
 
 
@@ -102,8 +102,8 @@ class Node
   template<typename... Indices>
   corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
   corgi::internals::are_integral<Indices...>::value, void > 
-  pySetMpiGrid(int val, Indices... indices) {
-    _mpiGrid(indices...) = val;
+  py_set_mpi_grid(int val, Indices... indices) {
+    _mpi_grid(indices...) = val;
   }
 
 
@@ -138,9 +138,9 @@ class Node
                corgi::internals::are_integral<DimensionLength...>::value, void
     >
   > 
-  Node(DimensionLength... dimensionLengths) :
-    _lengths {{static_cast<size_type>(dimensionLengths)...}},
-    _mpiGrid(dimensionLengths...),
+  Node(DimensionLength... dimension_lengths) :
+    _lengths {{static_cast<size_type>(dimension_lengths)...}},
+    _mpi_grid(dimension_lengths...),
     env(),
     comm()
   { }
@@ -151,13 +151,13 @@ class Node
   template< typename = corgi::internals::enable_if_t< (D == 1), void > > 
   Node(size_t i, size_t j, size_t k) :
     _lengths {{i}},
-    _mpiGrid({{i}})
+    _mpi_grid({{i}})
   { }
 
   template< typename = corgi::internals::enable_if_t< (D == 2), void > > 
   Node(size_t i, size_t j, size_t k) :
     _lengths {{i, j}},
-    _mpiGrid({{i, j}})
+    _mpi_grid({{i, j}})
   { }
   */
   
@@ -302,19 +302,19 @@ class Node
    *        \f]
    *
    *  For row-major switch to:
-   *  coeffs[i] = ct_accumulate(dimensionLengths, i + 1, Dimensions - i - 1,
+   *  coeffs[i] = ct_accumulate(dimension_lengths, i + 1, Dimensions - i - 1,
    *                                        static_cast<size_type>(1),
    *                                        ct_prod<size_type>);
    *
    */
   std::array<size_type, D>
-  compute_index_coeffs(const ::std::array<size_type, D>& dimensionLengths) const noexcept
+  compute_index_coeffs(const ::std::array<size_type, D>& dimension_lengths) const noexcept
   {
       std::array<size_type, D> coeffs;
       for (size_type i = 0; i < D; ++i)
       {
           coeffs[i] = corgi::internals::ct_accumulate(
-              dimensionLengths,
+              dimension_lengths,
               0,
               i,
               static_cast<size_type>(1),
@@ -379,46 +379,46 @@ class Node
   // return global grid sizes
   template<typename T = size_type>
   corgi::internals::enable_if_t< (D>=1), T> 
-  getNx() { return _lengths[0]; }
+  get_Nx() { return _lengths[0]; }
 
   template<typename T = size_type>
   corgi::internals::enable_if_t< (D>=2), T> 
-  getNy() { return _lengths[1]; }
+  get_Ny() { return _lengths[1]; }
 
   template<typename T = size_type>
   corgi::internals::enable_if_t< (D>=3), T> 
-  getNz() { return _lengths[2]; }
+  get_Nz() { return _lengths[2]; }
 
 
   // return global grid limits
   template<typename T = size_type>
   corgi::internals::enable_if_t< (D>=1), T> 
-  getXmin() { return _mins[0]; }
+  get_xmin() { return _mins[0]; }
 
   template<typename T = size_type>
   corgi::internals::enable_if_t< (D>=2), T> 
-  getYmin() { return _mins[1]; }
+  get_ymin() { return _mins[1]; }
 
   template<typename T = size_type>
   corgi::internals::enable_if_t< (D>=3), T> 
-  getZmin() { return _mins[2]; }
+  get_zmin() { return _mins[2]; }
 
 
   template<typename T = size_type>
   corgi::internals::enable_if_t< (D>=1), T> 
-  getXmax() { return _maxs[0]; }
+  get_xmax() { return _maxs[0]; }
 
   template<typename T = size_type>
   corgi::internals::enable_if_t< (D>=2), T> 
-  getYmax() { return _maxs[1]; }
+  get_ymax() { return _maxs[1]; }
 
   template<typename T = size_type>
   corgi::internals::enable_if_t< (D>=3), T> 
-  getZmax() { return _maxs[2]; }
+  get_zmax() { return _maxs[2]; }
 
 
   /// Set physical grid size
-  void setGridLims(
+  void set_grid_lims(
       const ::std::array<float_type, D>& mins,
       const ::std::array<float_type, D>& maxs
       )
@@ -440,16 +440,16 @@ class Node
   // Tile addition etc. manipulation
     
   /// Add local tile to the node
-  // void addTile(Tile& tile) {
-  void addTile(
-    TilePtr tileptr,
+  // void add_tile(Tile& tile) {
+  void add_tile(
+    Tileptr tileptr,
     corgi::internals::tuple_of<D, size_t> indices
     )
   {
 
     // claim unique ownership of the tile (for unique_ptr)
     // std::unique_ptr<corgi::Tile> tileptr = std::make_unique<corgi:Tile>(tile);
-    // TilePtr tileptr = std::make_unique<Tile_t>(tile);
+    // Tileptr tileptr = std::make_unique<Tile_t>(tile);
     
     // calculate unique global tile ID
     uint64_t cid = id( indices );
@@ -476,13 +476,13 @@ class Node
     //tiles[cid] = tileptr;
       
     // add to my internal listing
-    _mpiGrid( indices ) = comm.rank();
+    _mpi_grid( indices ) = comm.rank();
   }
 
 
   /// Shortcut for creating raw tiles with only the internal meta info.
-  // to be used with message passing (w.r.t addTile that is for use with initialization)
-  void createTile(Communication& cm)
+  // to be used with message passing (w.r.t add_tile that is for use with initialization)
+  void create_tile(Communication& cm)
   {
     auto tileptr = std::make_shared<Tile_t>();
     tileptr->load_metainfo(cm);
@@ -494,20 +494,20 @@ class Node
 
     // add
     tiles.emplace(cm.cid, tileptr); // NOTE using c++14 emplace to avoid copying
-    _mpiGrid( tileptr->index ) = cm.owner;
+    _mpi_grid( tileptr->index ) = cm.owner;
   }
 
   /// Update tile metadata
-  void updateTile(Communication& cm)
+  void update_tile(Communication& cm)
   {
-    auto& tile = getTile(cm.cid);
+    auto& tile = get_tile(cm.cid);
     tile.load_metainfo(cm);
-    _mpiGrid( tile.index ) = cm.owner;
+    _mpi_grid( tile.index ) = cm.owner;
   }
 
 
   /*! Return a vector of tile indices that fulfill a given criteria.  */
-  std::vector<uint64_t> getTileIds(
+  std::vector<uint64_t> get_tile_ids(
       const bool sorted=false ) {
     std::vector<uint64_t> ret;
 
@@ -524,7 +524,7 @@ class Node
   /*! \brief Get individual tile (as a reference)
    *
    * NOTE: from StackOverflow (recommended getter method):
-   * OtherType& get_othertype(const std::string& name)
+   * Other_t& get_othertype(const std::string& name)
    * {
    *     auto it = otMap.find(name);
    *     if (it == otMap.end()) throw std::invalid_argument("entry not found");
@@ -534,7 +534,7 @@ class Node
    * This way map retains its ownership of the tile and we avoid giving pointers
    * away from the Class.
    */
-  Tile_t& getTile(const uint64_t cid) {
+  Tile_t& get_tile(const uint64_t cid) {
     auto it = tiles.find(cid);
     if (it == tiles.end()) { throw std::invalid_argument("tile entry not found"); }
 
@@ -545,13 +545,13 @@ class Node
     corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
     corgi::internals::are_integral<Indices...>::value, 
   Tile_t&>
-  getTileInd(const Indices... indices) {
+  get_tile_ind(const Indices... indices) {
     uint64_t cid = id(indices...);
-    return getTile(cid);
+    return get_tile(cid);
   }
 
   /// \brief Get individual tile (as a pointer)
-  TilePtr getTilePtr(const uint64_t cid) {
+  Tileptr get_tileptr(const uint64_t cid) {
     auto it = tiles.find(cid);
     if (it == tiles.end()) { throw std::invalid_argument("entry not found"); }
     return it->second;
@@ -560,37 +560,37 @@ class Node
   template<typename... Indices>
     corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
     corgi::internals::are_integral<Indices...>::value, 
-  TilePtr>
-  getTilePtrInd(const Indices... indices)
+  Tileptr>
+  get_tileptr_ind(const Indices... indices)
   {
     uint64_t cid = id(indices...);
-    return getTilePtr(cid);
+    return get_tileptr(cid);
   }
 
-  TilePtr getTilePtr(const std::tuple<size_t> ind) {
+  Tileptr get_tileptr(const std::tuple<size_t> ind) {
     size_t i = std::get<0>(ind);
-    return getTilePtrInd(i);
+    return get_tileptr_ind(i);
   }
 
-  TilePtr getTilePtr(const std::tuple<size_t, size_t> ind) {
+  Tileptr get_tileptr(const std::tuple<size_t, size_t> ind) {
     size_t i = std::get<0>(ind);
     size_t j = std::get<1>(ind);
-    return getTilePtrInd(i, j);
+    return get_tileptr_ind(i, j);
   }
 
-  TilePtr getTilePtr(const std::tuple<size_t, size_t, size_t> ind) {
+  Tileptr get_tileptr(const std::tuple<size_t, size_t, size_t> ind) {
     size_t i = std::get<0>(ind);
     size_t j = std::get<1>(ind);
     size_t k = std::get<2>(ind);
-    return getTilePtrInd(i, j, k);
+    return get_tileptr_ind(i, j, k);
   }
 
 
   /// Return all local tiles
-  std::vector<uint64_t> getLocalTiles(
+  std::vector<uint64_t> get_local_tiles(
       const bool sorted=false ) {
 
-    std::vector<uint64_t> tile_list = getTileIds(sorted);
+    std::vector<uint64_t> tile_list = get_tile_ids(sorted);
 
     size_t i = 0, len = tile_list.size();
     while (i < len) {
@@ -608,9 +608,9 @@ class Node
 
 
   /// Return all tiles that are of VIRTUAL type.
-  std::vector<uint64_t> getVirtuals(
+  std::vector<uint64_t> get_virtuals(
       const bool sorted=false ) {
-    std::vector<uint64_t> tile_list = getTileIds(sorted);
+    std::vector<uint64_t> tile_list = get_tile_ids(sorted);
 
     size_t i = 0, len = tile_list.size();
     while (i < len) {
@@ -628,7 +628,7 @@ class Node
 
 
   // /// Check if we have a tile with the given index
-  bool isLocal(uint64_t cid) {
+  bool is_local(uint64_t cid) {
     bool local = false;
 
     // Do we have it on the list=
@@ -644,9 +644,9 @@ class Node
 
 
   /// return all virtual tiles around the given tile
-  std::vector<int> virtualNeighborhood(uint64_t cid) {
+  std::vector<int> virtual_nhood(uint64_t cid) {
 
-    auto& c = getTile(cid);
+    auto& c = get_tile(cid);
     auto neigs = c.nhood();
     //std::vector< corgi::internals::tuple_of<D, size_t> > neigs = c.nhood();
     std::vector<int> virtual_owners;
@@ -655,8 +655,8 @@ class Node
       // Get tile id from index notation
       uint64_t cid = id(indx);
 
-      if (!isLocal( cid )) {
-        int whoami = _mpiGrid(indx); 
+      if (!is_local( cid )) {
+        int whoami = _mpi_grid(indx); 
         virtual_owners.push_back( whoami );
       }
     }
@@ -676,10 +676,10 @@ class Node
   //  * together with the tiles and is analyzed there by others inside the
   //  * `rank_virtuals` function.
   //  * */
-  void analyzeBoundaryTiles() {
+  void analyze_boundaries() {
 
-    for (auto cid: getLocalTiles()) {
-      std::vector<int> virtual_owners = virtualNeighborhood(cid);
+    for (auto cid: get_local_tiles()) {
+      std::vector<int> virtual_owners = virtual_nhood(cid);
       size_t N = virtual_owners.size();
 
       // If N > 0 then this is a boundary tile.
@@ -715,7 +715,7 @@ class Node
 
 
         // update tile values
-        auto& c = getTile(cid);
+        auto& c = get_tile(cid);
         c.communication.top_virtual_owner = top_owner;
         c.communication.communications    = virtual_owners.size();
         c.communication.number_of_virtual_neighbors = N;
@@ -758,8 +758,8 @@ class Node
   std::vector<mpi::request> recv_tile_messages;
 
 
-  // /// Broadcast master ranks mpiGrid to everybody
-  void bcastMpiGrid() {
+  // /// Broadcast master ranks mpi_grid to everybody
+  void bcast_mpi_grid() {
 
     // total size
     int N = 1;
@@ -767,7 +767,7 @@ class Node
     std::vector<int> tmp;
 
     if (comm.rank() == 0) {
-      tmp = _mpiGrid.serialize();
+      tmp = _mpi_grid.serialize();
     } else {
       tmp.resize(N);
       for(int k=0; k<N; k++) {tmp[k] = -1.0;};
@@ -782,7 +782,7 @@ class Node
 
     // unpack
     if(comm.rank() != 0) {
-      _mpiGrid.deserialize(tmp, _lengths);
+      _mpi_grid.deserialize(tmp, _lengths);
     }
   }
 
@@ -790,7 +790,7 @@ class Node
   /// Issue isends to everywhere
   // First we send a warning message of how many tiles to expect.
   // Based on this the receiving side can prepare accordingly.
-  void communicateSendTiles() {
+  void send_tiles() {
 
     sent_info_messages.clear();
     sent_tile_messages.clear();
@@ -813,17 +813,17 @@ class Node
       // initial message informing how many tiles are coming
       // TODO: this whole thing could be avoided by using 
       // MPI_Iprobe in the receiving end. Maybe...
-      auto Nincoming_tiles = static_cast<int>(to_be_sent.size());
+      auto number_of_incoming_tiles = static_cast<int>(to_be_sent.size());
 
       //std::cout << comm.rank() 
       //          << " sending message to " 
       //          << dest
       //          << " incoming number of tiles " 
-      //          << Nincoming_tiles
+      //          << number_of_incoming_tiles
       //          << "\n";
 
       mpi::request req;
-      req = comm.isend(dest, commType::NTILES, Nincoming_tiles);
+      req = comm.isend(dest, commType::NTILES, number_of_incoming_tiles);
       sent_info_messages.push_back( req );
 
     }
@@ -834,7 +834,7 @@ class Node
     // FIXME: not really...
     int i = 0;
     for(auto cid: send_queue) {
-      auto& tile = getTile(cid);
+      auto& tile = get_tile(cid);
       for(int dest: send_queue_address[i]) {
 
         mpi::request req;
@@ -854,7 +854,7 @@ class Node
   {
     mpi::request req;
 
-    auto& tile = getTile(cid);
+    auto& tile = get_tile(cid);
     //std::cout << comm.rank() << ": sending cid" << cid << "/" << tile.communication.cid << "\n";
     req = comm.isend(dest, 0, tile.communication);
 
@@ -887,13 +887,13 @@ class Node
 
     // next need to build tile
     rcom.local = false; // received tiles are automatically virtuals
-    createTile(rcom);
+    create_tile(rcom);
 
     return;
   }
 
   /// Receive incoming stuff
-  void communicateRecvTiles() {
+  void recv_tiles() {
 
     recv_info_messages.clear();
     recv_tile_messages.clear();
@@ -910,9 +910,9 @@ class Node
       // TODO: encapsulate into vector that can be received & 
       // processed more later on
 
-      int Nincoming_tiles;
+      int number_of_incoming_tiles;
       mpi::request req;
-      req = comm.irecv(source, commType::NTILES, Nincoming_tiles);
+      req = comm.irecv(source, commType::NTILES, number_of_incoming_tiles);
 
       // TODO: Remove this code block and do in background instead
       req.wait();
@@ -920,17 +920,17 @@ class Node
 
       /*
          fmt::print("{}: I got a message! Waiting {} tiles from {}\n",
-         rank, Nincoming_tiles, source);
+         rank, number_of_incoming_tiles, source);
          */
       //std::cout << comm.rank()
       //          << " I got a message! Waiting " 
-      //          << Nincoming_tiles << " tiles from " 
+      //          << number_of_incoming_tiles << " tiles from " 
       //          << source
       //          << "\n";
 
       // Now receive the tiles themselves
       size_t j = recv_tile_messages.size();
-      for (int ic=0; ic<Nincoming_tiles; ic++) {
+      for (int ic=0; ic<number_of_incoming_tiles; ic++) {
         mpi::request reqc;
         Communication rcom;
 
@@ -946,10 +946,10 @@ class Node
 
           // TODO: Check validity of the tile better
           rcom.local = false; // received tiles are automatically virtuals
-          createTile(rcom);
+          create_tile(rcom);
 
         } else { // Tile is already on my virtual list; update
-          updateTile(rcom);  
+          update_tile(rcom);  
         };
       }
       i++;

@@ -13,7 +13,7 @@ Mesh::Mesh(int Nx, int Ny) : Nx(Nx), Ny(Ny) {
 
 
 /// Copy vertical slice
-void Mesh::copyVert(Mesh& rhs, int lhsI, int rhsI) {
+void Mesh::copy_vert(Mesh& rhs, int lhsI, int rhsI) {
   if(this->Ny != rhs.Ny) throw std::range_error ("y dimensions do not match");
 
   for(int j=0; j<this->Ny; j++) { 
@@ -23,7 +23,7 @@ void Mesh::copyVert(Mesh& rhs, int lhsI, int rhsI) {
 
 
 /// Copy horizontal slice 
-void Mesh::copyHorz(Mesh& rhs, int lhsJ, int rhsJ) {
+void Mesh::copy_horz(Mesh& rhs, int lhsJ, int rhsJ) {
   if(this->Nx != rhs.Nx) throw std::range_error ("x dimensions do not match");
 
   for(int i=0; i<this->Nx; i++) { 
@@ -36,51 +36,51 @@ void Mesh::copyHorz(Mesh& rhs, int lhsJ, int rhsJ) {
 
 
 /// Add data to the container
-void CellularAutomataCell::addData(Mesh m) {
+void CA_tile::add_data(Mesh m) {
   data.push_back(m);
 }
 
 
 /// get current patch
-Mesh& CellularAutomataCell::getData() {
+Mesh& CA_tile::get_data() {
   return *data.get();
 };
 
-Mesh* CellularAutomataCell::getDataPtr() {
+Mesh* CA_tile::get_dataptr() {
   return data.get();
 };
 
 /// get new data
-Mesh& CellularAutomataCell::getNewData() {
-  return *data.getNew();
+Mesh& CA_tile::get_new_data() {
+  return *data.get_new();
 };
 
 
 /// Update boundary/halo regions from neighbors
-void CellularAutomataCell::updateBoundaries(Grid& grid) {
+void CA_tile::update_boundaries(Grid& grid) {
 
-  Mesh& mesh = getData(); // target as a reference to update into
+  Mesh& mesh = get_data(); // target as a reference to update into
   
 
   // left 
-  CellPtr cleft = std::dynamic_pointer_cast<CellType>(grid.getCellPtr( neighs(-1, 0) ));
-  Mesh& mleft = cleft->getData();
-  mesh.copyVert(mleft, -1, mleft.Nx-1); // copy from right side to left
+  Tileptr cleft = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(-1, 0) ));
+  Mesh& mleft = cleft->get_data();
+  mesh.copy_vert(mleft, -1, mleft.Nx-1); // copy from right side to left
 
   // right
-  CellPtr cright = std::dynamic_pointer_cast<CellType>(grid.getCellPtr( neighs(+1, 0) ));
-  Mesh& mright = cright->getData();
-  mesh.copyVert(mright, mesh.Nx, 0); // copy from left side to right
+  Tileptr cright = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(+1, 0) ));
+  Mesh& mright = cright->get_data();
+  mesh.copy_vert(mright, mesh.Nx, 0); // copy from left side to right
 
   // top 
-  CellPtr ctop = std::dynamic_pointer_cast<CellType>(grid.getCellPtr( neighs(0, +1) ));
-  Mesh& mtop = ctop->getData();
-  mesh.copyHorz(mtop, mesh.Ny, 0); // copy from bottom side to top
+  Tileptr ctop = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(0, +1) ));
+  Mesh& mtop = ctop->get_data();
+  mesh.copy_horz(mtop, mesh.Ny, 0); // copy from bottom side to top
 
   // bottom
-  CellPtr cbot = std::dynamic_pointer_cast<CellType>(grid.getCellPtr( neighs(0, -1) ));
-  Mesh& mbot = cbot->getData();
-  mesh.copyHorz(mbot, -1, mbot.Ny-1); // copy from top side to bottom
+  Tileptr cbot = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(0, -1) ));
+  Mesh& mbot = cbot->get_data();
+  mesh.copy_horz(mbot, -1, mbot.Ny-1); // copy from top side to bottom
 
 
 
@@ -89,34 +89,34 @@ void CellularAutomataCell::updateBoundaries(Grid& grid) {
   // --------------------------------------------------  
     
   // top right
-  CellPtr ctr = std::dynamic_pointer_cast<CellType>(grid.getCellPtr( this->neighs(+1, +1) ));
-  Mesh& mtr = ctr->getData();
+  Tileptr ctr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( this->neighs(+1, +1) ));
+  Mesh& mtr = ctr->get_data();
   mesh(mesh.Nx, mesh.Ny) = mtr(0,0);
   
 
   // top left
-  CellPtr ctl = std::dynamic_pointer_cast<CellType>(grid.getCellPtr( this->neighs(-1, +1) ));
-  Mesh& mtl = ctl->getData();
+  Tileptr ctl = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( this->neighs(-1, +1) ));
+  Mesh& mtl = ctl->get_data();
   mesh(-1, mesh.Ny) = mtl(mtl.Nx-1,0);
 
 
   // bottom right
-  CellPtr cbr = std::dynamic_pointer_cast<CellType>(grid.getCellPtr( this->neighs(+1, -1) ));
-  Mesh& mbr = cbr->getData();
+  Tileptr cbr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( this->neighs(+1, -1) ));
+  Mesh& mbr = cbr->get_data();
   mesh(mesh.Nx, -1) = mbr(0,mbr.Ny-1);
 
   // bottom left WORKS
-  CellPtr cbl = std::dynamic_pointer_cast<CellType>(grid.getCellPtr( this->neighs(-1, -1) ));
-  Mesh& mbl = cbl->getData();
+  Tileptr cbl = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( this->neighs(-1, -1) ));
+  Mesh& mbl = cbl->get_data();
   mesh(-1,-1) = mbl(mbl.Nx-1, mbl.Ny-1);
   
 
 };
 
 
-void Solver::solve(CellularAutomataCell& cell) {
-  Mesh& m    = cell.getData();
-  Mesh& mnew = cell.getNewData();
+void Solver::solve(CA_tile& cell) {
+  Mesh& m    = cell.get_data();
+  Mesh& mnew = cell.get_new_data();
 
 
   for(int i=0; i<(int)m.Nx; i++) { 
@@ -149,5 +149,5 @@ void Solver::solve(CellularAutomataCell& cell) {
 
 
 
-// std::string Grid::petShop() { return "No Corgis for sale."; };
+// std::string Grid::pet_shop() { return "No Corgis for sale."; };
 

@@ -68,7 +68,7 @@ class Tile
     // Order here is fixed for mpi_tile_t
     Communication communication;
 
-    /// coarse mpiGrid grid indices
+    /// coarse mpi_grid grid indices
     corgi::internals::tuple_of<D, size_t> index;
 
     /// Global grid dimensions (needed for wrapping boundaries)

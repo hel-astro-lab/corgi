@@ -96,7 +96,7 @@ namespace BC {
 
 /*! Contains different tile boundary types. Type of computation will depend on 
  * what this type is.
-namespace tileType {
+namespace tile_t {
     enum {
         LOCAL,    //! Default type indicating that tile is owned by the current process
         VIRTUAL,  //! virtual tile (owned by other process)

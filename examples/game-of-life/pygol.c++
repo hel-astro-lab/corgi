@@ -44,27 +44,27 @@ PYBIND11_MODULE(pygol, m) {
 
   // --------------------------------------------------
   // Loading cell bindings from corgi library
-  py::object corgiCell = (py::object) py::module::import("corgi").attr("Cell");
+  py::object corgi_cell = (py::object) py::module::import("corgi").attr("Cell");
 
   // cell binding
-  py::class_<gol::CellularAutomataCell, 
+  py::class_<gol::CA_tile, 
             corgi::Cell, 
-            std::shared_ptr<gol::CellularAutomataCell>
-            >(m, "CellularAutomataCell")
+            std::shared_ptr<gol::CA_tile>
+            >(m, "CA_tile")
     .def(py::init<size_t, size_t, int, size_t, size_t>())
-    .def("addData",          &gol::CellularAutomataCell::addData)
-    .def("getData",          &gol::CellularAutomataCell::getData)
-    .def("cycle",            &gol::CellularAutomataCell::cycle)
-    .def("updateBoundaries", &gol::CellularAutomataCell::updateBoundaries);
+    .def("add_data",          &gol::CA_tile::add_data)
+    .def("get_data",          &gol::CA_tile::get_data)
+    .def("cycle",            &gol::CA_tile::cycle)
+    .def("update_boundaries", &gol::CA_tile::update_boundaries);
 
 
 
   // --------------------------------------------------
   // Grid bindings
-  py::object corgiNode = (py::object) py::module::import("corgi").attr("Node");
-  py::class_<gol::Grid>(m, "Grid", corgiNode)
+  py::object corgi_node = (py::object) py::module::import("corgi").attr("Node");
+  py::class_<gol::Grid>(m, "Grid", corgi_node)
     .def(py::init<size_t, size_t>());
-    // .def("petShop",   &gol::Grid::petShop);
+    // .def("pet_shop",   &gol::Grid::pet_shop);
 
   py::class_<gol::Solver>(m, "Solver")
     .def(py::init<>())

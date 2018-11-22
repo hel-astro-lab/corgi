@@ -70,13 +70,13 @@ class MultipleInheritance(unittest.TestCase):
     def test_multiple_inheriting(self):
 
         self.assertEqual( self.vallhund.fika(), self.swede.fika() )
-        self.assertEqual( self.vallhund.prayForOdin(), self.viking.prayForOdin() )
+        self.assertEqual( self.vallhund.pray_for_odin(), self.viking.pray_for_odin() )
 
         self.assertEqual( self.vallhund.number, self.swede.number )
 
 
 
-def tileID(i,j,Nx,Ny):
+def tile_id(i,j,Nx,Ny):
     return j*Nx + i
 
 
@@ -93,18 +93,18 @@ class ParallelGrid(unittest.TestCase):
 
     def setUp(self):
         self.node = pycorgi.twoD.Node(self.Nx, self.Ny)
-        self.node.setGridLims(self.xmin, self.xmax, self.ymin, self.ymax)
+        self.node.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
 
 
     #def test_extension(self):
-    #    self.assertEqual( self.node.petShop(), "No Corgis for sale.")
+    #    self.assertEqual( self.node.pet_shop(), "No Corgis for sale.")
 
 
     def test_cid(self):
-        for j in range(self.node.getNy()):
-            for i in range(self.node.getNx()):
+        for j in range(self.node.get_Ny()):
+            for i in range(self.node.get_Nx()):
                 cid = self.node.id(i, j)
-                cidr = tileID( i, j, self.node.getNx(), self.node.getNy() )
+                cidr = tile_id( i, j, self.node.get_Nx(), self.node.get_Ny() )
                 self.assertEqual(cid, cidr)
 
     def mpiInitialization(self):
@@ -118,15 +118,15 @@ class ParallelGrid(unittest.TestCase):
         self.refGrid[5:10, 10:15] = 3
 
         if self.node.master:
-            for j in range(self.node.getNy()):
-                for i in range(self.node.getNx()):
+            for j in range(self.node.get_Ny()):
+                for i in range(self.node.get_Nx()):
                     val = self.refGrid[i,j]
-                    self.node.setMpiGrid(i, j, val )
-        self.node.bcastMpiGrid()
+                    self.node.set_mpi_grid(i, j, val )
+        self.node.bcast_mpi_grid()
 
-        for j in range(self.node.getNy()):
-            for i in range(self.node.getNx()):
-                val = self.node.mpiGrid(i,j)
+        for j in range(self.node.get_Ny()):
+            for i in range(self.node.get_Nx()):
+                val = self.node.mpi_grid(i,j)
                 self.assertEqual(val, self.refGrid[i,j])
         self.node.finalizeMpi()
 
@@ -135,25 +135,25 @@ class ParallelGrid(unittest.TestCase):
     def test_loading(self):
 
         k = 0
-        for j in range(self.node.getNy()):
-            for i in range(self.node.getNx()):
+        for j in range(self.node.get_Ny()):
+            for i in range(self.node.get_Nx()):
 
                 #initialize heterogeneous grid
                 if (i % 2 == 0):
                     c = pycorgitest.Welsh()
                 else:
                     c = pycorgitest.Pembroke()
-                self.node.addTile(c, (i,j) ) 
+                self.node.add_tile(c, (i,j) ) 
                 k += 1
 
         self.assertEqual( k, self.Nx*self.Ny )
 
-        cids = self.node.getTileIds() 
+        cids = self.node.get_tile_ids() 
         self.assertEqual( len(cids), self.Nx*self.Ny )
 
         #now try and get them back
         for cid in cids:
-            c = self.node.getTile(cid)
+            c = self.node.get_tile(cid)
 
             self.assertEqual(c.cid,   cid)
             self.assertEqual(c.communication.owner, self.node.rank())
