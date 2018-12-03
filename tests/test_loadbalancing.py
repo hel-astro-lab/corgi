@@ -13,7 +13,6 @@ try:
     palette = pal.wesanderson.Moonrise1_5.mpl_colormap
     from visualize import plotNode
     from visualize import saveVisz
-
 except:
     pass
 
@@ -114,8 +113,11 @@ class Neighboords(unittest.TestCase):
             node.send_tiles()
             node.recv_tiles()
 
-        plotNode(axs[0], node, conf)
-        saveVisz(1, node, conf)
+        try:
+            plotNode(axs[0], node, conf)
+            saveVisz(1, node, conf)
+        except:
+            pass
 
         cur = readGrid(node, conf)
         #print(cur)
