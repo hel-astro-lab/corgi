@@ -117,6 +117,27 @@ def plotNode(ax, n, conf):
     #XXX add back
     #ax.set_title(str(len(n.get_virtuals() ))+"/"+str(len(n.get_tile() )))
 
+    #mark boundaries with hatch
+    dx = n.get_xmax() - n.get_xmin()
+    dy = n.get_ymax() - n.get_ymin()
+    for cid in n.get_boundary_tiles():
+        c = n.get_tile( cid )
+        (i, j) = c.index
+
+        ix0 = n.get_xmin() + dx*(i+0.0)/n.get_Nx()
+        jy0 = n.get_ymin() + dy*(j+0.0)/n.get_Ny()
+
+        ix1 = n.get_xmin() + dx*(i+1.0)/n.get_Nx()
+        jy1 = n.get_ymin() + dy*(j+1.0)/n.get_Ny()
+
+        #ax.fill_between([ix0,ix1], [jy0, jy1], hatch='///', alpha=0.0)
+
+        ax.plot([ix0, ix0],[jy0, jy1], color='k', linestyle='dotted')
+        ax.plot([ix1, ix1],[jy0, jy1], color='k', linestyle='dotted')
+        ax.plot([ix0, ix1],[jy0, jy0], color='k', linestyle='dotted')
+        ax.plot([ix0, ix1],[jy1, jy1], color='k', linestyle='dotted')
+
+
 
 def plotMesh(ax, n, conf):
 

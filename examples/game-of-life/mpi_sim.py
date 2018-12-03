@@ -101,7 +101,7 @@ if __name__ == "__main__":
     saveVisz(0, node, conf)
 
 
-    for lap in range(1, 1000):
+    for lap in range(1, 100):
         print("---lap: {}".format(lap))
 
         if (lap % 10 == 0):

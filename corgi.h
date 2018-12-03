@@ -627,6 +627,30 @@ class Node
     return tile_list;
   }
 
+  /// Return all local boundary tiles
+  std::vector<uint64_t> get_boundary_tiles(
+      const bool sorted=false ) {
+
+    std::vector<uint64_t> tile_list = get_tile_ids(sorted);
+
+    size_t i = 0, len = tile_list.size();
+    while (i < len) {
+
+      // remove if there are no virtual nbors and tile is not mine -> opposite means its boundary
+      if (tiles.at( tile_list[i] )-> communication.number_of_virtual_neighbors == 0 || 
+          tiles.at( tile_list[i] )-> communication.owner != comm.rank()
+          ) {
+        std::swap(tile_list[i], tile_list.back());
+        tile_list.pop_back();
+        len -= 1;
+      } else {
+        i++;
+      }
+    }
+
+    return tile_list;
+  }
+
 
   // /// Check if we have a tile with the given index
   bool is_local(uint64_t cid) {
@@ -720,6 +744,7 @@ class Node
         c.communication.top_virtual_owner = top_owner;
         c.communication.communications    = virtual_owners.size();
         c.communication.number_of_virtual_neighbors = N;
+        c.communication.virtual_owners = virtual_owners;
 
         if (std::find( send_queue.begin(), send_queue.end(),
               cid) == send_queue.end()

@@ -47,11 +47,15 @@ struct Communication {
     
   /// tile type listing
   bool local = false;
+
+  /// my virtual owners; not communicated along the metainfo
+  std::vector<int> virtual_owners;
+
 };
 
 
 
-/*! \brief Tile oject 
+/*! \brief Tile object
  *
  * This is the smallest storage unit of the framework. Internally this should host 
  * a mesh/grid/particles/etc.

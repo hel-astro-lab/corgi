@@ -59,6 +59,8 @@ auto declare_node(
                  py::arg("sorted") = true)
         .def("get_virtuals",          &corgi::Node<D>::get_virtuals,
                  py::arg("sorted") = true)
+        .def("get_boundary_tiles",          &corgi::Node<D>::get_boundary_tiles,
+                 py::arg("sorted") = true)
 
         .def("is_local",              &corgi::Node<D>::is_local)
         .def("analyze_boundaries", &corgi::Node<D>::analyze_boundaries)
@@ -95,7 +97,8 @@ PYBIND11_MODULE(pycorgi, m_base) {
         .def_readwrite("number_of_virtual_neighbors", &corgi::Communication::number_of_virtual_neighbors)
         .def_readwrite("mins",                        &corgi::Communication::mins                       )
         .def_readwrite("maxs",                        &corgi::Communication::maxs                       )
-        .def_readwrite("local",                       &corgi::Communication::local                      );
+        .def_readwrite("local",                       &corgi::Communication::local                      )
+        .def_readwrite("virtual_owners",              &corgi::Communication::virtual_owners                      );
       
 
     //--------------------------------------------------
