@@ -5,69 +5,37 @@
 namespace datarotators {
 
 /// \brief Container for storing multiple time steps of the simulation
-template <class T>
-class DataContainer {
+template <class T, size_t L>
+class Rotator {
   std::vector<T> container;
 
   public:
 
   size_t current_step = 0;
 
-  void push_back(T vm);
+  /// method to add data into the container
+  void push_back(T vm) {container.push_back(vm); };
 
-  T* get();
+  /// general index
+  inline size_t index(size_t i) const {return (i + current_step) % L ; };
 
-  T* get_new();
+  /// get reference to the current time step
+  inline T& get(size_t i=0) { return container[ index(i) ]; };
 
-  T* get_all(size_t cs);
+  /// get reference to the current time step
+  inline const T& get(size_t i=0) const { return container[ index(i) ]; };
 
   // FIXME raw cycling for time step index
-  void cycle();
+  void cycle() {
+    current_step++;
+
+    // check bounds and cycle back
+    if (current_step >= L) current_step = 0;
+
+    //std::cout << "ROTATOR STEP IS " << current_step << '\n';
+  }
 
 };
 
 
-/// method to add data into the container
-template <class T>
-void datarotators::DataContainer<T>::push_back(T vm) {
-  container.push_back(vm);
-}
-
-
-/// Get current element
-template <class T>
-T* datarotators::DataContainer<T>::get() {
-  // fmt::print("getting from DataContainer with {}\n", current_step);
-  return (T*) &(container[ current_step ]);
-}
-
-/// get a fresh container that we can update into
-template <class T>
-T* datarotators::DataContainer<T>::get_new() {
-  if (current_step == 0) return (T*) &(container[1]);
-  if (current_step == 1) return (T*) &(container[0]);
-}
-
-
-/// Get any arbitrary snapshot from the container
-template <class T>
-T* datarotators::DataContainer<T>::get_all(size_t cs) {
-  // fmt::print("pulling from DataContainer with {}\n", cs);
-  return (T*) &(container[cs]);
-}
-
-
-/// raw cycling for time step index
-// NOTE: could be done better
-template <class T>
-void datarotators::DataContainer<T>::cycle() {
-  // fmt::print(" calling cycle (originally {})\n", current_step);
-  current_step++;
-
-  // check bounds and cycle back
-  if (current_step > 1) current_step = 0;
-}
-
-
-
-} // end of namespace datarotators
+} // end of namespace 

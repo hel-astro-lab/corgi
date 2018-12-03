@@ -14,6 +14,7 @@ except:
 import pycorgi
 import pyca
 
+np.random.seed( 0 )
 
 # visualize matrix
 def imshow(ax, 
@@ -218,12 +219,12 @@ def saveVisz(lap, n, conf):
 
 #make random starting order
 def loadMpiRandomly(n):
-    np.random.seed(4)
     if n.master:
         for i in range(n.get_Nx()):
             for j in range(n.get_Ny()):
-                val = np.random.randint(n.Nrank)
+                val = np.random.randint( n.size() )
                 n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
 
 #load nodes to be in stripe formation (splitted in X=horizontal direction)
 def loadMpiXStrides(n):

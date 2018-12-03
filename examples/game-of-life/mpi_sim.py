@@ -24,9 +24,11 @@ from simulation import loadMpiXStrides
 from simulation import load_tiles
 from simulation import randomInitialize
 
+np.random.seed(0)
+
 
 # make all tiles same type 
-def downcast_tiles(n, conf):
+def initialize_virtuals(n, conf):
 
     for cid in n.get_virtuals():
         c_orig = n.get_tile(cid)
@@ -36,6 +38,7 @@ def downcast_tiles(n, conf):
         # TODO: load_metainfo *HAS* to be after add_tile
         c = pyca.Tile()
         n.add_tile(c, (i,j)) 
+        c_orig.communication.local = False;
         c.load_metainfo(c_orig.communication)
         print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
 
@@ -78,7 +81,8 @@ if __name__ == "__main__":
     node = pycorgi.twoD.Node( conf["Nx"], conf["Ny"] ) 
     node.set_grid_lims(0.0, 1.0, 0.0, 1.0)
     
-    loadMpiXStrides(node)
+    loadMpiRandomly(node)
+    #loadMpiXStrides(node)
 
     load_tiles(node)
     randomInitialize(node, conf)
@@ -94,22 +98,27 @@ if __name__ == "__main__":
     node.analyze_boundaries()
     node.send_tiles()
     node.recv_tiles()
-    downcast_tiles(node, conf)
+    initialize_virtuals(node, conf)
 
     plotNode(axs[0], node, conf)
     saveVisz(0, node, conf)
 
-    node.send_data(0)
-    node.recv_data(0)
+    #node.send_data(0)
+    #node.recv_data(0)
 
-    for lap in range(1, 100):
+
+    for lap in range(1, 300):
         print("---lap: {}".format(lap))
 
         if (lap % 10 == 0):
             plotNode(axs[0], node, conf)
             plotMesh(axs[1], node, conf)
             saveVisz(lap, node, conf)
-    
+
+        #send/recv boundaries
+        node.send_data(0)
+        node.recv_data(0)
+
         #update halo regions
         for cid in node.get_local_tiles():
             c = node.get_tile(cid)

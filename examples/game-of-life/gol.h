@@ -37,6 +37,16 @@ class Mesh {
     return (i+halo) + (Nx +2*halo)*(j+halo);
   }
 
+  int size()
+  {
+    return ((Nx + 2*halo) * (Ny + 2*halo));    
+  }
+
+  void clear()
+  {
+    std::fill(mesh.begin(), mesh.end(), 0);
+  }
+
   /// 2D access operator for values
   int operator () (const int i, const int j) const {
     return mesh[ indx(i,j) ];
@@ -90,7 +100,7 @@ class Tile : public corgi::Tile<2> {
     ~Tile() = default;
 
     // extending the base class
-    datarotators::DataContainer<Mesh> data;
+    datarotators::Rotator<Mesh,2> data;
 
     void add_data(Mesh m);
 

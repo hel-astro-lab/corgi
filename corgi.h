@@ -876,8 +876,6 @@ class Node
   }
 
   /// Send individual tile to dest
-  // NOTE: we bounce sending back to tile members,
-  //       this way they can be extended for different types of send.
   void send_tile(uint64_t cid, int dest)
   {
     mpi::request req;
@@ -985,6 +983,9 @@ class Node
   }
 
 
+  /// Call mpi send routines from tile for the boundary regions
+  // NOTE: we bounce sending back to tile members,
+  //       this way they can be extended for different types of send.
   void send_data(int tag)
   {
     sent_data_messages.clear();
@@ -1001,6 +1002,9 @@ class Node
   }
 
 
+  /// Call mpi recv routines from tile for the virtual regions
+  // NOTE: we bounce receiving back to tile members,
+  //       this way they can be extended for different types of recv.
   void recv_data(int tag)
   {
     recv_data_messages.clear();

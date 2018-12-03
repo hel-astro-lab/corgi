@@ -248,6 +248,7 @@ class Tile
     //  return comm.irecv(this->communicator, orig);
     //}
 
+    /// dummy MPI data send function
     virtual mpi::request send_data(
         mpi::communicator& comm,
         int dest, 
@@ -260,6 +261,8 @@ class Tile
       return req;
     }
 
+
+    /// dummy MPI data recv function
     virtual mpi::request recv_data(
         mpi::communicator& comm,
         int orig, 

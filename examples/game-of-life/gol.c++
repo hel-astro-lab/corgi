@@ -33,6 +33,7 @@ void Mesh::copy_horz(Mesh& rhs, int lhsJ, int rhsJ) {
 }
 
 
+
 // --------------------------------------------------
 
 
@@ -44,16 +45,12 @@ void Tile::add_data(Mesh m) {
 
 /// get current patch
 Mesh& Tile::get_data() {
-  return *data.get();
-};
-
-Mesh* Tile::get_dataptr() {
   return data.get();
 };
 
 /// get new data
 Mesh& Tile::get_new_data() {
-  return *data.get_new();
+  return data.get(1);
 };
 
 
@@ -129,18 +126,22 @@ void Tile::update_boundaries(corgi::Node<2>& grid) {
 
 mpi::request Tile::send_data( mpi::communicator& comm, int dest, int tag)
 {
-  mpi::request req;
+  //std::cout << "SEND to " << dest << "\n";
+  Mesh& mesh = get_data(); 
 
-  std::cout << "SEND to " << dest << "\n";
+  mpi::request req;
+  req = comm.isend(dest, cid, mesh.mesh.data(), mesh.size() );
 
   return req;
 }
 
 mpi::request Tile::recv_data( mpi::communicator& comm, int orig, int tag)
 {
-  mpi::request req;
+  //std::cout << "RECV from " << orig << "\n";
+  Mesh& mesh = get_data(); 
 
-  std::cout << "RECV from " << orig << "\n";
+  mpi::request req;
+  req = comm.irecv(orig, cid, mesh.mesh.data(), mesh.size() );
 
   return req;
 }
@@ -157,6 +158,7 @@ mpi::request Tile::recv_data( mpi::communicator& comm, int orig, int tag)
 void Solver::solve(Tile& tile) {
   Mesh& m    = tile.get_data();
   Mesh& mnew = tile.get_new_data();
+  mnew.clear();
 
   for(int i=0; i<(int)m.Nx; i++) { 
     for(int j=0; j<(int)m.Ny; j++) { 
@@ -171,12 +173,16 @@ void Solver::solve(Tile& tile) {
         }
       }
 
+
       // apply rules
       if(alive == 3) {
         mnew(i,j) = 1;
+      } else {
+        mnew(i,j) = m(i,j);
+      }
+
       // } else if(alive != 2) {
       //   mnew(i,j) = 0;
-      }
     }
   }
 }
