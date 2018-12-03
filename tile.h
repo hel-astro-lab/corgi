@@ -11,9 +11,12 @@
 #include "internals.h"
 #include "cellular_automata.h"
 
+#include <mpi4cpp/mpi.h>
 
 
 namespace corgi {
+
+namespace mpi = mpi4cpp::mpi;
 
 
 // Data storage struct for communication members
@@ -244,6 +247,30 @@ class Tile
     //{
     //  return comm.irecv(this->communicator, orig);
     //}
+
+    virtual mpi::request send_data(
+        mpi::communicator& comm,
+        int dest, 
+        int tag)
+    {
+      mpi::request req;
+
+      std::cout << "send to " << dest << "\n";
+
+      return req;
+    }
+
+    virtual mpi::request recv_data(
+        mpi::communicator& comm,
+        int orig, 
+        int tag)
+    {
+      mpi::request req;
+
+      std::cout << "recv from " << orig << "\n";
+
+      return req;
+    }
 
 
 }; // end of Tile class

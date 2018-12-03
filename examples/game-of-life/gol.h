@@ -6,9 +6,13 @@
 #include "../../corgi.h"
 #include "../../toolbox/dataContainer.h"
 
+#include <mpi4cpp/mpi.h>
 
 
 namespace gol {
+
+namespace mpi = mpi4cpp::mpi;
+
 
 
 /// Snapshot patch of a CA simulation
@@ -100,6 +104,9 @@ class Tile : public corgi::Tile<2> {
 
     /// step forward
     void cycle() { data.cycle(); }
+
+    virtual mpi::request send_data( mpi::communicator&, int orig, int tag) override;
+    virtual mpi::request recv_data( mpi::communicator&, int dest, int tag) override;
 
 };
 

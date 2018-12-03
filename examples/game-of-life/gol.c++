@@ -5,6 +5,7 @@
 
 
 using namespace gol;
+using namespace mpi4cpp;
 
 /// initialize internal mesh
 Mesh::Mesh(int Nx, int Ny) : Nx(Nx), Ny(Ny) {
@@ -124,6 +125,33 @@ void Tile::update_boundaries(corgi::Node<2>& grid) {
   
 
 };
+
+
+mpi::request Tile::send_data( mpi::communicator& comm, int dest, int tag)
+{
+  mpi::request req;
+
+  std::cout << "SEND to " << dest << "\n";
+
+  return req;
+}
+
+mpi::request Tile::recv_data( mpi::communicator& comm, int orig, int tag)
+{
+  mpi::request req;
+
+  std::cout << "RECV from " << orig << "\n";
+
+  return req;
+}
+
+
+
+
+
+
+
+
 
 
 void Solver::solve(Tile& tile) {

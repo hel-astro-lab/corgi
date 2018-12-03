@@ -779,9 +779,11 @@ class Node
 
   std::vector<mpi::request> sent_info_messages;
   std::vector<mpi::request> sent_tile_messages;
+  std::vector<mpi::request> sent_data_messages;
 
   std::vector<mpi::request> recv_info_messages;
   std::vector<mpi::request> recv_tile_messages;
+  std::vector<mpi::request> recv_data_messages;
 
 
   // /// Broadcast master ranks mpi_grid to everybody
@@ -981,6 +983,40 @@ class Node
       i++;
     }
   }
+
+
+  void send_data(int tag)
+  {
+    sent_data_messages.clear();
+
+    for(auto cid : get_boundary_tiles() ) {
+      auto& tile = get_tile(cid);
+      for(auto dest: tile.communication.virtual_owners) {
+        mpi::request req;
+        req = tile.send_data(comm, dest, tag);
+        
+        sent_data_messages.push_back( req );
+      }
+    }
+  }
+
+
+  void recv_data(int tag)
+  {
+    recv_data_messages.clear();
+
+    for(auto cid : get_virtuals() ) {
+      mpi::request req;
+
+      auto& tile = get_tile(cid);
+      req = tile.recv_data(comm, tile.communication.owner, tag);
+
+      recv_data_messages.push_back( req );
+    }
+
+    mpi::wait_all(recv_data_messages.begin(), recv_data_messages.end());
+  }
+
 
 
 }; // end of Node class

@@ -95,11 +95,12 @@ if __name__ == "__main__":
     node.send_tiles()
     node.recv_tiles()
     downcast_tiles(node, conf)
-    
 
     plotNode(axs[0], node, conf)
     saveVisz(0, node, conf)
 
+    node.send_data(0)
+    node.recv_data(0)
 
     for lap in range(1, 100):
         print("---lap: {}".format(lap))

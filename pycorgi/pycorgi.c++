@@ -72,7 +72,9 @@ auto declare_node(
         .def_readwrite("send_queue_address", &corgi::Node<D>::send_queue_address)
         .def("bcast_mpi_grid",            &corgi::Node<D>::bcast_mpi_grid)
         .def("send_tiles",    &corgi::Node<D>::send_tiles)
-        .def("recv_tiles",    &corgi::Node<D>::recv_tiles);
+        .def("recv_tiles",    &corgi::Node<D>::recv_tiles)
+        .def("send_data",               &corgi::Node<D>::send_data)
+        .def("recv_data",               &corgi::Node<D>::recv_data);
 
 
   return corgi_node;
