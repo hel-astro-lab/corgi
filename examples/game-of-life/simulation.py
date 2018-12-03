@@ -1,12 +1,18 @@
+from mpi4py import MPI
+
 import numpy as np
+import os
 
-import matplotlib.pyplot as plt
-from matplotlib import cm
-import palettable as pal
-palette = pal.wesanderson.Moonrise1_5.mpl_colormap
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    import palettable as pal
+    palette = pal.wesanderson.Moonrise1_5.mpl_colormap
+except:
+    pass
 
-
-import pygol
+import pycorgi
+import pyca
 
 
 # visualize matrix
@@ -57,23 +63,23 @@ def plotNode(ax, n, conf):
     #            tmp_grid[i,j] = 0.5
 
 
-    for cid in n.getCellIds():
-        c = n.get_tileptr( cid )
-        (i, j) = c.index()
+    for cid in n.get_tile_ids():
+        c = n.get_tile( cid )
+        (i, j) = c.index
         #check dublicates
         if tmp_grid[i,j] != -1.0:
             print("{}: ERROR in real cells at ({},{})".format(n.rank, i,j))
             sys.exit()
-        tmp_grid[i,j] = c.owner
+        tmp_grid[i,j] = c.communication.owner
 
     #XXX add back
     #for cid in n.get_virtuals():
-    #    c = n.getCell( cid )
-    #    (i,j) = c.index()
+    #    c = n.get_tile( cid )
+    #    (i,j) = c.index
     #    if tmp_grid[i,j] != -1.0:
     #        print("{}: ERROR in virtual cells at ({},{})".format(n.rank, i,j))
     #        sys.exit()
-    #    tmp_grid[i,j] = c.owner
+    #    tmp_grid[i,j] = c.communication.owner
 
     imshow(ax, tmp_grid, 
             n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
@@ -84,9 +90,9 @@ def plotNode(ax, n, conf):
 
 
     # add text label about number of neighbors
-    for cid in n.getCellIds():
-        c = n.get_tileptr( cid )
-        (i, j) = c.index()
+    for cid in n.get_tile_ids():
+        c = n.get_tile( cid )
+        (i, j) = c.index
         dx = n.get_xmax() - n.get_xmin()
         dy = n.get_ymax() - n.get_ymin()
 
@@ -94,22 +100,22 @@ def plotNode(ax, n, conf):
         jy = n.get_ymin() + dy*(j+0.5)/n.get_Ny()
 
         #Nv = n.number_of_virtual_neighbors(c)
-        Nv = c.number_of_virtual_neighbors
+        Nv = c.communication.number_of_virtual_neighbors
         label = str(Nv)
         #label = "{} ({},{})/{}".format(cid,i,j,Nv)
         #label = "({},{})".format(i,j)
         ax.text(ix, jy, label, ha='center',va='center', size=8)
 
     #for cid in n.get_virtuals():
-    #    c = n.getCell( cid )
-    #    (i,j) = c.index()
+    #    c = n.get_tile( cid )
+    #    (i,j) = c.index
     #    ix = n.get_xmin() + n.get_xmax()*(i+0.5)/n.get_Nx()
     #    jy = n.get_ymin() + n.get_ymin()*(j+0.5)/n.get_Ny()
     #    label = "Vir"
     #    ax.text(jy, ix, label, ha='center',va='center')
 
     #XXX add back
-    #ax.set_title(str(len(n.get_virtuals() ))+"/"+str(len(n.getCellIds() )))
+    #ax.set_title(str(len(n.get_virtuals() ))+"/"+str(len(n.get_tile() )))
 
 
 def plotMesh(ax, n, conf):
@@ -122,9 +128,9 @@ def plotMesh(ax, n, conf):
 
     data = -1.0 * np.ones( (NxFull, NyFull) )
 
-    for cid in n.getCellIds():
-        c = n.get_tileptr( cid )
-        (i, j) = c.index()
+    for cid in n.get_tile_ids():
+        c = n.get_tile( cid )
+        (i, j) = c.index
 
         mesh = c.get_data()
 
@@ -157,9 +163,9 @@ def plotMesh2(ax, n, conf):
 
     data = -1.0 * np.ones( (NxFull, NyFull) )
 
-    cid = n.cellId(1,1)
-    c = n.get_tileptr( cid )
-    (i, j) = c.index()
+    cid = n.id(1,1)
+    c = n.get_tile( cid )
+    (i, j) = c.index
 
     mesh = c.get_data()
 
@@ -183,7 +189,7 @@ def plotMesh2(ax, n, conf):
 def saveVisz(lap, n, conf):
 
     slap = str(lap).rjust(4, '0')
-    fname = conf["dir"] + '/node_{}_{}.png'.format(n.rank, slap)
+    fname = conf["dir"] + '/node_{}_{}.png'.format(n.rank(), slap)
     plt.savefig(fname)
 
 
@@ -214,15 +220,15 @@ def loadMpiXStrides(n):
     n.bcast_mpi_grid()
 
 
-#load cells into each node
-def loadCells(n):
+#load tiles into each node
+def load_tiles(n):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             #print("{} ({},{}) {} ?= {}".format(n.rank, i,j, n.get_mpi_grid(i,j), ref[j,i]))
 
-            if n.get_mpi_grid(i,j) == n.rank:
-                c = pygol.CA_tile(i, j, n.rank, n.get_Nx(), n.get_Ny())
-                n.addCell(c) 
+            if n.get_mpi_grid(i,j) == n.rank():
+                c = pyca.Tile()
+                n.add_tile(c, (i,j)) 
 
 
 
@@ -233,10 +239,10 @@ def randomInitialize(n, conf):
         for j in range(n.get_Ny()):
             #if n.get_mpi_grid(i,j) == n.rank:
             if True:
-                cid = n.cellId(i,j)
-                c = n.get_tileptr(cid) #get cell ptr
+                cid = n.id(i,j)
+                c = n.get_tile(cid) #get cell ptr
 
-                mesh = pygol.Mesh( conf["NxMesh"], conf["NyMesh"] )
+                mesh = pyca.Mesh( conf["NxMesh"], conf["NyMesh"] )
 
                 # fill mesh
                 if (i == 2) and (j == 2):
@@ -247,7 +253,6 @@ def randomInitialize(n, conf):
                                 mesh[q,k] = 1
                             else:
                                 mesh[q,k] = 0
-
 
 
                         #mesh[q,k] = q + conf["NxMesh"]*k
@@ -291,10 +296,10 @@ if __name__ == "__main__":
             "Nrank"  : 1
             }
     
-    node = pygol.Grid( conf["Nx"], conf["Ny"] ) 
+    node = pycorgi.twoD.Node( conf["Nx"], conf["Ny"] ) 
     node.set_grid_lims(0.0, 1.0, 0.0, 1.0)
     
-    loadCells(node)
+    load_tiles(node)
     randomInitialize(node, conf)
     
     
@@ -304,7 +309,7 @@ if __name__ == "__main__":
         if not os.path.exists( conf["dir"]):
             os.makedirs(conf["dir"])
     
-    sol = pygol.Solver()
+    sol = pyca.Solver()
     
     
     plotNode(axs[0], node, conf)
@@ -314,24 +319,24 @@ if __name__ == "__main__":
 
 
     for lap in range(1, 1000):
-        print "---lap: {}".format(lap)
+        print("---lap: {}".format(lap))
     
         #update halo regions
         for i in range(node.get_Nx()):
             for j in range(node.get_Ny()):
-                c = node.get_tileptr(i,j) #get cell ptr
+                c = node.get_tile(i,j) #get cell ptr
                 c.update_boundaries(node)
 
         #progress one time step
         for i in range(node.get_Nx()):
             for j in range(node.get_Ny()):
-                c = node.get_tileptr(i,j) #get cell ptr
+                c = node.get_tile(i,j) #get cell ptr
                 sol.solve(c)
 
         #cycle everybody in time
         for i in range(node.get_Nx()):
             for j in range(node.get_Ny()):
-                c = node.get_tileptr(i,j) #get cell ptr
+                c = node.get_tile(i,j) #get cell ptr
                 c.cycle()
 
 

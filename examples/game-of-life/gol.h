@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "../../cell.h"
+#include "../../tile.h"
 #include "../../corgi.h"
 #include "../../toolbox/dataContainer.h"
 
@@ -52,41 +52,38 @@ class Mesh {
 
 
 /// Simulation grid
-class Grid : public corgi::Node {
-
-  public:
-    Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
-
-    ~Grid() { };
-
-    // std::string pet_shop();
-
-    /// Cycle data containers of each cell forward
-    // void cycle() {
-    //   for (auto& it: cells) {
-    //     auto cellptr = std::dynamic_pointer_cast<CA_tile>( it.second );
-    //     cellptr->data.cycle();
-    //   }
-    // }
-
-};
+//class Grid : public corgi::Node {
+//
+//  public:
+//    Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
+//
+//    ~Grid() { };
+//
+//    // std::string pet_shop();
+//
+//    /// Cycle data containers of each cell forward
+//    // void cycle() {
+//    //   for (auto& it: cells) {
+//    //     auto cellptr = std::dynamic_pointer_cast<CA_tile>( it.second );
+//    //     cellptr->data.cycle();
+//    //   }
+//    // }
+//
+//};
 
 
 
 /// Small local cellular automata patch
-class CA_tile : public corgi::Cell {
+class Tile : public corgi::Tile<2> {
 
   public:
 
-    typedef CA_tile Tile_t;
-    typedef std::shared_ptr<CA_tile> Tileptr;
+    typedef Tile Tile_t;
+    typedef std::shared_ptr<Tile> Tileptr;
 
-    CA_tile(size_t i, size_t j, 
-             int o, 
-             size_t nx, size_t ny
-             ) : corgi::Cell(i, j, o, nx, ny) { }
+    Tile() {};
 
-    ~CA_tile() { };
+    ~Tile() = default;
 
     // extending the base class
     datarotators::DataContainer<Mesh> data;
@@ -99,8 +96,7 @@ class CA_tile : public corgi::Cell {
 
     Mesh& get_new_data();
 
-    void update_boundaries(Grid& grid);
-
+    void update_boundaries(corgi::Node<2>& grid);
 
     /// step forward
     void cycle() { data.cycle(); }
@@ -111,11 +107,8 @@ class CA_tile : public corgi::Cell {
 
 class Solver {
 
-
   public:
-    void solve(CA_tile& cell);
-
-
+    void solve(Tile&);
 
 };
 

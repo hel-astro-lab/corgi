@@ -6,7 +6,7 @@ namespace py = pybind11;
 #include "../../toolbox/dataContainer.h"
 
 
-PYBIND11_MODULE(pygol, m) {
+PYBIND11_MODULE(pyca, m) {
 
 
   /// Bind 2D Mesh 
@@ -44,27 +44,27 @@ PYBIND11_MODULE(pygol, m) {
 
   // --------------------------------------------------
   // Loading cell bindings from corgi library
-  py::object corgi_cell = (py::object) py::module::import("corgi").attr("Cell");
+  //py::object corgi_tile = (py::object) py::module::import("pycorgi").attr("Tile");
 
   // cell binding
-  py::class_<gol::CA_tile, 
-            corgi::Cell, 
-            std::shared_ptr<gol::CA_tile>
-            >(m, "CA_tile")
-    .def(py::init<size_t, size_t, int, size_t, size_t>())
-    .def("add_data",          &gol::CA_tile::add_data)
-    .def("get_data",          &gol::CA_tile::get_data)
-    .def("cycle",            &gol::CA_tile::cycle)
-    .def("update_boundaries", &gol::CA_tile::update_boundaries);
+  py::class_<gol::Tile, 
+            corgi::Tile<2>, 
+            std::shared_ptr<gol::Tile>
+            >(m, "Tile")
+    .def(py::init<>())
+    .def("add_data",          &gol::Tile::add_data)
+    .def("get_data",          &gol::Tile::get_data)
+    .def("cycle",             &gol::Tile::cycle)
+    .def("update_boundaries", &gol::Tile::update_boundaries);
 
 
 
   // --------------------------------------------------
   // Grid bindings
-  py::object corgi_node = (py::object) py::module::import("corgi").attr("Node");
-  py::class_<gol::Grid>(m, "Grid", corgi_node)
-    .def(py::init<size_t, size_t>());
-    // .def("pet_shop",   &gol::Grid::pet_shop);
+  //py::object corgi_node = (py::object) py::module::import("corgi").attr("Node");
+  //py::class_<gol::Grid>(m, "Grid", corgi_node)
+  //  .def(py::init<size_t, size_t>());
+  //  // .def("pet_shop",   &gol::Grid::pet_shop);
 
   py::class_<gol::Solver>(m, "Solver")
     .def(py::init<>())

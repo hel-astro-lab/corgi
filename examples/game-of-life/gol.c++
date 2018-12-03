@@ -36,28 +36,28 @@ void Mesh::copy_horz(Mesh& rhs, int lhsJ, int rhsJ) {
 
 
 /// Add data to the container
-void CA_tile::add_data(Mesh m) {
+void Tile::add_data(Mesh m) {
   data.push_back(m);
 }
 
 
 /// get current patch
-Mesh& CA_tile::get_data() {
+Mesh& Tile::get_data() {
   return *data.get();
 };
 
-Mesh* CA_tile::get_dataptr() {
+Mesh* Tile::get_dataptr() {
   return data.get();
 };
 
 /// get new data
-Mesh& CA_tile::get_new_data() {
+Mesh& Tile::get_new_data() {
   return *data.get_new();
 };
 
 
 /// Update boundary/halo regions from neighbors
-void CA_tile::update_boundaries(Grid& grid) {
+void Tile::update_boundaries(corgi::Node<2>& grid) {
 
   Mesh& mesh = get_data(); // target as a reference to update into
   
@@ -114,9 +114,9 @@ void CA_tile::update_boundaries(Grid& grid) {
 };
 
 
-void Solver::solve(CA_tile& cell) {
-  Mesh& m    = cell.get_data();
-  Mesh& mnew = cell.get_new_data();
+void Solver::solve(Tile& tile) {
+  Mesh& m    = tile.get_data();
+  Mesh& mnew = tile.get_new_data();
 
 
   for(int i=0; i<(int)m.Nx; i++) { 
@@ -148,6 +148,4 @@ void Solver::solve(CA_tile& cell) {
 }
 
 
-
-// std::string Grid::pet_shop() { return "No Corgis for sale."; };
 

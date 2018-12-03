@@ -47,8 +47,9 @@ set (WARNING_FLAGS
 
 add_subdirectory(pycorgi)
 
-#add_subdirectory(examples/game-of-life)
 add_subdirectory(tests)
+
+add_subdirectory(examples/game-of-life)
 
 
 #-------------------------------------------------- 
