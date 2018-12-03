@@ -24,14 +24,15 @@ auto declare_tile(
     corgi_tile
         .def(py::init<>())
 
-        .def_readwrite("cid",                         &corgi::Tile<D>::cid)
-        .def_readwrite("communication",               &corgi::Tile<D>::communication)
-        .def_readwrite("mins",                        &corgi::Tile<D>::mins)
-        .def_readwrite("maxs",                        &corgi::Tile<D>::maxs)
-        .def_readwrite("index",                       &corgi::Tile<D>::index)
-        .def("set_tile_mins",                         &corgi::Tile<D>::set_tile_mins)
-        .def("set_tile_maxs",                         &corgi::Tile<D>::set_tile_maxs)
-        .def("nhood",                                 &corgi::Tile<D>::nhood);
+        .def_readwrite("cid",           &corgi::Tile<D>::cid)
+        .def_readwrite("communication", &corgi::Tile<D>::communication)
+        .def_readwrite("mins",          &corgi::Tile<D>::mins)
+        .def_readwrite("maxs",          &corgi::Tile<D>::maxs)
+        .def_readwrite("index",         &corgi::Tile<D>::index)
+        .def("set_tile_mins",           &corgi::Tile<D>::set_tile_mins)
+        .def("set_tile_maxs",           &corgi::Tile<D>::set_tile_maxs)
+        .def("load_metainfo",           &corgi::Tile<D>::load_metainfo)
+        .def("nhood",                   &corgi::Tile<D>::nhood);
 
     return corgi_tile;
 }

@@ -208,7 +208,7 @@ def loadMpiRandomly(n):
 def loadMpiXStrides(n):
     if n.master: #only master initializes; then sends
         stride = np.zeros( (n.get_Nx()), np.int64)
-        dx = np.float(n.get_Nx()) / np.float(n.Nrank) 
+        dx = np.float(n.get_Nx()) / np.float(n.size() ) 
         for i in range(n.get_Nx()):
             val = np.int( i/dx )
             stride[i] = val
@@ -235,10 +235,10 @@ def load_tiles(n):
 def randomInitialize(n, conf):
 
     val = 0
+
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
-            #if n.get_mpi_grid(i,j) == n.rank:
-            if True:
+            if n.get_mpi_grid(i,j) == n.rank():
                 cid = n.id(i,j)
                 c = n.get_tile(cid) #get cell ptr
 
@@ -272,12 +272,12 @@ def randomInitialize(n, conf):
 if __name__ == "__main__":
 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(4,8))
+    plt.fig = plt.figure(1, figsize=(8,4))
     plt.rc('font', family='serif', size=12)
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(2, 1)
+    gs = plt.GridSpec(1, 2)
     gs.update(hspace = 0.5)
     
     axs = []
@@ -301,8 +301,6 @@ if __name__ == "__main__":
     
     load_tiles(node)
     randomInitialize(node, conf)
-    
-    
     
     # Path to be created 
     if node.master:

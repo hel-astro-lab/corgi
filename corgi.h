@@ -553,7 +553,8 @@ class Node
   /// \brief Get individual tile (as a pointer)
   Tileptr get_tileptr(const uint64_t cid) {
     auto it = tiles.find(cid);
-    if (it == tiles.end()) { throw std::invalid_argument("entry not found"); }
+    //if (it == tiles.end()) { throw std::invalid_argument("entry not found"); }
+    if (it == tiles.end()) { return nullptr; };
     return it->second;
   }
 
