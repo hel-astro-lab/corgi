@@ -95,9 +95,6 @@ void Tile::update_boundaries(corgi::Node<2>& grid)
 
 }
 
-
-
-
 mpi::request Tile::send_data( mpi::communicator& comm, int dest, int tag)
 {
   //std::cout << "SEND to " << dest << "\n";
@@ -121,14 +118,6 @@ mpi::request Tile::recv_data( mpi::communicator& comm, int orig, int tag)
 }
 
 
-
-
-
-
-
-
-
-
 void Solver::solve(Tile& tile) {
   Mesh& m    = tile.get_data();
   Mesh& mnew = tile.get_new_data();
@@ -137,7 +126,7 @@ void Solver::solve(Tile& tile) {
   for(int i=0; i<(int)m.Nx; i++) { 
     for(int j=0; j<(int)m.Ny; j++) { 
 
-      // count how many is alive
+      // count how many are alive
       int alive = 0;
       for(int ir=-1; ir<2; ir++) {
         for(int jr=-1; jr<2; jr++) {
@@ -146,7 +135,6 @@ void Solver::solve(Tile& tile) {
           if(state == 1) { alive++; }
         }
       }
-
 
       // apply rules
       if(alive == 3) {
