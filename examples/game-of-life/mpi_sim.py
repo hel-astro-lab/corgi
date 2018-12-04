@@ -75,7 +75,6 @@ if __name__ == "__main__":
             "NxMesh" : 10,
             "NyMesh" : 10,
             "dir"    : "out2",
-            "Nrank"  : 2
             }
     
     node = pycorgi.twoD.Node( conf["Nx"], conf["Ny"] ) 

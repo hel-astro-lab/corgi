@@ -45,7 +45,6 @@ def imshow(ax,
               vmin = vmin,
               vmax = vmax,
               aspect='auto',
-              #vmax = Nrank,
               #alpha=0.5
               )
  
@@ -86,7 +85,7 @@ def plotNode(ax, n, conf):
             n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
             cmap = palette,
             vmin = 0.0,
-            vmax = conf["Nrank"]-1
+            vmax = n.size(),
             )
 
 
@@ -316,7 +315,6 @@ if __name__ == "__main__":
             "NxMesh" : 100,
             "NyMesh" : 100,
             "dir"    : "out",
-            "Nrank"  : 1
             }
     
     node = pycorgi.twoD.Node( conf["Nx"], conf["Ny"] ) 
