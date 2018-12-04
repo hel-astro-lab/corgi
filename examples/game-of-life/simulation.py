@@ -219,6 +219,7 @@ def saveVisz(lap, n, conf):
 
 #make random starting order
 def loadMpiRandomly(n):
+    np.random.seed(0)
     if n.master:
         for i in range(n.get_Nx()):
             for j in range(n.get_Ny()):
@@ -257,6 +258,7 @@ def load_tiles(n):
 def randomInitialize(n, conf):
 
     val = 0
+    np.random.seed(0)
 
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
@@ -267,7 +269,7 @@ def randomInitialize(n, conf):
                 mesh = pyca.Mesh( conf["NxMesh"], conf["NyMesh"] )
 
                 # fill mesh
-                if (i == 2) and (j == 2):
+                if (i == 0) and (j == 0):
                     for q in range(conf["NxMesh"]):
                         for k in range(conf["NyMesh"]):
                             ref = np.random.randint(0,11)
@@ -275,7 +277,6 @@ def randomInitialize(n, conf):
                                 mesh[q,k] = 1
                             else:
                                 mesh[q,k] = 0
-
 
                         #mesh[q,k] = q + conf["NxMesh"]*k
                         #mesh[q,k] = val

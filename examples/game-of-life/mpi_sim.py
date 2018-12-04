@@ -81,8 +81,8 @@ if __name__ == "__main__":
     node = pycorgi.twoD.Node( conf["Nx"], conf["Ny"] ) 
     node.set_grid_lims(0.0, 1.0, 0.0, 1.0)
     
-    loadMpiRandomly(node)
-    #loadMpiXStrides(node)
+    #loadMpiRandomly(node)
+    loadMpiXStrides(node)
 
     load_tiles(node)
     randomInitialize(node, conf)
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     #node.recv_data(0)
 
 
-    for lap in range(1, 300):
+    for lap in range(1, 301):
         print("---lap: {}".format(lap))
 
         #send/recv boundaries
