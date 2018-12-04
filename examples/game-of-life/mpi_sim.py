@@ -110,14 +110,14 @@ if __name__ == "__main__":
     for lap in range(1, 300):
         print("---lap: {}".format(lap))
 
+        #send/recv boundaries
+        node.send_data(0)
+        node.recv_data(0)
+
         if (lap % 10 == 0):
             plotNode(axs[0], node, conf)
             plotMesh(axs[1], node, conf)
             saveVisz(lap, node, conf)
-
-        #send/recv boundaries
-        node.send_data(0)
-        node.recv_data(0)
 
         #update halo regions
         for cid in node.get_local_tiles():

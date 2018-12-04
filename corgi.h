@@ -481,7 +481,7 @@ class Node
 
 
   /// Shortcut for creating raw tiles with only the internal meta info.
-  // to be used with message passing (w.r.t add_tile that is for use with initialization)
+  // to be used with message passing (w.r.t. add_tile that is for use with initialization)
   void create_tile(Communication& cm)
   {
     auto tileptr = std::make_shared<Tile_t>();
