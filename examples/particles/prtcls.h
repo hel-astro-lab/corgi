@@ -35,6 +35,7 @@ class Tile : public corgi::Tile<2> {
   /// setter
   void set_container(const ParticleBlock& block) {containers.push_back(block);};
 
+  size_t Nspecies() {return containers.size(); };
 
   virtual mpi::request send_data( mpi::communicator&, int orig, int tag) override;
   virtual mpi::request recv_data( mpi::communicator&, int dest, int tag) override;
