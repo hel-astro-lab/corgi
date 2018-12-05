@@ -45,7 +45,10 @@ PYBIND11_MODULE(pyprtcls, m) {
     .def(py::init<>())
     .def("get_container",       &prtcls::Tile::get_container, 
         py::return_value_policy::reference)
-    .def("set_container",       &prtcls::Tile::set_container);
+    .def("set_container",       &prtcls::Tile::set_container)
+    .def("check_outgoing_particles",     &prtcls::Tile::check_outgoing_particles)
+    .def("get_incoming_particles",       &prtcls::Tile::get_incoming_particles)
+    .def("delete_transferred_particles", &prtcls::Tile::delete_transferred_particles);
 
 
   // --------------------------------------------------

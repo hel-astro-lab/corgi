@@ -105,6 +105,26 @@ class ParticleBlock {
       std::vector<double> prtcl_vel,
       double prtcl_wgt);
 
+  // --------------------------------------------------
+
+  /// check and mark particles exceeding given limits
+  void check_outgoing_particles(
+      std::array<double,2>&,
+      std::array<double,2>& );
+
+
+  /// delete particles that went beyond boundaries, i.e.,
+  // ended up in to_other_tiles box
+  void delete_transferred_particles();
+
+
+  /// transfer particles between blocks
+  void transfer_and_wrap_particles(
+      ParticleBlock&, 
+      std::array<int,3>,
+      std::array<double,3>&,
+      std::array<double,3>&);
+
 };
 
 

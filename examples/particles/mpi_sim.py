@@ -445,7 +445,7 @@ if __name__ == "__main__":
     node.send_data(0)
     node.recv_data(0)
 
-    for lap in range(1, 21):
+    for lap in range(1, 101):
         print("---lap: {}".format(lap))
 
         #send/recv boundaries
@@ -461,6 +461,21 @@ if __name__ == "__main__":
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             pusher.solve(tile)
+
+        #communicate particles
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.check_outgoing_particles()
+
+        #mpi communication
+
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.get_incoming_particles(node)
+
+        for cid in node.get_local_tiles():
+            tile = node.get_tile(cid)
+            tile.delete_transferred_particles()
 
 
 

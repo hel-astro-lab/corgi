@@ -39,6 +39,18 @@ class Tile : public corgi::Tile<2> {
 
   virtual mpi::request send_data( mpi::communicator&, int orig, int tag) override;
   virtual mpi::request recv_data( mpi::communicator&, int dest, int tag) override;
+
+  /// check all particle containers for particles
+  // exceeding limits
+  void check_outgoing_particles();
+
+  /// delete particles from each container that are exceeding
+  // the boundaries
+  void delete_transferred_particles();
+
+  /// get particles flowing into this tile
+  void get_incoming_particles(corgi::Node<2>& grid);
+
 };
 
 
