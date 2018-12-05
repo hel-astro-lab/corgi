@@ -120,7 +120,6 @@ void ParticleBlock::check_outgoing_particles(
 void ParticleBlock::delete_transferred_particles()
 {
   std::vector<int> to_be_deleted;
-  to_be_deleted.clear();
 
   //for(auto& elem : container.to_other_tiles)  {
   //  std::cout << "to be removed particle # " 

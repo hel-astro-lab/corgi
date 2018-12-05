@@ -159,32 +159,33 @@ class Particles:
 
         self.wgt = []
 
-def get_particles(node, conf):
+def get_particles(node, conf, ip):
     prtcl = Particles()
     prtcl.clear()
 
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
-                cid = node.id(i,j)
-                c = node.get_tile(cid)
+                if node.get_mpi_grid(i,j) == node.rank():
+                    cid = node.id(i,j)
+                    c = node.get_tile(cid)
 
-                x, y, z, ux, uy, uz, wgt = get_particles_from_tile(c)
+                    x, y, z, ux, uy, uz, wgt = get_particles_from_tile(c, ip)
 
-                prtcl.xs.extend(x)
-                prtcl.ys.extend(y)
-                prtcl.zs.extend(z)
+                    prtcl.xs.extend(x)
+                    prtcl.ys.extend(y)
+                    prtcl.zs.extend(z)
 
-                prtcl.uxs.extend(ux)
-                prtcl.uys.extend(uy)
-                prtcl.uzs.extend(uz)
+                    prtcl.uxs.extend(ux)
+                    prtcl.uys.extend(uy)
+                    prtcl.uzs.extend(uz)
 
-                prtcl.wgt.extend(wgt)
+                    prtcl.wgt.extend(wgt)
 
     return prtcl
 
 
-def get_particles_from_tile(tile, ispcs=0):
+def get_particles_from_tile(tile, ispcs):
     container = tile.get_container(ispcs)
     x  = container.loc(0)
     y  = container.loc(1)
@@ -207,7 +208,7 @@ def plotMesh(ax, n, conf, downsample=0):
     plotNode(ax, n, conf)
     #plotTileBoundaries(ax, n, conf)
 
-    prtcl = get_particles(n, conf)
+    prtcl = get_particles(n, conf, 0)
     Np = len(prtcl.xs)
     print("particles to plot: {}".format(Np))
 
@@ -224,6 +225,9 @@ def plotMesh(ax, n, conf, downsample=0):
 
     ax.plot(prtcl.xs, prtcl.ys, ".", color='red')
     
+    #second container
+    prtcl1 = get_particles(n, conf, 1)
+    ax.plot(prtcl1.xs, prtcl1.ys, ".", color='k')
 
 
 
@@ -367,12 +371,12 @@ def initialize_virtuals(n, conf):
 
 class Conf:
 
-    Nx  = 5
-    Ny  = 5
+    Nx  = 10
+    Ny  = 10
     Nz  = 1
 
-    NxMesh = 3
-    NyMesh = 3
+    NxMesh = 1
+    NyMesh = 1
     NzMesh = 1
 
     Nspecies = 2
