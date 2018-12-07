@@ -80,7 +80,6 @@ mpi::request Tile::send_data( mpi::communicator& comm, int dest, int tag)
 
   return req;
 }
-
 mpi::request Tile::recv_data( mpi::communicator& comm, int orig, int tag)
 {
   //std::cout << "RECV from " << orig << "\n";

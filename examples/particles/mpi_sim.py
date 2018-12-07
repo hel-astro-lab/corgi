@@ -472,10 +472,15 @@ if __name__ == "__main__":
             tile.check_outgoing_particles()
 
         #mpi communication
+        #pack_outgoing
+        #send
 
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.get_incoming_particles(node)
+        
+        #recv
+        #unpack_incoming
 
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)

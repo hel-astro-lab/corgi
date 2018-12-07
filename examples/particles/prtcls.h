@@ -7,6 +7,7 @@
 #include "../../corgi.h"
 
 #include "container.h"
+#include "communication.h"
 
 
 namespace prtcls {

@@ -1,14 +1,42 @@
 #pragma once
 
+#include <array>
 #include <vector>
 #include <map>
+
+#include "communication.h"
+
 
 
 namespace prtcls {
 
+/// Particle class for easier communication
+class Particle
+{
+public:
 
-class ParticleBlock {
+  std::array<double,7> data;
 
+  Particle(double x,  double y,  double z,
+           double ux, double uy, double uz,
+           double wgt);
+
+  inline double& x()   { return data[0] };
+  inline double& y()   { return data[1] };
+  inline double& z()   { return data[2] };
+  inline double& ux()  { return data[3] };
+  inline double& uy()  { return data[4] };
+  inline double& uz()  { return data[5] };
+  inline double& wgt() { return data[6] };
+};
+
+
+
+
+class ParticleBlock 
+{
+
+  //--------------------------------------------------
   protected:
 
   size_t Nprtcls;
@@ -17,11 +45,25 @@ class ParticleBlock {
   std::vector< std::vector<double> > velArr;
   std::vector<double> wgtArr;
 
+  /// packed outgoing particles
+  mpi4cpp::mpi::ParticleMessage outgoing_particles;
+  mpi4cpp::mpi::ParticleMessage outgoing_extra_particles;
+  void pack_outgoing_particles();
+
+  /// packed incoming particles
+  mpi4cpp::mpi::ParticleMessage incoming_particles;
+  mpi4cpp::mpi::ParticleMessage incoming_extra_particles;
+  void unpack_incoming_particles();
+
+
+  //--------------------------------------------------
   public:
 
   //! multimap of particles going to other tiles
   typedef std::multimap<std::tuple<int,int,int>, int> mapType;
   mapType to_other_tiles;
+
+
 
   // size of the internal mesh
   size_t Nx;
@@ -126,6 +168,11 @@ class ParticleBlock {
       std::array<double,3>&);
 
 };
+
+
+
+
+
 
 
 

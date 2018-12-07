@@ -108,10 +108,11 @@ void ParticleBlock::check_outgoing_particles(
     if ((i == 0) && (j == 0)) continue; //TODO: hack to make this work with 2D corgi tiles
 
     //if ( (i != 0) | (j != 0) | (k != 0) ) {
-    if ( (i != 0) || (j != 0) ) { // TODO: another 2D hack
+      
+    // TODO: another 2D hack
+    if ( (i != 0) || (j != 0) ) { 
       to_other_tiles.insert( 
-          std::make_pair( std::make_tuple(i,j,k), n) 
-                           );
+          std::make_pair( std::make_tuple(i,j,k), n) );
     }
   }
 }
@@ -199,6 +200,21 @@ void ParticleBlock::transfer_and_wrap_particles(
 
   return;
 }
+
+
+
+Particle::Particle(double ux, double uy, double uz, double wgt)
+{
+  data[0] = x;
+  data[1] = y;
+  data[2] = z;
+  data[3] = ux;
+  data[4] = uy;
+  data[5] = uz;
+  data[6] = wgt;
+}
+
+
 
 
 
