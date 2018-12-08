@@ -89,7 +89,7 @@ class ParticleBlock
   /// dynamic message size that traces the optimal
   // message length (i.e., number of particles) hand 
   // in hand with the corresponding receiver side.
-  int optimal_message_size = 2;
+  int optimal_message_size = 10;
 
   //--------------------------------------------------
 
