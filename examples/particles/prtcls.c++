@@ -131,7 +131,6 @@ std::vector<mpi::request> Tile::recv_data( mpi::communicator& comm, int orig, in
           container.incoming_particles.data(),
           container.optimal_message_size)
         );
-
   }
 
   //req = comm.irecv(orig, cid, mesh.mesh.data(), mesh.size() );
@@ -168,6 +167,8 @@ std::vector<mpi::request> Tile::recv_extra_data(
             container.incoming_extra_particles.data(),
             extra_size)
           );
+    } else {
+      container.incoming_extra_particles.clear();
     }
 
     //TODO: dynamic optimal_message_size here
