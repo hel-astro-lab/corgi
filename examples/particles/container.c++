@@ -261,13 +261,24 @@ void ParticleBlock::unpack_incoming_particles(
 {
   double locx, locy, locz, velx, vely, velz, wgt;
 
-  if (incoming_particles.size() > 1) {
-    std::cout << "unpacking Np:" << incoming_particles.size() 
-      << " /+ " << incoming_extra_particles.size() << "\n";
+  // get real number of incoming particles
+  InfoParticle msginfo(incoming_particles[0]);
+  int number_of_incoming_particles = msginfo.size();
+
+  int number_of_primary_particles = 
+    number_of_incoming_particles > optimal_message_size 
+    ? optimal_message_size : number_of_incoming_particles;
+
+  int number_of_secondary_particles = incoming_extra_particles.size();
+
+  if (number_of_incoming_particles > 1) {
+    std::cout << "unpacking Np:" << number_of_incoming_particles
+      << " /+ " << number_of_primary_particles << "/"
+      << number_of_secondary_particles << "\n";
   }
 
   // skipping 1st info particle
-  for(size_t i=1; i<incoming_particles.size(); i++){
+  for(size_t i=1; i<number_of_primary_particles; i++){
 
     // global wrap for periodic boundaries
     //locx = wrap( incoming_particles[i].x(), global_mins[0], global_maxs[0] );
@@ -291,7 +302,7 @@ void ParticleBlock::unpack_incoming_particles(
     add_particle({locx,locy,locz}, {velx,vely,velz}, wgt);
   }
 
-  for(size_t i=0; i<incoming_extra_particles.size(); i++){
+  for(size_t i=0; i<number_of_secondary_particles; i++){
 
     // global wrap for periodic boundaries
     //locx = wrap( incoming_extra_particles[i].x(), global_mins[0], global_maxs[0] );

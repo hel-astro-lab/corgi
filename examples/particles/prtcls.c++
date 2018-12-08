@@ -124,7 +124,7 @@ std::vector<mpi::request> Tile::recv_data( mpi::communicator& comm, int orig, in
 
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
-    container.incoming_particles.reserve( container.optimal_message_size );
+    container.incoming_particles.resize( container.optimal_message_size );
 
     reqs.push_back(
         comm.irecv(orig, get_tag(cid, ispc),
@@ -157,6 +157,8 @@ std::vector<mpi::request> Tile::recv_extra_data(
     // check if we need to expect extra message
     extra_size = msginfo.size() - container.optimal_message_size;
     if(extra_size > 0) {
+      container.incoming_extra_particles.resize(extra_size);
+
       reqs.push_back(
           comm.irecv(orig, get_extra_tag(cid, ispc),
             container.incoming_extra_particles.data(),

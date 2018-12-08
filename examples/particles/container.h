@@ -93,7 +93,7 @@ class ParticleBlock
   /// dynamic message size that traces the optimal
   // message length (i.e., number of particles) hand 
   // in hand with the corresponding receiver side.
-  size_t optimal_message_size = 100;
+  size_t optimal_message_size = 10;
 
   //--------------------------------------------------
 
