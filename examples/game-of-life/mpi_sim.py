@@ -30,7 +30,7 @@ np.random.seed(0)
 # make all tiles same type 
 def initialize_virtuals(n, conf):
 
-    for cid in n.get_virtuals():
+    for cid in n.get_virtual_tiles():
         c_orig = n.get_tile(cid)
         (i,j) = c_orig.index
 
