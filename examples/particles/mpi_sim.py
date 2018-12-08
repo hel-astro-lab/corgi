@@ -422,8 +422,8 @@ if __name__ == "__main__":
     node = pycorgi.twoD.Node( conf.Nx, conf.Ny ) 
     node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
     
-    #loadMpiRandomly(node)
-    loadMpiXStrides(node)
+    loadMpiRandomly(node)
+    #loadMpiXStrides(node)
 
     load_tiles(node, conf)
     inject(node, filler, conf)
@@ -484,7 +484,7 @@ if __name__ == "__main__":
         # global unpacking (independent)
         for cid in node.get_virtual_tiles(): 
             tile = node.get_tile(cid)
-            tile.unpack_incoming_particles(node)
+            tile.unpack_incoming_particles()
             tile.check_outgoing_particles()
 
         # transfer local + global
@@ -497,5 +497,8 @@ if __name__ == "__main__":
             tile = node.get_tile(cid)
             tile.delete_transferred_particles()
 
+        for cid in node.get_virtual_tiles(): 
+            tile = node.get_tile(cid)
+            tile.delete_all_particles()
 
 

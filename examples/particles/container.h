@@ -84,11 +84,7 @@ class ParticleBlock
   /// packed incoming particles
   std::vector<Particle> incoming_particles;
   std::vector<Particle> incoming_extra_particles;
-  void unpack_incoming_particles(
-    std::array<double,2>&, 
-    std::array<double,2>&, 
-    std::array<double,3>&, 
-    std::array<double,3>& );
+  void unpack_incoming_particles();
 
   /// dynamic message size that traces the optimal
   // message length (i.e., number of particles) hand 

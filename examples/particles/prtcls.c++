@@ -184,27 +184,19 @@ void Tile::pack_outgoing_particles()
 }
 
 
-void Tile::unpack_incoming_particles(
-    corgi::Node<2>& grid)
+void Tile::unpack_incoming_particles()
 {
-
-  std::array<double,3> grid_mins = {
-    static_cast<double>( grid.get_xmin() ),
-    static_cast<double>( grid.get_ymin() ),
-    static_cast<double>( 0.0             )
-  };
-
-  std::array<double,3> grid_maxs = {
-    static_cast<double>( grid.get_xmax() ),
-    static_cast<double>( grid.get_ymax() ),
-    static_cast<double>( 1.0             )
-  };
-
-
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
+    container.unpack_incoming_particles();
+  }
+}
 
-    container.unpack_incoming_particles( mins, maxs, grid_mins, grid_maxs);
+void Tile::delete_all_particles()
+{
+  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+    ParticleBlock& container = get_container(ispc);
+    container.resize(0);
   }
 }
 

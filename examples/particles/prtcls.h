@@ -62,7 +62,10 @@ class Tile : public corgi::Tile<2> {
   void pack_outgoing_particles();
 
   /// unpack received MPI message particles
-  void unpack_incoming_particles(corgi::Node<2>& grid);
+  void unpack_incoming_particles();
+
+  /// delete all particles from each container
+  void delete_all_particles();
 
 };
 
