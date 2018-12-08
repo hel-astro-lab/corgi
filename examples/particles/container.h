@@ -4,9 +4,6 @@
 #include <vector>
 #include <map>
 
-#include "communication.h"
-
-
 
 namespace prtcls {
 
@@ -17,17 +14,19 @@ public:
 
   std::array<double,7> data;
 
+  Particle() {};
+
   Particle(double x,  double y,  double z,
            double ux, double uy, double uz,
            double wgt);
 
-  inline double& x()   { return data[0] };
-  inline double& y()   { return data[1] };
-  inline double& z()   { return data[2] };
-  inline double& ux()  { return data[3] };
-  inline double& uy()  { return data[4] };
-  inline double& uz()  { return data[5] };
-  inline double& wgt() { return data[6] };
+  inline double& x()   { return data[0]; };
+  inline double& y()   { return data[1]; };
+  inline double& z()   { return data[2]; };
+  inline double& ux()  { return data[3]; };
+  inline double& uy()  { return data[4]; };
+  inline double& uz()  { return data[5]; };
+  inline double& wgt() { return data[6]; };
 };
 
 
@@ -40,17 +39,25 @@ public:
   InfoParticle(size_t np) 
     : Particle(
         static_cast<double>(np), 0,0,
-        0,0,0
+        0,0,0,
         0) {}
+
+  InfoParticle(Particle& prtcl) {
+    data[0] = prtcl.x();
+  }
 
   size_t size() {return static_cast<size_t>(Particle::x());}
 
 private:
-  using x,y,z;
-  using ux,uy,uz;
-  using wgt;
+  using Particle::x;
+  using Particle::y;
+  using Particle::z;
+  using Particle::ux;
+  using Particle::uy;
+  using Particle::uz;
+  using Particle::wgt;
 
-}
+};
 
 
 
@@ -67,6 +74,8 @@ class ParticleBlock
   std::vector< std::vector<double> > velArr;
   std::vector<double> wgtArr;
 
+  public:
+
   /// packed outgoing particles
   std::vector<Particle> outgoing_particles;
   std::vector<Particle> outgoing_extra_particles;
@@ -75,15 +84,18 @@ class ParticleBlock
   /// packed incoming particles
   std::vector<Particle> incoming_particles;
   std::vector<Particle> incoming_extra_particles;
-  void unpack_incoming_particles();
+  void unpack_incoming_particles(
+    std::array<double,2>&, 
+    std::array<double,2>&, 
+    std::array<double,3>&, 
+    std::array<double,3>& );
 
   /// dynamic message size that traces the optimal
   // message length (i.e., number of particles) hand 
   // in hand with the corresponding receiver side.
-  size_t optimal_message_size = 10;
+  size_t optimal_message_size = 100;
 
   //--------------------------------------------------
-  public:
 
   //! multimap of particles going to other tiles
   typedef std::multimap<std::tuple<int,int,int>, int> mapType;

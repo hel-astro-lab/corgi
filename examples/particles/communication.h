@@ -8,13 +8,13 @@ namespace mpi4cpp { namespace mpi {
 
 
 template <>
-struct is_mpi_datatype<particle::Particle> 
+struct is_mpi_datatype<::prtcls::Particle> 
   : mpl::true_ { };
 
 
 template <>
-inline MPI_Datatype get_mpi_datatype<particle::Particle>(
-    const particle::Particle& obj) 
+inline MPI_Datatype get_mpi_datatype<::prtcls::Particle>(
+    const ::prtcls::Particle& obj) 
 {
     
   // get start of the class

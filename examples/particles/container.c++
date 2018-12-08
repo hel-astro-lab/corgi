@@ -1,5 +1,6 @@
 #include <array>
 #include <vector>
+#include <iostream>
 
 #include "container.h"
 #include "wrap.h"
@@ -171,6 +172,7 @@ void ParticleBlock::transfer_and_wrap_particles(
     )
 {
   double locx, locy, locz, velx, vely, velz, wgt;
+  int ind;
 
   for (auto&& elem : neigh.to_other_tiles) {
       
@@ -183,16 +185,18 @@ void ParticleBlock::transfer_and_wrap_particles(
     // in directions in respect to the current tile
     if (std::get<0>(elem.first) == -dirs[0] &&
         std::get<1>(elem.first) == -dirs[1] ) {
-              
-      locx = wrap( neigh.loc(0, elem.second), mins[0], maxs[0] );
-      locy = wrap( neigh.loc(1, elem.second), mins[1], maxs[1] );
-      locz = wrap( neigh.loc(2, elem.second), mins[2], maxs[2] );
 
-      velx = neigh.vel(0, elem.second);
-      vely = neigh.vel(1, elem.second);
-      velz = neigh.vel(2, elem.second);
+      ind = elem.second;
 
-      wgt  = neigh.wgt(elem.second);
+      locx = wrap( neigh.loc(0, ind), mins[0], maxs[0] );
+      locy = wrap( neigh.loc(1, ind), mins[1], maxs[1] );
+      locz = wrap( neigh.loc(2, ind), mins[2], maxs[2] );
+
+      velx = neigh.vel(0, ind);
+      vely = neigh.vel(1, ind);
+      velz = neigh.vel(2, ind);
+
+      wgt  = neigh.wgt(ind);
 
       add_particle({locx,locy,locz}, {velx,vely,velz}, wgt);
     }
@@ -210,21 +214,105 @@ void ParticleBlock::pack_outgoing_particles()
   size_t np = to_other_tiles.size() + 1;
   InfoParticle infoprtcl(np);
 
+  if (np>1) {
+    std::cout << "Packing Np:" << np 
+      << " and extra is: " << np-optimal_message_size << "\n";
+  }
+
   outgoing_particles.reserve(optimal_message_size);
-  if (optimal_message_size > np) {
+  if (optimal_message_size < np) {
     outgoing_extra_particles.reserve( np-optimal_message_size);
   }
 
+  // first particle is always the message info
+  outgoing_particles.push_back(infoprtcl);
 
-  int n;
+  // next, pack all other particles
+  size_t i=0; 
+  int ind;
   for (auto&& elem : to_other_tiles) {
-    n = elem.second;
+    ind = elem.second;
 
-    outgoing_particles.emplace_back( 
-      loc(0, n), loc(1, n), loc(2, n), 
-      vel(0, n), vel(1, n), vel(2, n), 
-      wgt(n))
+    if(i < optimal_message_size) {
+      outgoing_particles.emplace_back( 
+        loc(0, ind), loc(1, ind), loc(2, ind), 
+        vel(0, ind), vel(1, ind), vel(2, ind), 
+        wgt(ind));
+    } else {
+      outgoing_extra_particles.emplace_back( 
+        loc(0, ind), loc(1, ind), loc(2, ind), 
+        vel(0, ind), vel(1, ind), vel(2, ind), 
+        wgt(ind));
+    }
 
+    i++;
+  }
+
+  return;
+}
+
+
+void ParticleBlock::unpack_incoming_particles(
+    std::array<double,2>& container_mins,
+    std::array<double,2>& container_maxs,
+    std::array<double,3>& global_mins, 
+    std::array<double,3>& global_maxs
+    )
+{
+  double locx, locy, locz, velx, vely, velz, wgt;
+
+  if (incoming_particles.size() > 1) {
+    std::cout << "unpacking Np:" << incoming_particles.size() 
+      << " /+ " << incoming_extra_particles.size() << "\n";
+  }
+
+  // skipping 1st info particle
+  for(size_t i=1; i<incoming_particles.size(); i++){
+
+    // global wrap for periodic boundaries
+    //locx = wrap( incoming_particles[i].x(), global_mins[0], global_maxs[0] );
+    //locy = wrap( incoming_particles[i].y(), global_mins[1], global_maxs[1] );
+    //locz = wrap( incoming_particles[i].z(), global_mins[2], global_maxs[2] );
+
+    // check if particle is mine?
+    //if(! (container_mins[0] < locx && locx <= container_maxs[0]) ) continue;
+    //if(! (container_mins[1] < locy && locy <= container_maxs[1]) ) continue;
+    //if(! (container_mins[2] < locz && locz <= container_maxs[2]) ) continue;
+
+    locx = incoming_particles[i].x();
+    locy = incoming_particles[i].y();
+    locz = incoming_particles[i].z();
+
+    velx = incoming_particles[i].ux();
+    vely = incoming_particles[i].uy();
+    velz = incoming_particles[i].uz();
+    wgt  = incoming_particles[i].wgt();
+
+    add_particle({locx,locy,locz}, {velx,vely,velz}, wgt);
+  }
+
+  for(size_t i=0; i<incoming_extra_particles.size(); i++){
+
+    // global wrap for periodic boundaries
+    //locx = wrap( incoming_extra_particles[i].x(), global_mins[0], global_maxs[0] );
+    //locy = wrap( incoming_extra_particles[i].y(), global_mins[1], global_maxs[1] );
+    //locz = wrap( incoming_extra_particles[i].z(), global_mins[2], global_maxs[2] );
+
+    // check if particle is mine?
+    //if(! (container_mins[0] < locx && locx <= container_maxs[0]) ) continue;
+    //if(! (container_mins[1] < locy && locy <= container_maxs[1]) ) continue;
+    //if(! (container_mins[2] < locz && locz <= container_maxs[2]) ) continue;
+
+    locx = incoming_extra_particles[i].x();
+    locy = incoming_extra_particles[i].y();
+    locz = incoming_extra_particles[i].z();
+
+    velx = incoming_extra_particles[i].ux();
+    vely = incoming_extra_particles[i].uy();
+    velz = incoming_extra_particles[i].uz();
+    wgt  = incoming_extra_particles[i].wgt();
+
+    add_particle({locx,locy,locz}, {velx,vely,velz}, wgt);
   }
 
   return;
@@ -232,8 +320,9 @@ void ParticleBlock::pack_outgoing_particles()
 
 
 
-
-Particle::Particle(double ux, double uy, double uz, double wgt)
+inline Particle::Particle(double x, double y, double z,
+                   double ux, double uy, double uz, 
+                   double wgt)
 {
   data[0] = x;
   data[1] = y;

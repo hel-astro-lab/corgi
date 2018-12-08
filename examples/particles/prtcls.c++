@@ -32,13 +32,13 @@ void Tile::get_incoming_particles(
     corgi::Node<2>& grid)
 {
 
-  std::array<double,3> mins = {
+  std::array<double,3> grid_mins = {
     static_cast<double>( grid.get_xmin() ),
     static_cast<double>( grid.get_ymin() ),
     static_cast<double>( 0.0             )
   };
 
-  std::array<double,3> maxs = {
+  std::array<double,3> grid_maxs = {
     static_cast<double>( grid.get_xmax() ),
     static_cast<double>( grid.get_ymax() ),
     static_cast<double>( 1.0             )
@@ -62,7 +62,7 @@ void Tile::get_incoming_particles(
         ParticleBlock& neigh = external_tile.get_container(ispc);
 
         container.transfer_and_wrap_particles(
-            neigh, {i,j,k}, mins, maxs);
+            neigh, {i,j,k}, grid_mins, grid_maxs);
       }
     }
   }
@@ -71,33 +71,142 @@ void Tile::get_incoming_particles(
 }
 
 
-mpi::request Tile::send_data( mpi::communicator& comm, int dest, int tag)
+// create MPI tag given tile id and extra layer of differentiation
+int get_tag(int cid, int extra_param)
+{
+  assert(extra_param < 100);
+  return cid + extra_param*1e6;
+}
+
+// create MPI tag for extra communication given tile 
+// id and extra layer of differentiation
+int get_extra_tag(int cid, int extra_param)
+{
+  assert(extra_param < 100);
+  return cid + extra_param*1e8;
+}
+
+
+std::vector<mpi::request> Tile::send_data( mpi::communicator& comm, int dest, int /*tag*/)
 {
   //std::cout << "SEND to " << dest << "\n";
 
-  mpi::request req;
+  std::vector<mpi::request> reqs;
+  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+    ParticleBlock& container = get_container(ispc);
+
+    reqs.push_back(
+        comm.isend(dest, get_tag(cid, ispc), 
+          container.outgoing_particles.data(), 
+          container.outgoing_particles.size())
+        );
+
+    if(!container.outgoing_extra_particles.empty()) {
+      reqs.push_back(
+          comm.isend(dest, get_extra_tag(cid, ispc), 
+            container.outgoing_extra_particles.data(), 
+            container.outgoing_extra_particles.size())
+          );
+    }
+  }
+
   //req = comm.isend(dest, cid, mesh.mesh.data(), mesh.size() );
 
-  return req;
+  return reqs;
 }
 
-mpi::request Tile::recv_data( mpi::communicator& comm, int orig, int tag)
+
+std::vector<mpi::request> Tile::recv_data( mpi::communicator& comm, int orig, int /*tag*/)
 {
   //std::cout << "RECV from " << orig << "\n";
 
-  mpi::request req;
+  std::vector<mpi::request> reqs;
+
+  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+    ParticleBlock& container = get_container(ispc);
+    container.incoming_particles.reserve( container.optimal_message_size );
+
+    reqs.push_back(
+        comm.irecv(orig, get_tag(cid, ispc),
+          container.incoming_particles.data(),
+          container.optimal_message_size)
+        );
+
+  }
+
   //req = comm.irecv(orig, cid, mesh.mesh.data(), mesh.size() );
 
-  return req;
+  return reqs;
 }
 
-mpi::request Tile::wait_data( mpi::communicator& comm, int orig, int tag)
+
+std::vector<mpi::request> Tile::recv_extra_data( 
+    mpi::communicator& comm, int orig, int /*tag*/)
 {
-  mpi::request req;
+  std::vector<mpi::request> reqs;
+
+  // this assumes that wait for the first messages is already called
+  // and passed.
+
+  //InfoParticle msginfo;
+  int extra_size;
+  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+    ParticleBlock& container = get_container(ispc);
+    InfoParticle msginfo(container.incoming_particles[0]);
+
+    // check if we need to expect extra message
+    extra_size = msginfo.size() - container.optimal_message_size;
+    if(extra_size > 0) {
+      reqs.push_back(
+          comm.irecv(orig, get_extra_tag(cid, ispc),
+            container.incoming_extra_particles.data(),
+            extra_size)
+          );
+    }
+
+    //TODO: dynamic optimal_message_size here
+
+  }
 
 
-  return req;
+  return reqs;
 }
+
+
+void Tile::pack_outgoing_particles()
+{
+  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+    ParticleBlock& container = get_container(ispc);
+    container.pack_outgoing_particles();
+  }
+}
+
+
+void Tile::unpack_incoming_particles(
+    corgi::Node<2>& grid)
+{
+
+  std::array<double,3> grid_mins = {
+    static_cast<double>( grid.get_xmin() ),
+    static_cast<double>( grid.get_ymin() ),
+    static_cast<double>( 0.0             )
+  };
+
+  std::array<double,3> grid_maxs = {
+    static_cast<double>( grid.get_xmax() ),
+    static_cast<double>( grid.get_ymax() ),
+    static_cast<double>( 1.0             )
+  };
+
+
+  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+    ParticleBlock& container = get_container(ispc);
+
+    container.unpack_incoming_particles( mins, maxs, grid_mins, grid_maxs);
+  }
+}
+
+
 
 void Pusher::solve(Tile& tile) 
 {

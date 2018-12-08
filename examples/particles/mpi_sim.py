@@ -353,7 +353,7 @@ def filler(xloc, ispcs, conf):
 # make all tiles same type 
 def initialize_virtuals(n, conf):
 
-    for cid in n.get_virtuals():
+    for cid in n.get_virtual_tiles():
         c_orig = n.get_tile(cid)
         (i,j) = c_orig.index
 
@@ -452,10 +452,6 @@ if __name__ == "__main__":
     for lap in range(1, 101):
         print("---lap: {}".format(lap))
 
-        #send/recv boundaries
-        node.send_data(0)
-        node.recv_data(0)
-
         if (lap % 1 == 0):
             plotNode(axs[0], node, conf)
             plotMesh(axs[1], node, conf)
@@ -466,22 +462,37 @@ if __name__ == "__main__":
             tile = node.get_tile(cid)
             pusher.solve(tile)
 
-        #communicate particles
+
+        ################################################## 
+        # communication
+
+        #local particle exchange (independent)
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.check_outgoing_particles()
 
-        #mpi communication
-        #pack_outgoing
-        #send
+        # global mpi exchange (independent)
+        for cid in node.get_boundary_tiles():
+            tile = node.get_tile(cid)
+            tile.pack_outgoing_particles()
 
+        # MPI global exchange
+        node.send_data(0) #(indepdendent)
+        node.recv_data(0) #(indepdendent)
+        node.wait_data(0) #(indepdendent)
+
+        # global unpacking (independent)
+        for cid in node.get_virtual_tiles(): 
+            tile = node.get_tile(cid)
+            tile.unpack_incoming_particles(node)
+            tile.check_outgoing_particles()
+
+        # transfer local + global
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.get_incoming_particles(node)
-        
-        #recv
-        #unpack_incoming
 
+        # delete local transferred particles
         for cid in node.get_local_tiles():
             tile = node.get_tile(cid)
             tile.delete_transferred_particles()

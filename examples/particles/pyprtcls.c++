@@ -48,7 +48,9 @@ PYBIND11_MODULE(pyprtcls, m) {
     .def("set_container",       &prtcls::Tile::set_container)
     .def("check_outgoing_particles",     &prtcls::Tile::check_outgoing_particles)
     .def("get_incoming_particles",       &prtcls::Tile::get_incoming_particles)
-    .def("delete_transferred_particles", &prtcls::Tile::delete_transferred_particles);
+    .def("delete_transferred_particles", &prtcls::Tile::delete_transferred_particles)
+    .def("pack_outgoing_particles",      &prtcls::Tile::pack_outgoing_particles)
+    .def("unpack_incoming_particles",    &prtcls::Tile::unpack_incoming_particles);
 
 
   // --------------------------------------------------

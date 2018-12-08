@@ -249,30 +249,46 @@ class Tile
     //}
 
     /// dummy MPI data send function
-    virtual mpi::request send_data(
-        mpi::communicator& comm,
+    virtual std::vector<mpi::request> 
+    send_data(
+        mpi::communicator& /*comm*/,
         int dest, 
-        int tag)
+        int /*tag*/)
     {
-      mpi::request req;
+      std::vector<mpi::request> reqs;
 
       std::cout << "send to " << dest << "\n";
 
-      return req;
+      return reqs;
     }
 
 
     /// dummy MPI data recv function
-    virtual mpi::request recv_data(
-        mpi::communicator& comm,
+    virtual std::vector<mpi::request> 
+    recv_data(
+        mpi::communicator& /*comm*/,
         int orig, 
-        int tag)
+        int /*tag*/)
     {
-      mpi::request req;
+      std::vector<mpi::request> reqs;
 
       std::cout << "recv from " << orig << "\n";
 
-      return req;
+      return reqs;
+    }
+
+    /// dummy MPI data recv function for extra data 
+    virtual std::vector<mpi::request> 
+    recv_extra_data(
+        mpi::communicator& /*comm*/,
+        int orig, 
+        int /*tag*/)
+    {
+      std::vector<mpi::request> reqs;
+
+      std::cout << "recv from " << orig << "\n";
+
+      return reqs;
     }
 
 

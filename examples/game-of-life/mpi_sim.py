@@ -112,6 +112,7 @@ if __name__ == "__main__":
         #send/recv boundaries
         node.send_data(0)
         node.recv_data(0)
+        node.wait_data(0)
 
         if (lap % 10 == 0):
             plotNode(axs[0], node, conf)

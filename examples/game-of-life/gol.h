@@ -115,8 +115,11 @@ class Tile : public corgi::Tile<2> {
     /// step forward
     void cycle() { data.cycle(); }
 
-    virtual mpi::request send_data( mpi::communicator&, int orig, int tag) override;
-    virtual mpi::request recv_data( mpi::communicator&, int dest, int tag) override;
+    virtual std::vector<mpi::request> 
+    send_data( mpi::communicator&, int orig, int tag) override;
+
+    virtual std::vector<mpi::request> 
+    recv_data( mpi::communicator&, int dest, int tag) override;
 
 };
 

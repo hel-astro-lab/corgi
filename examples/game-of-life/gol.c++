@@ -95,26 +95,26 @@ void Tile::update_boundaries(corgi::Node<2>& grid)
 
 }
 
-mpi::request Tile::send_data( mpi::communicator& comm, int dest, int tag)
+std::vector<mpi::request> Tile::send_data( mpi::communicator& comm, int dest, int /*tag*/)
 {
   //std::cout << "SEND to " << dest << "\n";
   Mesh& mesh = get_data(); 
 
-  mpi::request req;
-  req = comm.isend(dest, cid, mesh.mesh.data(), mesh.size() );
+  std::vector<mpi::request> reqs;
+  reqs.push_back( comm.isend(dest, cid, mesh.mesh.data(), mesh.size()) );
 
-  return req;
+  return reqs;
 }
 
-mpi::request Tile::recv_data( mpi::communicator& comm, int orig, int tag)
+std::vector<mpi::request> Tile::recv_data( mpi::communicator& comm, int orig, int /*tag*/)
 {
   //std::cout << "RECV from " << orig << "\n";
   Mesh& mesh = get_data(); 
 
-  mpi::request req;
-  req = comm.irecv(orig, cid, mesh.mesh.data(), mesh.size() );
+  std::vector<mpi::request> reqs;
+  reqs.push_back( comm.irecv(orig, cid, mesh.mesh.data(), mesh.size()) );
 
-  return req;
+  return reqs;
 }
 
 

@@ -38,8 +38,14 @@ class Tile : public corgi::Tile<2> {
 
   size_t Nspecies() {return containers.size(); };
 
-  virtual mpi::request send_data( mpi::communicator&, int orig, int tag) override;
-  virtual mpi::request recv_data( mpi::communicator&, int dest, int tag) override;
+  virtual std::vector<mpi::request> 
+  send_data( mpi::communicator&, int orig, int tag) override;
+
+  virtual std::vector<mpi::request> 
+  recv_data( mpi::communicator&, int dest, int tag) override;
+
+  virtual std::vector<mpi::request> 
+  recv_extra_data( mpi::communicator&, int dest, int tag) override;
 
   /// check all particle containers for particles
   // exceeding limits
@@ -51,6 +57,12 @@ class Tile : public corgi::Tile<2> {
 
   /// get particles flowing into this tile
   void get_incoming_particles(corgi::Node<2>& grid);
+
+  /// pack particles for MPI message
+  void pack_outgoing_particles();
+
+  /// unpack received MPI message particles
+  void unpack_incoming_particles(corgi::Node<2>& grid);
 
 };
 
