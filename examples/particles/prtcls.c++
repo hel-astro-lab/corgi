@@ -92,7 +92,7 @@ std::vector<mpi::request> Tile::send_data( mpi::communicator& comm, int dest, in
   //std::cout << "SEND to " << dest << "\n";
 
   std::vector<mpi::request> reqs;
-  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+  for(size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
 
     reqs.push_back(
@@ -156,6 +156,10 @@ std::vector<mpi::request> Tile::recv_extra_data(
 
     // check if we need to expect extra message
     extra_size = msginfo.size() - container.optimal_message_size;
+
+    //std::cout << " recv extra data with " << extra_size 
+    //  << "( "<< msginfo.size() << "\n";
+
     if(extra_size > 0) {
       container.incoming_extra_particles.resize(extra_size);
 
@@ -169,7 +173,6 @@ std::vector<mpi::request> Tile::recv_extra_data(
     //TODO: dynamic optimal_message_size here
 
   }
-
 
   return reqs;
 }
@@ -191,6 +194,7 @@ void Tile::unpack_incoming_particles()
     container.unpack_incoming_particles();
   }
 }
+
 
 void Tile::delete_all_particles()
 {

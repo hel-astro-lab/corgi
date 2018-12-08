@@ -211,7 +211,7 @@ void ParticleBlock::pack_outgoing_particles()
   outgoing_extra_particles.clear();
     
   // +1 for info particle
-  size_t np = to_other_tiles.size() + 1;
+  int np = to_other_tiles.size() + 1;
   InfoParticle infoprtcl(np);
 
   //if (np>1) {
@@ -220,7 +220,7 @@ void ParticleBlock::pack_outgoing_particles()
   //}
 
   outgoing_particles.reserve(optimal_message_size);
-  if (optimal_message_size < np) {
+  if (np-optimal_message_size > 0) {
     outgoing_extra_particles.reserve( np-optimal_message_size);
   }
 
@@ -228,8 +228,7 @@ void ParticleBlock::pack_outgoing_particles()
   outgoing_particles.push_back(infoprtcl);
 
   // next, pack all other particles
-  size_t i=0; 
-  int ind;
+  int i=1, ind;
   for (auto&& elem : to_other_tiles) {
     ind = elem.second;
 
@@ -273,7 +272,7 @@ void ParticleBlock::unpack_incoming_particles()
   //}
 
   // skipping 1st info particle
-  for(size_t i=1; i<number_of_primary_particles; i++){
+  for(int i=1; i<number_of_primary_particles; i++){
     locx = incoming_particles[i].x();
     locy = incoming_particles[i].y();
     locz = incoming_particles[i].z();
@@ -286,7 +285,7 @@ void ParticleBlock::unpack_incoming_particles()
     add_particle({locx,locy,locz}, {velx,vely,velz}, wgt);
   }
 
-  for(size_t i=0; i<number_of_secondary_particles; i++){
+  for(int i=0; i<number_of_secondary_particles; i++){
     locx = incoming_extra_particles[i].x();
     locy = incoming_extra_particles[i].y();
     locz = incoming_extra_particles[i].z();
