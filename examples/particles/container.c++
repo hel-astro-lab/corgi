@@ -201,6 +201,36 @@ void ParticleBlock::transfer_and_wrap_particles(
   return;
 }
 
+void ParticleBlock::pack_outgoing_particles()
+{
+  outgoing_particles.clear();
+  outgoing_extra_particles.clear();
+    
+  // +1 for info particle
+  size_t np = to_other_tiles.size() + 1;
+  InfoParticle infoprtcl(np);
+
+  outgoing_particles.reserve(optimal_message_size);
+  if (optimal_message_size > np) {
+    outgoing_extra_particles.reserve( np-optimal_message_size);
+  }
+
+
+  int n;
+  for (auto&& elem : to_other_tiles) {
+    n = elem.second;
+
+    outgoing_particles.emplace_back( 
+      loc(0, n), loc(1, n), loc(2, n), 
+      vel(0, n), vel(1, n), vel(2, n), 
+      wgt(n))
+
+  }
+
+  return;
+}
+
+
 
 
 Particle::Particle(double ux, double uy, double uz, double wgt)

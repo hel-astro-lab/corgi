@@ -80,6 +80,7 @@ mpi::request Tile::send_data( mpi::communicator& comm, int dest, int tag)
 
   return req;
 }
+
 mpi::request Tile::recv_data( mpi::communicator& comm, int orig, int tag)
 {
   //std::cout << "RECV from " << orig << "\n";
@@ -90,6 +91,13 @@ mpi::request Tile::recv_data( mpi::communicator& comm, int orig, int tag)
   return req;
 }
 
+mpi::request Tile::wait_data( mpi::communicator& comm, int orig, int tag)
+{
+  mpi::request req;
+
+
+  return req;
+}
 
 void Pusher::solve(Tile& tile) 
 {

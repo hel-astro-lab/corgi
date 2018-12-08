@@ -31,6 +31,28 @@ public:
 };
 
 
+/// Special handling of particle MPI message info 
+// via this auxiliary helper class
+class InfoParticle : public Particle
+{
+public:
+
+  InfoParticle(size_t np) 
+    : Particle(
+        static_cast<double>(np), 0,0,
+        0,0,0
+        0) {}
+
+  size_t size() {return static_cast<size_t>(Particle::x());}
+
+private:
+  using x,y,z;
+  using ux,uy,uz;
+  using wgt;
+
+}
+
+
 
 
 class ParticleBlock 
@@ -46,15 +68,19 @@ class ParticleBlock
   std::vector<double> wgtArr;
 
   /// packed outgoing particles
-  mpi4cpp::mpi::ParticleMessage outgoing_particles;
-  mpi4cpp::mpi::ParticleMessage outgoing_extra_particles;
+  std::vector<Particle> outgoing_particles;
+  std::vector<Particle> outgoing_extra_particles;
   void pack_outgoing_particles();
 
   /// packed incoming particles
-  mpi4cpp::mpi::ParticleMessage incoming_particles;
-  mpi4cpp::mpi::ParticleMessage incoming_extra_particles;
+  std::vector<Particle> incoming_particles;
+  std::vector<Particle> incoming_extra_particles;
   void unpack_incoming_particles();
 
+  /// dynamic message size that traces the optimal
+  // message length (i.e., number of particles) hand 
+  // in hand with the corresponding receiver side.
+  size_t optimal_message_size = 10;
 
   //--------------------------------------------------
   public:

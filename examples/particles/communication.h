@@ -57,6 +57,7 @@ inline MPI_Datatype get_mpi_datatype<particle::Particle>(
 
 
 /// Packed collection particles for MPI communication
+/*
 class ParticleMessage {
   public:
 
@@ -67,7 +68,7 @@ class ParticleMessage {
   std::vector<Particle> data(10);
 
 }
-
+*/
 
 
 
