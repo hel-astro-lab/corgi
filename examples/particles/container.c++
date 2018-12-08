@@ -221,6 +221,7 @@ void ParticleBlock::pack_outgoing_particles()
 
   outgoing_particles.reserve(optimal_message_size);
   if (np-optimal_message_size > 0) {
+    std::cout << "EXTRA send with " << np-optimal_message_size << "\n";
     outgoing_extra_particles.reserve( np-optimal_message_size);
   }
 
@@ -246,6 +247,9 @@ void ParticleBlock::pack_outgoing_particles()
 
     i++;
   }
+
+  // TODO: set next message size dynamically according to history
+  //optimal_message_size = np;
 
   return;
 }

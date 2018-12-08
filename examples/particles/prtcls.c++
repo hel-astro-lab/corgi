@@ -46,8 +46,8 @@ void Tile::get_incoming_particles(
 
   // fetch incoming particles from neighbors around me
   int k = 0;
-  for (int i=-1; i<=1; i++) {
-    for (int j=-1; j<=1; j++) {
+  for(int i=-1; i<=1; i++) {
+    for(int j=-1; j<=1; j++) {
 
       // get neighboring tile
       auto ind = this->neighs(i, j); 
@@ -57,7 +57,7 @@ void Tile::get_incoming_particles(
         dynamic_cast<Tile&>( grid.get_tile(cid) );
 
       // loop over all containers
-      for (size_t ispc=0; ispc<Nspecies(); ispc++) {
+      for(size_t ispc=0; ispc<Nspecies(); ispc++) {
         ParticleBlock& container = get_container(ispc);
         ParticleBlock& neigh = external_tile.get_container(ispc);
 
@@ -171,6 +171,7 @@ std::vector<mpi::request> Tile::recv_extra_data(
     }
 
     //TODO: dynamic optimal_message_size here
+    //container.optimal_message_size = msginfo.size();
 
   }
 
