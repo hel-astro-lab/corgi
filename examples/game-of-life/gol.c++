@@ -5,6 +5,7 @@
 
 
 using namespace gol;
+using namespace mpi4cpp;
 
 /// initialize internal mesh
 Mesh::Mesh(int Nx, int Ny) : Nx(Nx), Ny(Ny) {
@@ -32,6 +33,7 @@ void Mesh::copy_horz(Mesh& rhs, int lhsJ, int rhsJ) {
 }
 
 
+
 // --------------------------------------------------
 
 
@@ -43,97 +45,88 @@ void Tile::add_data(Mesh m) {
 
 /// get current patch
 Mesh& Tile::get_data() {
-  return *data.get();
-};
-
-Mesh* Tile::get_dataptr() {
   return data.get();
 };
 
 /// get new data
 Mesh& Tile::get_new_data() {
-  return *data.get_new();
+  return data.get(1);
 };
 
 
 /// Update boundary/halo regions from neighbors
-void Tile::update_boundaries(corgi::Node<2>& grid) {
+void Tile::update_boundaries(corgi::Node<2>& grid) 
+{
+  int ito, jto, ifro, jfro;
+  Tileptr tpr;
 
   Mesh& mesh = get_data(); // target as a reference to update into
 
-  // left 
-  Tileptr cleft = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr(  neighs(-1, 0) )); 
-  if(cleft) {
-    Mesh& mleft = cleft->get_data();
-    mesh.copy_vert(mleft, -1, mleft.Nx-1); // copy from right side to left
+  for(int in=-1; in <= 1; in++) {
+    for(int jn=-1; jn <= 1; jn++) {
+      if (in == 0 && jn == 0) continue;
+
+      tpr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(in, jn) ));
+      if (tpr) {
+        Mesh& mpr = tpr->get_data();
+
+        /* diagonal rules are:
+        if + then to   n
+        if + then from 0
+
+        if - then to   -1
+        if - then from n-1
+        */
+
+        if (in == +1) { ito = mesh.Nx; ifro = 0; }
+        if (jn == +1) { jto = mesh.Ny; jfro = 0; }
+
+        if (in == -1) { ito = -1;      ifro = mpr.Nx-1; }
+        if (jn == -1) { jto = -1;      jfro = mpr.Ny-1; }
+
+        // copy
+        if      (jn == 0) mesh.copy_vert(mpr, ito, ifro);   // vertical
+        else if (in == 0) mesh.copy_horz(mpr, jto, jfro);   // horizontal
+        else              mesh(ito, jto) = mpr(ifro, jfro); // diagonal
+        
+      } // end of if(tpr)
+    }
   }
 
-  // right
-  Tileptr cright = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(+1, 0) ));
-  if(cright) {
-    Mesh& mright = cright->get_data();
-    mesh.copy_vert(mright, mesh.Nx, 0); // copy from left side to right
-  }
+}
 
-  // top 
-  Tileptr ctop = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr(   neighs(0, +1) ));
-  if(ctop) {
-    Mesh& mtop = ctop->get_data();
-    mesh.copy_horz(mtop, mesh.Ny, 0); // copy from bottom side to top
-  }
+std::vector<mpi::request> Tile::send_data( mpi::communicator& comm, int dest, int /*tag*/)
+{
+  //std::cout << "SEND to " << dest << "\n";
+  Mesh& mesh = get_data(); 
 
-  // bottom
-  Tileptr cbot = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr(   neighs(0, -1) ));
-  if(cbot) {
-    Mesh& mbot = cbot->get_data();
-    mesh.copy_horz(mbot, -1, mbot.Ny-1); // copy from top side to bottom
-  }
+  std::vector<mpi::request> reqs;
+  reqs.push_back( comm.isend(dest, cid, mesh.mesh.data(), mesh.size()) );
 
+  return reqs;
+}
 
+std::vector<mpi::request> Tile::recv_data( mpi::communicator& comm, int orig, int /*tag*/)
+{
+  //std::cout << "RECV from " << orig << "\n";
+  Mesh& mesh = get_data(); 
 
-  // diagonals/corners
-  // --------------------------------------------------  
-    
-  // top right
-  Tileptr ctr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(+1, +1) ));
-  if(ctr) {
-    Mesh& mtr = ctr->get_data();
-    mesh(mesh.Nx, mesh.Ny) = mtr(0,0);
-  }
+  std::vector<mpi::request> reqs;
+  reqs.push_back( comm.irecv(orig, cid, mesh.mesh.data(), mesh.size()) );
 
-  // top left
-  Tileptr ctl = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(-1, +1) ));
-  if(ctl) {
-    Mesh& mtl = ctl->get_data();
-    mesh(-1, mesh.Ny) = mtl(mtl.Nx-1,0);
-  }
-
-  // bottom right
-  Tileptr cbr = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(+1, -1) ));
-  if(cbr) {
-    Mesh& mbr = cbr->get_data();
-    mesh(mesh.Nx, -1) = mbr(0,mbr.Ny-1);
-  }
-
-  // bottom left
-  Tileptr cbl = std::dynamic_pointer_cast<Tile_t>(grid.get_tileptr( neighs(-1, -1) ));
-  if(cbl) {
-    Mesh& mbl = cbl->get_data();
-    mesh(-1,-1) = mbl(mbl.Nx-1, mbl.Ny-1);
-  }
-  
-
-};
+  return reqs;
+}
 
 
 void Solver::solve(Tile& tile) {
   Mesh& m    = tile.get_data();
   Mesh& mnew = tile.get_new_data();
+  mnew.clear();
 
   for(int i=0; i<(int)m.Nx; i++) { 
     for(int j=0; j<(int)m.Ny; j++) { 
 
-      // count how many is alive
+      // count how many are alive
       int alive = 0;
       for(int ir=-1; ir<2; ir++) {
         for(int jr=-1; jr<2; jr++) {
@@ -146,9 +139,12 @@ void Solver::solve(Tile& tile) {
       // apply rules
       if(alive == 3) {
         mnew(i,j) = 1;
+      } else {
+        mnew(i,j) = m(i,j);
+      }
+
       // } else if(alive != 2) {
       //   mnew(i,j) = 0;
-      }
     }
   }
 }

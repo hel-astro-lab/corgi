@@ -14,6 +14,7 @@ except:
 import pycorgi
 import pyca
 
+np.random.seed( 0 )
 
 # visualize matrix
 def imshow(ax, 
@@ -44,7 +45,6 @@ def imshow(ax,
               vmin = vmin,
               vmax = vmax,
               aspect='auto',
-              #vmax = Nrank,
               #alpha=0.5
               )
  
@@ -85,7 +85,7 @@ def plotNode(ax, n, conf):
             n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
             cmap = palette,
             vmin = 0.0,
-            vmax = conf["Nrank"]-1
+            vmax = n.size(),
             )
 
 
@@ -218,12 +218,13 @@ def saveVisz(lap, n, conf):
 
 #make random starting order
 def loadMpiRandomly(n):
-    np.random.seed(4)
+    np.random.seed(0)
     if n.master:
         for i in range(n.get_Nx()):
             for j in range(n.get_Ny()):
-                val = np.random.randint(n.Nrank)
+                val = np.random.randint( n.size() )
                 n.set_mpi_grid(i, j, val)
+    n.bcast_mpi_grid()
 
 #load nodes to be in stripe formation (splitted in X=horizontal direction)
 def loadMpiXStrides(n):
@@ -256,6 +257,7 @@ def load_tiles(n):
 def randomInitialize(n, conf):
 
     val = 0
+    np.random.seed(0)
 
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
@@ -266,7 +268,7 @@ def randomInitialize(n, conf):
                 mesh = pyca.Mesh( conf["NxMesh"], conf["NyMesh"] )
 
                 # fill mesh
-                if (i == 2) and (j == 2):
+                if (i == 0) and (j == 0):
                     for q in range(conf["NxMesh"]):
                         for k in range(conf["NyMesh"]):
                             ref = np.random.randint(0,11)
@@ -274,7 +276,6 @@ def randomInitialize(n, conf):
                                 mesh[q,k] = 1
                             else:
                                 mesh[q,k] = 0
-
 
                         #mesh[q,k] = q + conf["NxMesh"]*k
                         #mesh[q,k] = val
@@ -314,7 +315,6 @@ if __name__ == "__main__":
             "NxMesh" : 100,
             "NyMesh" : 100,
             "dir"    : "out",
-            "Nrank"  : 1
             }
     
     node = pycorgi.twoD.Node( conf["Nx"], conf["Ny"] ) 

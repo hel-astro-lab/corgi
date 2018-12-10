@@ -6,9 +6,13 @@
 #include "../../corgi.h"
 #include "../../toolbox/dataContainer.h"
 
+#include <mpi4cpp/mpi.h>
 
 
 namespace gol {
+
+namespace mpi = mpi4cpp::mpi;
+
 
 
 /// Snapshot patch of a CA simulation
@@ -31,6 +35,16 @@ class Mesh {
   // Indexing with +1 halo regions around the array
   int indx(const int i, const int j) const {
     return (i+halo) + (Nx +2*halo)*(j+halo);
+  }
+
+  int size()
+  {
+    return ((Nx + 2*halo) * (Ny + 2*halo));    
+  }
+
+  void clear()
+  {
+    std::fill(mesh.begin(), mesh.end(), 0);
   }
 
   /// 2D access operator for values
@@ -86,7 +100,7 @@ class Tile : public corgi::Tile<2> {
     ~Tile() = default;
 
     // extending the base class
-    datarotators::DataContainer<Mesh> data;
+    datarotators::Rotator<Mesh,2> data;
 
     void add_data(Mesh m);
 
@@ -100,6 +114,12 @@ class Tile : public corgi::Tile<2> {
 
     /// step forward
     void cycle() { data.cycle(); }
+
+    virtual std::vector<mpi::request> 
+    send_data( mpi::communicator&, int orig, int tag) override;
+
+    virtual std::vector<mpi::request> 
+    recv_data( mpi::communicator&, int dest, int tag) override;
 
 };
 

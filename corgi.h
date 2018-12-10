@@ -481,7 +481,7 @@ class Node
 
 
   /// Shortcut for creating raw tiles with only the internal meta info.
-  // to be used with message passing (w.r.t add_tile that is for use with initialization)
+  // to be used with message passing (w.r.t. add_tile that is for use with initialization)
   void create_tile(Communication& cm)
   {
     auto tileptr = std::make_shared<Tile_t>();
@@ -779,9 +779,11 @@ class Node
 
   std::vector<mpi::request> sent_info_messages;
   std::vector<mpi::request> sent_tile_messages;
+  std::vector< std::vector<mpi::request> > sent_data_messages;
 
   std::vector<mpi::request> recv_info_messages;
   std::vector<mpi::request> recv_tile_messages;
+  std::vector< std::vector<mpi::request> > recv_data_messages;
 
 
   // /// Broadcast master ranks mpi_grid to everybody
@@ -874,8 +876,6 @@ class Node
   }
 
   /// Send individual tile to dest
-  // NOTE: we bounce sending back to tile members,
-  //       this way they can be extended for different types of send.
   void send_tile(uint64_t cid, int dest)
   {
     mpi::request req;
@@ -981,6 +981,60 @@ class Node
       i++;
     }
   }
+
+  /// Initialize vector of vector if needed
+  void initialize_message_array(
+      std::vector<std::vector<mpi::request>>& arr, 
+      int tag)
+  {
+    while((int)arr.size() <= tag) {
+      std::vector<mpi::request> arri(0);
+      arr.push_back( arri );
+    }
+  }
+
+  /// Call mpi send routines from tile for the boundary regions
+  // NOTE: we bounce sending back to tile members,
+  //       this way they can be extended for different types of send.
+  void send_data(int tag)
+  {
+    initialize_message_array(sent_data_messages, tag);
+    sent_data_messages.at(tag).clear();
+
+    for(auto cid : get_boundary_tiles() ) {
+      auto& tile = get_tile(cid);
+      for(auto dest: tile.communication.virtual_owners) {
+        auto reqs = tile.send_data(comm, dest, tag);
+        
+        for(auto& req : reqs) sent_data_messages.at(tag).push_back(req);
+      }
+    }
+  }
+
+
+  /// Call mpi recv routines from tile for the virtual regions
+  // NOTE: we bounce receiving back to tile members,
+  //       this way they can be extended for different types of recv.
+  void recv_data(int tag)
+  {
+    initialize_message_array(recv_data_messages, tag);
+    recv_data_messages.at(tag).clear();
+
+    for(auto cid : get_virtuals() ) {
+      auto& tile = get_tile(cid);
+      auto reqs = tile.recv_data(comm, tile.communication.owner, tag);
+
+      for(auto& req : reqs) recv_data_messages.at(tag).push_back(req);
+    }
+  }
+
+  /// barrier until all (primary) data is received
+  void wait_data(int tag)
+  {
+    assert( tag < (int)recv_data_messages.size() );
+    mpi::wait_all(recv_data_messages[tag].begin(), recv_data_messages[tag].end());
+  }
+
 
 
 }; // end of Node class
