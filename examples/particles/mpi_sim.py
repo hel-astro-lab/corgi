@@ -402,17 +402,17 @@ class Conf:
 if __name__ == "__main__":
 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,4))
+    plt.fig = plt.figure(1, figsize=(4,4))
     plt.rc('font', family='serif', size=12)
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(1, 2)
+    gs = plt.GridSpec(1, 1)
     gs.update(hspace = 0.5)
     
     axs = []
     axs.append( plt.subplot(gs[0]) )
-    axs.append( plt.subplot(gs[1]) )
+    #axs.append( plt.subplot(gs[1]) )
     
     
     #setup node
@@ -441,16 +441,16 @@ if __name__ == "__main__":
     node.recv_tiles()
     initialize_virtuals(node, conf)
 
-    plotNode(axs[0], node, conf)
-    plotMesh(axs[1], node, conf)
+    #plotNode(axs[0], node, conf)
+    plotMesh(axs[0], node, conf)
     saveVisz(0, node, conf)
 
     for lap in range(1, 101):
         print("---lap: {}".format(lap))
 
         if (lap % 1 == 0):
-            plotNode(axs[0], node, conf)
-            plotMesh(axs[1], node, conf)
+            #plotNode(axs[0], node, conf)
+            plotMesh(axs[0], node, conf)
             saveVisz(lap, node, conf)
     
         #move particles

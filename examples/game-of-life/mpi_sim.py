@@ -80,8 +80,8 @@ if __name__ == "__main__":
     node = pycorgi.twoD.Node( conf["Nx"], conf["Ny"] ) 
     node.set_grid_lims(0.0, 1.0, 0.0, 1.0)
     
-    #loadMpiRandomly(node)
-    loadMpiXStrides(node)
+    loadMpiRandomly(node)
+    #loadMpiXStrides(node)
 
     load_tiles(node)
     randomInitialize(node, conf)
