@@ -445,10 +445,6 @@ if __name__ == "__main__":
     plotMesh(axs[1], node, conf)
     saveVisz(0, node, conf)
 
-
-    node.send_data(0)
-    node.recv_data(0)
-
     for lap in range(1, 101):
         print("---lap: {}".format(lap))
 
@@ -477,9 +473,16 @@ if __name__ == "__main__":
             tile.pack_outgoing_particles()
 
         # MPI global exchange
+        # transfer primary and extra data
         node.send_data(0) #(indepdendent)
+        node.send_data(1) #(indepdendent)
+
         node.recv_data(0) #(indepdendent)
+        node.recv_data(1) #(indepdendent)
+
         node.wait_data(0) #(indepdendent)
+        node.wait_data(1) #(indepdendent)
+
 
         # global unpacking (independent)
         for cid in node.get_virtual_tiles(): 

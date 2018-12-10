@@ -37,15 +37,37 @@ class Tile : public corgi::Tile<2> {
   void set_container(const ParticleBlock& block) {containers.push_back(block);};
 
   size_t Nspecies() {return containers.size(); };
+    
 
+
+  //--------------------------------------------------
+  // MPI send
   virtual std::vector<mpi::request> 
   send_data( mpi::communicator&, int orig, int tag) override;
 
-  virtual std::vector<mpi::request> 
-  recv_data( mpi::communicator&, int dest, int tag) override;
+  /// actual tag=0 send
+  std::vector<mpi::request> 
+  send_particle_data( mpi::communicator&, int orig);
 
+  /// actual tag=1 send
+  std::vector<mpi::request> 
+  send_particle_extra_data( mpi::communicator&, int orig);
+
+
+  //--------------------------------------------------
+  // MPI recv
   virtual std::vector<mpi::request> 
-  recv_extra_data( mpi::communicator&, int dest, int tag) override;
+  recv_data(mpi::communicator&, int dest, int tag) override;
+
+  /// actual tag=0 recv
+  std::vector<mpi::request> 
+  recv_particle_data(mpi::communicator&, int dest);
+
+  /// actual tag=1 recv
+  std::vector<mpi::request> 
+  recv_particle_extra_data(mpi::communicator&, int dest);
+  //--------------------------------------------------
+
 
   /// check all particle containers for particles
   // exceeding limits

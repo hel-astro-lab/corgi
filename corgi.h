@@ -779,11 +779,11 @@ class Node
 
   std::vector<mpi::request> sent_info_messages;
   std::vector<mpi::request> sent_tile_messages;
-  std::vector<mpi::request> sent_data_messages;
+  std::vector< std::vector<mpi::request> > sent_data_messages;
 
   std::vector<mpi::request> recv_info_messages;
   std::vector<mpi::request> recv_tile_messages;
-  std::vector<mpi::request> recv_data_messages;
+  std::vector< std::vector<mpi::request> > recv_data_messages;
 
 
   // /// Broadcast master ranks mpi_grid to everybody
@@ -982,20 +982,31 @@ class Node
     }
   }
 
+  /// Initialize vector of vector if needed
+  void initialize_message_array(
+      std::vector<std::vector<mpi::request>>& arr, 
+      int tag)
+  {
+    while((int)arr.size() <= tag) {
+      std::vector<mpi::request> arri(0);
+      arr.push_back( arri );
+    }
+  }
 
   /// Call mpi send routines from tile for the boundary regions
   // NOTE: we bounce sending back to tile members,
   //       this way they can be extended for different types of send.
   void send_data(int tag)
   {
-    sent_data_messages.clear();
+    initialize_message_array(sent_data_messages, tag);
+    sent_data_messages.at(tag).clear();
 
     for(auto cid : get_boundary_tiles() ) {
       auto& tile = get_tile(cid);
       for(auto dest: tile.communication.virtual_owners) {
         auto reqs = tile.send_data(comm, dest, tag);
         
-        for(auto& req : reqs) sent_data_messages.push_back(req);
+        for(auto& req : reqs) sent_data_messages.at(tag).push_back(req);
       }
     }
   }
@@ -1006,36 +1017,22 @@ class Node
   //       this way they can be extended for different types of recv.
   void recv_data(int tag)
   {
-    recv_data_messages.clear();
+    initialize_message_array(recv_data_messages, tag);
+    recv_data_messages.at(tag).clear();
 
     for(auto cid : get_virtuals() ) {
       auto& tile = get_tile(cid);
       auto reqs = tile.recv_data(comm, tile.communication.owner, tag);
 
-      for(auto& req : reqs) recv_data_messages.push_back(req);
+      for(auto& req : reqs) recv_data_messages.at(tag).push_back(req);
     }
-
   }
 
   /// barrier until all (primary) data is received
   void wait_data(int tag)
   {
-    mpi::wait_all(recv_data_messages.begin(), recv_data_messages.end());
-
-    // extra messages
-    std::vector<mpi::request> recv_extra_data_messages;
-
-    for(auto cid : get_virtuals() ) {
-      auto& tile = get_tile(cid);
-      auto reqs = tile.recv_extra_data(
-          comm, tile.communication.owner, tag);
-
-      for(auto& req : reqs) recv_extra_data_messages.push_back(req);
-    }
-
-    mpi::wait_all(recv_extra_data_messages.begin(), 
-                  recv_extra_data_messages.end());
-
+    assert( tag < (int)recv_data_messages.size() );
+    mpi::wait_all(recv_data_messages[tag].begin(), recv_data_messages[tag].end());
   }
 
 

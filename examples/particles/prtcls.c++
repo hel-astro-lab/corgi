@@ -82,10 +82,15 @@ int get_extra_tag(int cid, int extra_param)
 }
 
 
-std::vector<mpi::request> Tile::send_data( mpi::communicator& comm, int dest, int /*tag*/)
+std::vector<mpi::request> Tile::send_data( mpi::communicator& comm, int dest, int tag)
 {
-  //std::cout << "SEND to " << dest << "\n";
+  if(tag == 0)      return Tile::send_particle_data(comm, dest);
+  else if(tag == 1) return Tile::send_particle_extra_data(comm,dest);
+  else assert(false);
+}
 
+std::vector<mpi::request> Tile::send_particle_data( mpi::communicator& comm, int dest)
+{
   std::vector<mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
@@ -95,6 +100,17 @@ std::vector<mpi::request> Tile::send_data( mpi::communicator& comm, int dest, in
           container.outgoing_particles.data(), 
           container.outgoing_particles.size())
         );
+  }
+
+  return reqs;
+}
+
+
+std::vector<mpi::request> Tile::send_particle_extra_data( mpi::communicator& comm, int dest)
+{
+  std::vector<mpi::request> reqs;
+  for(size_t ispc=0; ispc<Nspecies(); ispc++) {
+    ParticleBlock& container = get_container(ispc);
 
     if(!container.outgoing_extra_particles.empty()) {
       reqs.push_back(
@@ -104,19 +120,21 @@ std::vector<mpi::request> Tile::send_data( mpi::communicator& comm, int dest, in
           );
     }
   }
-
-  //req = comm.isend(dest, cid, mesh.mesh.data(), mesh.size() );
-
   return reqs;
 }
 
 
-std::vector<mpi::request> Tile::recv_data( mpi::communicator& comm, int orig, int /*tag*/)
+std::vector<mpi::request> Tile::recv_data( mpi::communicator& comm, int orig, int tag)
 {
-  //std::cout << "RECV from " << orig << "\n";
+  if(tag == 0)      return Tile::recv_particle_data(comm,orig);
+  else if(tag == 1) return Tile::recv_particle_extra_data(comm,orig);
+  else assert(false);
+}
 
+
+std::vector<mpi::request> Tile::recv_particle_data( mpi::communicator& comm, int orig)
+{
   std::vector<mpi::request> reqs;
-
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
     container.incoming_particles.resize( container.optimal_message_size );
@@ -128,21 +146,17 @@ std::vector<mpi::request> Tile::recv_data( mpi::communicator& comm, int orig, in
         );
   }
 
-  //req = comm.irecv(orig, cid, mesh.mesh.data(), mesh.size() );
-
   return reqs;
 }
 
 
-std::vector<mpi::request> Tile::recv_extra_data( 
-    mpi::communicator& comm, int orig, int /*tag*/)
+std::vector<mpi::request> Tile::recv_particle_extra_data( mpi::communicator& comm, int orig )
 {
   std::vector<mpi::request> reqs;
 
-  // this assumes that wait for the first messages is already called
+  // this assumes that wait for the first message is already called
   // and passed.
 
-  //InfoParticle msginfo;
   int extra_size;
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
@@ -150,10 +164,6 @@ std::vector<mpi::request> Tile::recv_extra_data(
 
     // check if we need to expect extra message
     extra_size = msginfo.size() - container.optimal_message_size;
-
-    //std::cout << " recv extra data with " << extra_size 
-    //  << "( "<< msginfo.size() << "\n";
-
     if(extra_size > 0) {
       container.incoming_extra_particles.resize(extra_size);
 
