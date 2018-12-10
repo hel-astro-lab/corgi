@@ -11,19 +11,14 @@ using namespace mpi4cpp;
 
 void Tile::check_outgoing_particles()
 {
-  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
-    ParticleBlock& container = get_container(ispc);
-
+  for(auto&& container : containers) {
     container.check_outgoing_particles(mins, maxs);
   }
 }
 
 void Tile::delete_transferred_particles()
 {
-
-  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
-    ParticleBlock& container = get_container(ispc);
-
+  for(auto&& container : containers) {
     container.delete_transferred_particles();
   }
 }
@@ -182,8 +177,7 @@ std::vector<mpi::request> Tile::recv_extra_data(
 
 void Tile::pack_outgoing_particles()
 {
-  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
-    ParticleBlock& container = get_container(ispc);
+  for(auto&& container : containers) {
     container.pack_outgoing_particles();
   }
 }
@@ -191,8 +185,7 @@ void Tile::pack_outgoing_particles()
 
 void Tile::unpack_incoming_particles()
 {
-  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
-    ParticleBlock& container = get_container(ispc);
+  for(auto&& container : containers) {
     container.unpack_incoming_particles();
   }
 }
@@ -200,8 +193,7 @@ void Tile::unpack_incoming_particles()
 
 void Tile::delete_all_particles()
 {
-  for (size_t ispc=0; ispc<Nspecies(); ispc++) {
-    ParticleBlock& container = get_container(ispc);
+  for(auto&& container : containers) {
     container.resize(0);
   }
 }
@@ -210,10 +202,7 @@ void Tile::delete_all_particles()
 
 void Pusher::solve(Tile& tile) 
 {
-
-  for (size_t ispc=0; ispc<tile.Nspecies(); ispc++) {
-    ParticleBlock& container = tile.get_container(ispc);
-
+  for(auto&& container : tile.containers) {
     int nparts = container.size();
 
     // initialize pointers to particle arrays
