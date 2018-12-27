@@ -279,17 +279,27 @@ if __name__ == "__main__":
         if not os.path.exists( conf.outdir):
             os.makedirs(conf.outdir)
     
+    node.analyze_boundaries()
+    node.send_tiles()
+    node.recv_tiles()
+    initialize_virtuals(node, conf)
+
+    plotNode(axs[0], node, conf)
+    saveVisz(0, node, conf)
+
 
     ##################################################
     for lap in range(1, 2):
         print("---lap: {}".format(lap))
 
         # corgi loadbalance 
-        node.analyze_boundaries()
-        node.send_tiles()
-        node.recv_tiles()
-        initialize_virtuals(node, conf)
+        node.adoption_council()
+        node.adopt()
 
+        #node.analyze_boundaries()
+        #node.send_tiles()
+        #node.recv_tiles()
+        #initialize_virtuals(node, conf)
 
         if (lap % 1 == 0):
             plotNode(axs[0], node, conf)

@@ -75,7 +75,11 @@ auto declare_node(
         .def("recv_tiles",              &corgi::Node<D>::recv_tiles)
         .def("send_data",               &corgi::Node<D>::send_data)
         .def("recv_data",               &corgi::Node<D>::recv_data)
-        .def("wait_data",               &corgi::Node<D>::wait_data);
+        .def("wait_data",               &corgi::Node<D>::wait_data)
+
+        // adoption routines
+        .def("adopt",                   &corgi::Node<D>::adopt)
+        .def("adoption_council",        &corgi::Node<D>::adoption_council);
 
 
   return corgi_node;

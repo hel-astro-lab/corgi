@@ -54,6 +54,7 @@ struct Communication {
   /// my virtual owners; not communicated along the metainfo
   std::vector<int> virtual_owners;
 
+
 };
 
 

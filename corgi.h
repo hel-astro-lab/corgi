@@ -982,6 +982,88 @@ class Node
     }
   }
 
+
+
+  // Decide who to adopt
+  //
+  // Every node has their own council, but they should all come to same 
+  // conclusion.
+  
+  private:
+  std::vector<int> adoptions; 
+  
+  public:
+  void adoption_council()
+  {
+
+    int quota = 3;
+
+
+    // collect virtual tiles and their metainfo into a container
+    std::vector<Communication> virtuals;
+    for(auto cid : get_virtuals() ) {
+      auto& tile = get_tile(cid);
+      virtuals.push_back(tile.communication);
+    }
+
+    // sort in descending order using lambda function
+    std::sort(virtuals.begin(), virtuals.end(), 
+        [](const auto& lhs, const auto& rhs) 
+    {
+      return lhs.number_of_virtual_neighbors > rhs.number_of_virtual_neighbors;
+    });
+
+
+    // now loop over all virtual tiles and check if I can adopt someone
+    adoptions.clear();
+    for(auto& vir : virtuals) {
+
+      // skip tiles where I am not the top owner
+      if(vir.top_virtual_owner == comm.rank()) {
+        adoptions.push_back( vir.cid );
+
+
+        std::cout << comm.rank() 
+          << ": adoption council marks " << vir.cid
+          << " at " << vir.indices[0] << " " << vir.indices[1] << "\n";
+      }
+
+      if( (int)adoptions.size() >= quota) break;
+    }
+
+  }
+
+
+  /// iterate over tiles in adoption vector and claim them to me
+  void adopt()
+  {
+    for(auto cid : adoptions){
+      auto& vir = get_tile(cid);
+
+      vir.communication.owner = comm.rank();
+      vir.communication.local = true;
+
+      _mpi_grid( vir.index ) = comm.rank();
+
+      std::cout << comm.rank() 
+        << ": adopting " << vir.cid
+        << " at " << vir.communication.indices[0] << " " 
+                  << vir.communication.indices[1] << "\n";
+
+    }
+  }
+
+
+
+
+
+
+
+
+
+  // --------------------------------------------------
+  // user-data message routines
+
   /// Initialize vector of vector if needed
   void initialize_message_array(
       std::vector<std::vector<mpi::request>>& arr, 
@@ -1034,6 +1116,15 @@ class Node
     assert( tag < (int)recv_data_messages.size() );
     mpi::wait_all(recv_data_messages[tag].begin(), recv_data_messages[tag].end());
   }
+
+
+
+
+
+
+
+
+
 
 
 
