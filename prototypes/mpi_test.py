@@ -452,8 +452,6 @@ def communicate_send_adoptions():
             print "{}: sending info about my kidnap to {}".format(rank, dest)
             kidnaps.extend( (n.adopted_index[q]) )
 
-
-
         print "sending this: ", kidnaps
         comm.isend(kidnaps, dest=dest, tag=adopt_tag)
 

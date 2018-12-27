@@ -785,6 +785,8 @@ class Node
   std::vector<mpi::request> recv_tile_messages;
   std::vector< std::vector<mpi::request> > recv_data_messages;
 
+  std::vector<mpi::request> sent_adoption_messages;
+  std::vector<mpi::request> recv_adoption_messages;
 
   // /// Broadcast master ranks mpi_grid to everybody
   void bcast_mpi_grid() {
@@ -991,12 +993,14 @@ class Node
   
   private:
   std::vector<int> adoptions; 
+  std::vector<int> kidnaps; 
+  int max_quota = 3;
   
   public:
   void adoption_council()
   {
 
-    int quota = 3;
+    int quota = max_quota;
 
 
     // collect virtual tiles and their metainfo into a container
@@ -1055,9 +1059,65 @@ class Node
 
 
 
+  void send_adoptions()
+  {
+    sent_adoption_messages.clear();
 
+    // ensure that adoptions vector is of standard length
+    //if(adoptions.size() < max_quota) adoptions.resize(max_quota);
+    while(adoptions.size() < max_quota) adoptions.push_back(-1);
 
+    for (int dest = 0; dest<comm.size(); dest++) {
+      if( dest == comm.rank() ) { continue; } // do not send to myself
 
+      mpi::request req;
+      req = comm.isend(dest, commType::ADOPT, adoptions.data(), max_quota);
+      sent_adoption_messages.push_back( req );
+    }
+  }
+
+  void recv_adoptions()
+  {
+    recv_adoption_messages.clear();
+
+    // ensure that the receiving array is of correct size
+    kidnaps.resize(comm.size()*max_quota);
+
+    for (int orig = 0; orig<comm.size(); orig++) {
+      if( orig == comm.rank() ) { continue; } // do not recv from myself
+
+      mpi::request req;
+      req = comm.irecv(orig, commType::ADOPT, &kidnaps[orig*max_quota], max_quota);
+      recv_adoption_messages.push_back( req );
+    }
+
+  }
+
+  void wait_adoptions()
+  {
+    mpi::wait_all(recv_adoption_messages.begin(), recv_adoption_messages.end());
+
+    int kidnapped_cid;
+    for (int orig = 0; orig<comm.size(); orig++) {
+      if( orig == comm.rank() ) { continue; } // do not process myself
+
+      for(int i=0; i<max_quota; i++) {
+        kidnapped_cid = kidnaps[orig*max_quota + i];
+        if(kidnapped_cid == -1) continue;
+
+        std::cout << comm.rank() << ": tile " << kidnapped_cid 
+          << " has been kidnapped by evil " << orig << "\n";
+
+      }
+    }
+  }
+
+  void communicate_adoptions()
+  {
+    send_adoptions();
+    recv_adoptions();
+    wait_adoptions();
+  }
 
 
 

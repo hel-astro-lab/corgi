@@ -295,6 +295,8 @@ if __name__ == "__main__":
         # corgi loadbalance 
         node.adoption_council()
         node.adopt()
+        node.communicate_adoptions()
+
 
         #node.analyze_boundaries()
         #node.send_tiles()
