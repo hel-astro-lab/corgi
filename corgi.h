@@ -74,7 +74,7 @@ class Node
   using TileID_t = uint64_t;
   using Tile_t   = corgi::Tile<D>;
   using Tileptr  = std::shared_ptr<Tile_t>;
-  using Tile_map  = std::unordered_map<TileID_t, Tileptr>;
+  using Tile_map = std::unordered_map<TileID_t, Tileptr>;
 
 
 
@@ -369,6 +369,45 @@ class Node
       return id_impl(indices, Indices{} );
   }
   
+  /// Inverse Morton Z-code
+  //
+  // TODO: make N-dimensional
+  corgi::internals::tuple_of<1, index_type> id2index(
+      uint64_t cid, 
+      std::array<size_type,1> /*lengths*/)
+  {
+    corgi::internals::tuple_of<1, index_type> indices = std::make_tuple(cid);
+
+    return indices;
+  }
+
+  corgi::internals::tuple_of<2, index_type> id2index(
+      uint64_t cid,
+      std::array<size_type,2> lengths)
+  {
+    corgi::internals::tuple_of<2, index_type> indices = std::make_tuple
+      (
+       cid % lengths[0],
+      (cid / lengths[0]) % (lengths[1] )
+       );
+
+    return indices;
+  }
+
+  corgi::internals::tuple_of<3, index_type> id2index(
+      uint64_t cid,
+      std::array<size_type,3> lengths)
+  {
+    corgi::internals::tuple_of<3, index_type> indices = std::make_tuple
+      (
+       cid % lengths[0],
+      (cid / lengths[0]) % (lengths[1] ),
+       cid /(lengths[0] * lengths[1] )
+       );
+
+    return indices;
+  }
+
 
   public:
 
@@ -746,9 +785,9 @@ class Node
         c.communication.number_of_virtual_neighbors = N;
         c.communication.virtual_owners = virtual_owners;
 
-        if (std::find( send_queue.begin(), send_queue.end(),
-              cid) == send_queue.end()
-           ) {
+        if (std::find( send_queue.begin(), send_queue.end(), cid) 
+            == send_queue.end()) 
+        {
           send_queue.push_back( cid );
           send_queue_address.push_back( virtual_owners );
         }
@@ -830,7 +869,7 @@ class Node
 
       int i = 0;
       std::vector<int> to_be_sent;
-      for (std::vector<int> address: send_queue_address) {
+      for(std::vector<int> address: send_queue_address) {
         if( std::find( address.begin(),
               address.end(),
               dest) != address.end()) 
@@ -982,6 +1021,8 @@ class Node
       }
       i++;
     }
+
+    clear_send_queue();
   }
 
 
@@ -994,7 +1035,7 @@ class Node
   private:
   std::vector<int> adoptions; 
   std::vector<int> kidnaps; 
-  int max_quota = 3;
+  int max_quota = 5;
   
   public:
   void adoption_council()
@@ -1025,7 +1066,6 @@ class Node
       // skip tiles where I am not the top owner
       if(vir.top_virtual_owner == comm.rank()) {
         adoptions.push_back( vir.cid );
-
 
         std::cout << comm.rank() 
           << ": adoption council marks " << vir.cid
@@ -1059,13 +1099,14 @@ class Node
 
 
 
+  /// send MPI message of my adoptions to everybody
   void send_adoptions()
   {
     sent_adoption_messages.clear();
 
     // ensure that adoptions vector is of standard length
     //if(adoptions.size() < max_quota) adoptions.resize(max_quota);
-    while(adoptions.size() < max_quota) adoptions.push_back(-1);
+    while((int)adoptions.size() < max_quota) adoptions.push_back(-1);
 
     for (int dest = 0; dest<comm.size(); dest++) {
       if( dest == comm.rank() ) { continue; } // do not send to myself
@@ -1076,6 +1117,7 @@ class Node
     }
   }
 
+  /// receive MPI adoption messages from others
   void recv_adoptions()
   {
     recv_adoption_messages.clear();
@@ -1093,10 +1135,16 @@ class Node
 
   }
 
+  /// wait and unpack MPI adoption messages
+  //
+  // Here we try to keep track of all the ownership changes,
+  // even if they are remote and do not consider me.
   void wait_adoptions()
   {
+    // wait
     mpi::wait_all(recv_adoption_messages.begin(), recv_adoption_messages.end());
 
+    // unpack
     int kidnapped_cid;
     for (int orig = 0; orig<comm.size(); orig++) {
       if( orig == comm.rank() ) { continue; } // do not process myself
@@ -1105,13 +1153,27 @@ class Node
         kidnapped_cid = kidnaps[orig*max_quota + i];
         if(kidnapped_cid == -1) continue;
 
+        auto index = id2index(kidnapped_cid, _lengths);
+
         std::cout << comm.rank() << ": tile " << kidnapped_cid 
           << " has been kidnapped by evil " << orig << "\n";
 
+        if(is_local(kidnapped_cid)) {
+          std::cout << comm.rank() << ": tile " << kidnapped_cid << " is mine! \n";
+          //tiles.erase(kidnapped_cid);
+
+          auto& tile = get_tile(kidnapped_cid);
+          tile.communication.owner = orig;
+          tile.communication.local = false;
+        }
+
+        // update global status irrespective of if it is mine or not
+        _mpi_grid(index) = orig;
       }
     }
   }
 
+  /// shortcut for calling blocking version of adoption messaging
   void communicate_adoptions()
   {
     send_adoptions();
@@ -1119,6 +1181,12 @@ class Node
     wait_adoptions();
   }
 
+
+  /// loop over all virtuals and remove them
+  void erase_virtuals()
+  {
+    for(auto cid : get_virtuals() ) tiles.erase(cid);
+  }
 
 
   // --------------------------------------------------
@@ -1176,10 +1244,6 @@ class Node
     assert( tag < (int)recv_data_messages.size() );
     mpi::wait_all(recv_data_messages[tag].begin(), recv_data_messages[tag].end());
   }
-
-
-
-
 
 
 

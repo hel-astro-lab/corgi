@@ -210,6 +210,7 @@ def initialize_virtuals(n, conf):
         # TODO: load_metainfo *HAS* to be after add_tile
         c = pycorgi.Tile()
         n.add_tile(c, (i,j)) 
+        #c = c_orig
 
         c_orig.communication.local = False;
         c.load_metainfo(c_orig.communication)
@@ -289,19 +290,19 @@ if __name__ == "__main__":
 
 
     ##################################################
-    for lap in range(1, 2):
+    for lap in range(1, 31):
         print("---lap: {}".format(lap))
 
         # corgi loadbalance 
         node.adoption_council()
         node.adopt()
         node.communicate_adoptions()
+        #node.erase_virtuals()
 
-
-        #node.analyze_boundaries()
-        #node.send_tiles()
-        #node.recv_tiles()
-        #initialize_virtuals(node, conf)
+        node.analyze_boundaries()
+        node.send_tiles()
+        node.recv_tiles()
+        initialize_virtuals(node, conf)
 
         if (lap % 1 == 0):
             plotNode(axs[0], node, conf)

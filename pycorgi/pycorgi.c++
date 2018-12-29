@@ -80,8 +80,8 @@ auto declare_node(
         // adoption routines
         .def("adopt",                   &corgi::Node<D>::adopt)
         .def("adoption_council",        &corgi::Node<D>::adoption_council)
-        .def("communicate_adoptions",   &corgi::Node<D>::communicate_adoptions);
-
+        .def("communicate_adoptions",   &corgi::Node<D>::communicate_adoptions)
+        .def("erase_virtuals",          &corgi::Node<D>::erase_virtuals);
 
 
   return corgi_node;
