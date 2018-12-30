@@ -157,6 +157,12 @@ def plotNode(ax, n, conf, mpigrid=False):
             ax.plot([ix0, ix1],[jy0, jy0], color='k', linestyle='dotted')
             ax.plot([ix0, ix1],[jy1, jy1], color='k', linestyle='dotted')
 
+    if True:
+        #virs = n.get_virtual_tiles()
+        boun = n.get_boundary_tiles()
+        locs = n.get_tile_ids()
+        ax.set_title(str(len(boun))+"/"+str(len(locs)))
+
 
 
 #load tiles into each node
@@ -244,8 +250,8 @@ def initialize_virtuals(n, conf):
 
 class Conf:
 
-    Nx  = 10
-    Ny  = 5
+    Nx  = 20
+    Ny  = 20
     Nz  = 1
 
     NxMesh = 1
@@ -315,7 +321,7 @@ if __name__ == "__main__":
     saveVisz(0, node, conf)
 
     ##################################################
-    for lap in range(1, 20):
+    for lap in range(1, 101):
         print("---lap: {}".format(lap))
 
         # corgi loadbalance 
@@ -325,7 +331,7 @@ if __name__ == "__main__":
         node.adopt()
         #print("communicate_adoptions")
         node.communicate_adoptions()
-        #node.erase_virtuals()
+        node.erase_virtuals()
 
         #print("analyze_boundaries")
         node.analyze_boundaries()

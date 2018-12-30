@@ -745,7 +745,7 @@ class Node
   bool is_local(uint64_t cid) {
     bool local = false;
 
-    // Do we have it on the list=
+    // Do we have it on the list?
     if (tiles.count( cid ) > 0) {
       // is it local (i.e., not virtual)
       if ( tiles.at(cid)->communication.owner == comm.rank() ) {
@@ -758,21 +758,19 @@ class Node
 
 
   /// return all virtual tiles around the given tile
-  std::vector<int> virtual_nhood(uint64_t cid) {
-
+  std::vector<int> virtual_nhood(uint64_t cid) 
+  {
     auto& c = get_tile(cid);
     auto neigs = c.nhood();
     //std::vector< corgi::internals::tuple_of<D, size_t> > neigs = c.nhood();
     std::vector<int> virtual_owners;
-    for (auto& indx: neigs) {
+    for(auto& indx: neigs) {
 
       // Get tile id from index notation
-      uint64_t cid = id(indx);
+      //uint64_t ncid = id(indx);
+      int whoami = _mpi_grid(indx); 
 
-      if (!is_local( cid )) {
-        int whoami = _mpi_grid(indx); 
-        virtual_owners.push_back( whoami );
-      }
+      if(whoami != comm.rank()) virtual_owners.push_back( whoami );
     }
 
     return virtual_owners;
@@ -843,8 +841,12 @@ class Node
           send_queue.push_back( cid );
           send_queue_address.push_back( virtual_owners );
         }
-
+      } else { // else N == 0
+        auto& c = get_tile(cid);
+        c.communication.number_of_virtual_neighbors = 0;
+        c.communication.communications              = 0;
       }
+
     }
   }
 
@@ -1085,7 +1087,7 @@ class Node
   private:
   std::vector<int> adoptions; 
   std::vector<int> kidnaps; 
-  int max_quota = 5;
+  int max_quota = 3;
   
   public:
   void adoption_council()
@@ -1110,6 +1112,8 @@ class Node
     // now loop over all virtual tiles and check if I can adopt someone
     adoptions.clear();
     for(auto& vir : virtuals) {
+
+      if(vir.number_of_virtual_neighbors <= 3) continue;
 
       // skip tiles where I am not the top owner
       if(vir.top_virtual_owner == comm.rank()) {
@@ -1233,7 +1237,20 @@ class Node
   /// loop over all virtuals and remove them
   void erase_virtuals()
   {
-    for(auto cid : get_virtuals() ) tiles.erase(cid);
+
+    int whoami;
+    for(auto cid : get_virtuals() ) {
+
+      // check if virtual tile is still needed
+      auto& c = get_tile(cid);
+      auto neigs = c.nhood();
+      for(auto& indx: neigs) {
+        whoami = _mpi_grid(indx); 
+        if(whoami == comm.rank()) continue;
+      }
+
+      tiles.erase(cid);
+    }
   }
 
 
