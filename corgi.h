@@ -1087,12 +1087,34 @@ class Node
   private:
   std::vector<int> adoptions; 
   std::vector<int> kidnaps; 
-  int max_quota = 3;
-  
+  int min_quota = 4;
+  int max_quota = 8;
+
+
   public:
+  /// Compute maximum number of new tiles I can adopt
+  int get_quota()
+  {
+    // integrate over all work
+    int N = 1;
+    for (size_t i = 0; i<D; i++) N *= _lengths[i];
+    
+    // work for me
+    int work = N/comm.size();
+
+    /// excess work I can do
+    int excess = (int)get_local_tiles().size() - work;
+    excess = excess > 0 ? excess : 0;
+
+    int quota = max_quota - excess;
+
+    return quota > min_quota ? quota : min_quota;
+  }
+  
+  /// Propagate CA rules one step forward and decide who adopts who
   void adoption_council()
   {
-    int quota = max_quota;
+    int quota = get_quota();
 
     // collect virtual tiles and their metainfo into a container
     std::vector<Communication> virtuals;
