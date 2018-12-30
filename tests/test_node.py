@@ -112,7 +112,7 @@ class Parallel(unittest.TestCase):
 
             self.assertEqual(c.cid,   cid)
             self.assertEqual(c.communication.owner, self.node.rank())
-            self.assertEqual(c.communication.local, True)
+            #self.assertEqual(c.communication.local, True)
 
             #ci = c.i
             #cj = c.j

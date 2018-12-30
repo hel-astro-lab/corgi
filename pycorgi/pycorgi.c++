@@ -51,6 +51,7 @@ auto declare_node(
         .def("size",      [](corgi::Node<D>& n) { return n.comm.size(); })
         .def("master",    [](corgi::Node<D>& n) { return n.comm.rank() == 0; })
         .def("add_tile",              &corgi::Node<D>::add_tile, py::keep_alive<1,2>())
+        .def("replace_tile",          &corgi::Node<D>::replace_tile, py::keep_alive<1,2>())
         .def("get_tile_ids",           &corgi::Node<D>::get_tile_ids,
                 py::arg("sorted") = true)
         .def("get_tile", (std::shared_ptr<corgi::Tile<D>> (corgi::Node<D>::*)(const uint64_t)) &corgi::Node<D>::get_tileptr)

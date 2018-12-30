@@ -80,9 +80,9 @@ def loadMpiXStrides(n):
     n.bcast_mpi_grid()
 
 # Visualize current cell ownership on node
-def plotNode(ax, n, conf):
-    tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
+def plotNode(ax, n, conf, mpigrid=False):
 
+    tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
     for cid in n.get_tile_ids():
         c = n.get_tile( cid )
         (i, j) = c.index
@@ -92,46 +92,70 @@ def plotNode(ax, n, conf):
             sys.exit()
         tmp_grid[i,j] = c.communication.owner
 
-    imshow(ax, tmp_grid, 
-            n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
-            cmap = palette,
-            vmin = 0.0,
-            vmax = n.size(),
-            )
+    if not(mpigrid):
+        imshow(ax, tmp_grid, 
+               n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
+               cmap = palette,
+               vmin = 0.0,
+               vmax = n.size(),
+               )
+
+    # internal mpi_grid
+    if mpigrid:
+        tmp_grid2 = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
+        for i in range(n.get_Nx()):
+            for j in range(n.get_Ny()):
+                tmp_grid2[i,j] = node.get_mpi_grid(i,j)
+                #print("{}: val={}".format(node.rank(), node.get_mpi_grid(i,j)))
+
+        #for i in range(n.get_Nx()):
+        #    for j in range(n.get_Ny()):
+        #        if(tmp_grid2[i,j] != tmp_grid[i,j]):
+        #            print(" mismatch {} vs {} at ({},{})".format(tmp_grid[i,j], tmp_grid2[i,j], i,j))
+
+        imshow(ax, tmp_grid2, 
+           n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
+           cmap = palette,
+           vmin = 0.0,
+           vmax = n.size(),
+           )
+
 
     # add text label about number of neighbors
-    for cid in n.get_tile_ids():
-        c = n.get_tile( cid )
-        (i, j) = c.index
-        dx = n.get_xmax() - n.get_xmin()
-        dy = n.get_ymax() - n.get_ymin()
+    if True:
+        for cid in n.get_tile_ids():
+            c = n.get_tile( cid )
+            (i, j) = c.index
+            dx = n.get_xmax() - n.get_xmin()
+            dy = n.get_ymax() - n.get_ymin()
 
-        ix = n.get_xmin() + dx*(i+0.5)/n.get_Nx()
-        jy = n.get_ymin() + dy*(j+0.5)/n.get_Ny()
+            ix = n.get_xmin() + dx*(i+0.5)/n.get_Nx()
+            jy = n.get_ymin() + dy*(j+0.5)/n.get_Ny()
 
-        Nv = c.communication.number_of_virtual_neighbors
-        label = str(Nv)
-        ax.text(ix, jy, label, ha='center',va='center', size=8)
+            Nv = c.communication.number_of_virtual_neighbors
+            label = str(Nv)
+            ax.text(ix, jy, label, ha='center',va='center', size=8)
 
     #mark boundaries with hatch
-    dx = n.get_xmax() - n.get_xmin()
-    dy = n.get_ymax() - n.get_ymin()
-    for cid in n.get_boundary_tiles():
-        c = n.get_tile( cid )
-        (i, j) = c.index
+    if False:
+        dx = n.get_xmax() - n.get_xmin()
+        dy = n.get_ymax() - n.get_ymin()
+        for cid in n.get_boundary_tiles():
+            c = n.get_tile( cid )
+            (i, j) = c.index
 
-        ix0 = n.get_xmin() + dx*(i+0.0)/n.get_Nx()
-        jy0 = n.get_ymin() + dy*(j+0.0)/n.get_Ny()
+            ix0 = n.get_xmin() + dx*(i+0.0)/n.get_Nx()
+            jy0 = n.get_ymin() + dy*(j+0.0)/n.get_Ny()
 
-        ix1 = n.get_xmin() + dx*(i+1.0)/n.get_Nx()
-        jy1 = n.get_ymin() + dy*(j+1.0)/n.get_Ny()
+            ix1 = n.get_xmin() + dx*(i+1.0)/n.get_Nx()
+            jy1 = n.get_ymin() + dy*(j+1.0)/n.get_Ny()
 
-        #ax.fill_between([ix0,ix1], [jy0, jy1], hatch='///', alpha=0.0)
+            #ax.fill_between([ix0,ix1], [jy0, jy1], hatch='///', alpha=0.0)
 
-        ax.plot([ix0, ix0],[jy0, jy1], color='k', linestyle='dotted')
-        ax.plot([ix1, ix1],[jy0, jy1], color='k', linestyle='dotted')
-        ax.plot([ix0, ix1],[jy0, jy0], color='k', linestyle='dotted')
-        ax.plot([ix0, ix1],[jy1, jy1], color='k', linestyle='dotted')
+            ax.plot([ix0, ix0],[jy0, jy1], color='k', linestyle='dotted')
+            ax.plot([ix1, ix1],[jy0, jy1], color='k', linestyle='dotted')
+            ax.plot([ix0, ix1],[jy0, jy0], color='k', linestyle='dotted')
+            ax.plot([ix0, ix1],[jy1, jy1], color='k', linestyle='dotted')
 
 
 
@@ -209,11 +233,10 @@ def initialize_virtuals(n, conf):
         # new prtcl tile;
         # TODO: load_metainfo *HAS* to be after add_tile
         c = pycorgi.Tile()
-        n.add_tile(c, (i,j)) 
-        #c = c_orig
+        n.replace_tile(c, (i,j)) 
 
-        c_orig.communication.local = False;
-        c.load_metainfo(c_orig.communication)
+        #c.communication.local = False;
+        #c.load_metainfo(c_orig.communication)
         #print("{}: loading {} owned by {}".format(n.rank(), cid, c.communication.owner))
         
         #initialize_tile(c, i,j,n, conf)
@@ -222,7 +245,7 @@ def initialize_virtuals(n, conf):
 class Conf:
 
     Nx  = 10
-    Ny  = 10
+    Ny  = 5
     Nz  = 1
 
     NxMesh = 1
@@ -249,18 +272,19 @@ class Conf:
 if __name__ == "__main__":
 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(4,4))
+    plt.fig = plt.figure(1, figsize=(8,4))
     plt.rc('font', family='serif', size=12)
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(1, 1)
+    gs = plt.GridSpec(1, 2)
     gs.update(hspace = 0.5)
     
     axs = []
     axs.append( plt.subplot(gs[0]) )
-    #axs.append( plt.subplot(gs[1]) )
+    axs.append( plt.subplot(gs[1]) )
     
+
     #setup node
     conf = Conf()
     conf.update_bbox()
@@ -271,14 +295,15 @@ if __name__ == "__main__":
     loadMpiRandomly(node)
     #loadMpiXStrides(node)
 
-
     load_tiles(node, conf)
-    
 
     # Path to be created 
     if node.master:
         if not os.path.exists( conf.outdir):
             os.makedirs(conf.outdir)
+    plotNode(axs[0], node, conf)
+    plotNode(axs[1], node, conf, mpigrid=True)
+    saveVisz(-1, node, conf)
     
     node.analyze_boundaries()
     node.send_tiles()
@@ -286,26 +311,34 @@ if __name__ == "__main__":
     initialize_virtuals(node, conf)
 
     plotNode(axs[0], node, conf)
+    plotNode(axs[1], node, conf, mpigrid=True)
     saveVisz(0, node, conf)
 
-
     ##################################################
-    for lap in range(1, 31):
+    for lap in range(1, 20):
         print("---lap: {}".format(lap))
 
         # corgi loadbalance 
+        #print("adoption_council")
         node.adoption_council()
+        #print("adopt")
         node.adopt()
+        #print("communicate_adoptions")
         node.communicate_adoptions()
         #node.erase_virtuals()
 
+        #print("analyze_boundaries")
         node.analyze_boundaries()
+        #print("send_tiles")
         node.send_tiles()
+        #print("recv_tiles")
         node.recv_tiles()
+        #print("initialize")
         initialize_virtuals(node, conf)
 
         if (lap % 1 == 0):
             plotNode(axs[0], node, conf)
+            plotNode(axs[1], node, conf, mpigrid=True)
             saveVisz(lap, node, conf)
     
 

@@ -480,6 +480,8 @@ class Node
     
   /// Add local tile to the node
   // void add_tile(Tile& tile) {
+  //
+  // FIXME
   void add_tile(
     Tileptr tileptr,
     corgi::internals::tuple_of<D, size_t> indices
@@ -500,9 +502,8 @@ class Node
     tileptr->cid                 = cid;
     tileptr->communication.cid   = cid;
     tileptr->communication.owner = comm.rank();
-    tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
+    //tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
     tileptr->lengths             = _lengths;
-
 
     // copy indices from tuple into D=3 array in Communication obj
     auto tmp = corgi::internals::into_array(indices);
@@ -511,16 +512,44 @@ class Node
     // tiles.emplace(cid, std::move(tileptr)); // unique_ptr needs to be moved
     tiles.emplace(cid, tileptr); // NOTE using c++14 emplace to avoid copying
     //tiles.insert( std::make_pair(cid, tileptr) ); // NOTE using c++14 emplace to avoid copying
-    //tiles[cid] = tileptr;
-    //tiles[cid] = tileptr;
       
     // add to my internal listing
     _mpi_grid( indices ) = comm.rank();
   }
 
 
+  /// Replace/add incoming tile
+  //
+  // FIXME
+  void replace_tile(
+    Tileptr tileptr,
+    corgi::internals::tuple_of<D, size_t> indices
+    )
+  {
+    // calculate unique global tile ID
+    uint64_t cid = id(indices);
+
+    // add tile if it does not exist
+    if(tiles.count(cid) == 0) return add_tile(tileptr, indices);
+
+    // else replace previous one; copy Communication object
+    auto& tile = get_tile(cid);
+    auto cm = tile.communication;
+
+    tileptr->index   = indices;
+    tileptr->cid     = cid;
+    tileptr->lengths = _lengths;
+
+    tiles.erase(cid);
+    tiles.emplace(cid, tileptr); 
+
+    update_tile(cm);
+  }
+
+
   /// Shortcut for creating raw tiles with only the internal meta info.
   // to be used with message passing (w.r.t. add_tile that is for use with initialization)
+  // FIXME
   void create_tile(Communication& cm)
   {
     auto tileptr = std::make_shared<Tile_t>();
@@ -537,6 +566,7 @@ class Node
   }
 
   /// Update tile metadata
+  // FIXME
   void update_tile(Communication& cm)
   {
     auto& tile = get_tile(cm.cid);
@@ -547,7 +577,8 @@ class Node
 
   /*! Return a vector of tile indices that fulfill a given criteria.  */
   std::vector<uint64_t> get_tile_ids(
-      const bool sorted=false ) {
+      const bool sorted=false ) 
+  {
     std::vector<uint64_t> ret;
 
     for (auto& it: tiles) ret.push_back( it.first );
@@ -631,39 +662,58 @@ class Node
       const bool sorted=false ) {
 
     std::vector<uint64_t> tile_list = get_tile_ids(sorted);
+    std::vector<uint64_t> ret;
+    ret.reserve(tile_list.size());
 
-    size_t i = 0, len = tile_list.size();
-    while (i < len) {
-      if (!tiles.at( tile_list[i] )->communication.local) {
-        std::swap(tile_list[i], tile_list.back());
-        tile_list.pop_back();
-        len -= 1;
-      } else {
-        i++;
+    for(auto elem : tile_list) {
+      if(tiles.at( elem )->communication.owner == comm.rank() ) {
+        ret.push_back(elem);
       }
     }
+    return ret;
 
-    return tile_list;
+    //size_t i = 0, len = tile_list.size();
+    //while(i < len) {
+    //  std::cout << comm.rank() << ": " << i << "/" << len << "\n";
+    //  if(!tiles.at( tile_list[i] )->communication.local) {
+    //    std::swap(tile_list[i], tile_list.back());
+    //    tile_list.pop_back();
+    //    len--;
+    //  } else {
+    //    i++;
+    //  }
+    //}
+    //return tile_list;
   }
 
 
   /// Return all tiles that are of VIRTUAL type.
   std::vector<uint64_t> get_virtuals(
-      const bool sorted=false ) {
-    std::vector<uint64_t> tile_list = get_tile_ids(sorted);
+      const bool sorted=false ) 
+  {
 
-    size_t i = 0, len = tile_list.size();
-    while (i < len) {
-      if (tiles.at( tile_list[i] )->communication.local) {
-        std::swap(tile_list[i], tile_list.back());
-        tile_list.pop_back();
-        len -= 1;
-      } else {
-        i++;
+    std::vector<uint64_t> tile_list = get_tile_ids(sorted);
+    std::vector<uint64_t> ret;
+    ret.reserve(tile_list.size());
+
+    for(auto elem : tile_list) {
+      if(tiles.at( elem )->communication.owner != comm.rank() ) {
+        ret.push_back(elem);
       }
     }
+    return ret;
 
-    return tile_list;
+    //size_t i = 0, len = tile_list.size();
+    //while(i < len) {
+    //  if (tiles.at( tile_list[i] )->communication.local) {
+    //    std::swap(tile_list[i], tile_list.back());
+    //    tile_list.pop_back();
+    //    len--;
+    //  } else {
+    //    i++;
+    //  }
+    //}
+    //return tile_list;
   }
 
   /// Return all local boundary tiles
@@ -673,7 +723,7 @@ class Node
     std::vector<uint64_t> tile_list = get_tile_ids(sorted);
 
     size_t i = 0, len = tile_list.size();
-    while (i < len) {
+    while(i < len) {
 
       // remove if there are no virtual nbors and tile is not mine -> opposite means its boundary
       if (tiles.at( tile_list[i] )-> communication.number_of_virtual_neighbors == 0 || 
@@ -698,7 +748,7 @@ class Node
     // Do we have it on the list=
     if (tiles.count( cid ) > 0) {
       // is it local (i.e., not virtual)
-      if ( tiles.at(cid)->communication.local ) {
+      if ( tiles.at(cid)->communication.owner == comm.rank() ) {
         local = true;
       }
     }
@@ -742,9 +792,11 @@ class Node
   //  * */
   void analyze_boundaries() {
 
-    for (auto cid: get_local_tiles()) {
+    for(auto cid: get_local_tiles()) {
+      //std::cout << comm.rank() << ": ab: " << cid << "\n";
       std::vector<int> virtual_owners = virtual_nhood(cid);
       size_t N = virtual_owners.size();
+      //std::cout << comm.rank() << ": ab: " << cid << "N:" << N << "\n";
 
       // If N > 0 then this is a boundary tile.
       // other criteria could also apply but here we assume
@@ -783,7 +835,7 @@ class Node
         c.communication.top_virtual_owner = top_owner;
         c.communication.communications    = virtual_owners.size();
         c.communication.number_of_virtual_neighbors = N;
-        c.communication.virtual_owners = virtual_owners;
+        c.communication.virtual_owners    = virtual_owners;
 
         if (std::find( send_queue.begin(), send_queue.end(), cid) 
             == send_queue.end()) 
@@ -791,6 +843,7 @@ class Node
           send_queue.push_back( cid );
           send_queue_address.push_back( virtual_owners );
         }
+
       }
     }
   }
@@ -953,7 +1006,7 @@ class Node
     //  << "\n";
 
     // next need to build tile
-    rcom.local = false; // received tiles are automatically virtuals
+    //rcom.local = false; // received tiles are automatically virtuals
     create_tile(rcom);
 
     return;
@@ -965,7 +1018,7 @@ class Node
     recv_info_messages.clear();
     recv_tile_messages.clear();
 
-    size_t i = 0;
+    //size_t i = 0;
     for (int source=0; source<comm.size(); source++) {
       if (source == comm.rank() ) continue; // do not receive from myself
 
@@ -996,7 +1049,6 @@ class Node
       //          << "\n";
 
       // Now receive the tiles themselves
-      size_t j = recv_tile_messages.size();
       for (int ic=0; ic<number_of_incoming_tiles; ic++) {
         mpi::request reqc;
         Communication rcom;
@@ -1007,19 +1059,17 @@ class Node
         reqc.wait();
         recv_tile_messages.push_back( reqc );
           
-        j++;
-
         if(this->tiles.count(rcom.cid) == 0) { // Tile does not exist yet; create it
-
           // TODO: Check validity of the tile better
-          rcom.local = false; // received tiles are automatically virtuals
           create_tile(rcom);
-
         } else { // Tile is already on my virtual list; update
           update_tile(rcom);  
         };
+
+        // update and make non-local virtual
+        //auto& new_tile = get_tile(rcom.cid);
+        //new_tile.communication.local = false;
       }
-      i++;
     }
 
     clear_send_queue();
@@ -1040,9 +1090,7 @@ class Node
   public:
   void adoption_council()
   {
-
     int quota = max_quota;
-
 
     // collect virtual tiles and their metainfo into a container
     std::vector<Communication> virtuals;
@@ -1085,7 +1133,7 @@ class Node
       auto& vir = get_tile(cid);
 
       vir.communication.owner = comm.rank();
-      vir.communication.local = true;
+      //vir.communication.local = true;
 
       _mpi_grid( vir.index ) = comm.rank();
 
@@ -1164,7 +1212,7 @@ class Node
 
           auto& tile = get_tile(kidnapped_cid);
           tile.communication.owner = orig;
-          tile.communication.local = false;
+          //tile.communication.local = false;
         }
 
         // update global status irrespective of if it is mine or not
