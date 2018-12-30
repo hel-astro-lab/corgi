@@ -1087,8 +1087,8 @@ class Node
   private:
   std::vector<int> adoptions; 
   std::vector<int> kidnaps; 
-  int min_quota = 4;
-  int max_quota = 8;
+  int min_quota = 8;
+  int max_quota = 32;
 
 
   public:

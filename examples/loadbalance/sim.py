@@ -1,7 +1,8 @@
 from mpi4py import MPI
 
 import numpy as np
-import os
+import os, sys
+import h5py
 
 try:
     import matplotlib.pyplot as plt
@@ -86,9 +87,10 @@ def plotNode(ax, n, conf, mpigrid=False):
     for cid in n.get_tile_ids():
         c = n.get_tile( cid )
         (i, j) = c.index
+
         #check dublicates
         if tmp_grid[i,j] != -1.0:
-            print("{}: ERROR in real cells at ({},{})".format(n.rank, i,j))
+            print("{}: ERROR in real cells at ({},{})".format(n.rank(), i,j))
             sys.exit()
         tmp_grid[i,j] = c.communication.owner
 
@@ -162,6 +164,28 @@ def plotNode(ax, n, conf, mpigrid=False):
         boun = n.get_boundary_tiles()
         locs = n.get_local_tiles()
         ax.set_title(str(len(virs))+"/"+str(len(boun))+"/"+str(len(locs)))
+
+def get_mpi_grid(n, conf):
+
+    tmp = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
+    for i in range(n.get_Nx()):
+        for j in range(n.get_Ny()):
+            tmp[i,j] = node.get_mpi_grid(i,j)
+    return tmp
+
+
+def analyze(n, f5, lap, conf):
+
+    virs = len(n.get_virtual_tiles()  )
+    boun = len(n.get_boundary_tiles() )
+    locs = len(n.get_local_tiles()    )
+
+    f5['virtuals'][lap]   = virs
+    f5['boundaries'][lap] = boun
+    f5['locals'][lap]     = locs
+
+    grid = get_mpi_grid(n, conf)
+    f5['grid'][:,:,lap] = grid
 
 
 
@@ -250,8 +274,8 @@ def initialize_virtuals(n, conf):
 
 class Conf:
 
-    Nx  = 30
-    Ny  = 30
+    Nx  = 100
+    Ny  = 100
     Nz  = 1
 
     NxMesh = 1
@@ -307,21 +331,40 @@ if __name__ == "__main__":
     if node.master:
         if not os.path.exists( conf.outdir):
             os.makedirs(conf.outdir)
-    plotNode(axs[0], node, conf)
-    plotNode(axs[1], node, conf, mpigrid=True)
-    saveVisz(-1, node, conf)
+
+
+    ################################################## 
+    rank = str(node.rank())
+    f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "w")
+
+    Nsamples = 101
+    f5.create_dataset("virtuals",   (Nsamples,), dtype='f')
+    f5.create_dataset("locals",     (Nsamples,), dtype='f')
+    f5.create_dataset("boundaries", (Nsamples,), dtype='f')
+    f5.create_dataset("grid", (conf.Nx, conf.Ny, Nsamples), dtype='f')
+
+    ################################################## 
+
+    do_plots = False
+    if do_plots:
+        plotNode(axs[0], node, conf)
+        plotNode(axs[1], node, conf, mpigrid=True)
+        saveVisz(-1, node, conf)
     
     node.analyze_boundaries()
     node.send_tiles()
     node.recv_tiles()
     initialize_virtuals(node, conf)
 
-    plotNode(axs[0], node, conf)
-    plotNode(axs[1], node, conf, mpigrid=True)
-    saveVisz(0, node, conf)
+    analyze(node, f5, 0, conf)
+
+    if do_plots:
+        plotNode(axs[0], node, conf)
+        plotNode(axs[1], node, conf, mpigrid=True)
+        saveVisz(0, node, conf)
 
     ##################################################
-    for lap in range(1, 51):
+    for lap in range(1, Nsamples):
         print("---lap: {}".format(lap))
 
         # corgi loadbalance 
@@ -343,10 +386,18 @@ if __name__ == "__main__":
         #print("initialize")
         initialize_virtuals(node, conf)
 
-        if (lap % 1 == 0):
-            plotNode(axs[0], node, conf)
-            plotNode(axs[1], node, conf, mpigrid=True)
-            saveVisz(lap, node, conf)
+        if (lap % 20 == 0):
+            if do_plots:
+                plotNode(axs[0], node, conf)
+                plotNode(axs[1], node, conf, mpigrid=True)
+                saveVisz(lap, node, conf)
     
+        analyze(node, f5, lap, conf)
+
+    f5.close()
+
+    plotNode(axs[0], node, conf)
+    plotNode(axs[1], node, conf, mpigrid=True)
+    saveVisz(100, node, conf)
 
 
