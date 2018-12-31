@@ -36,8 +36,7 @@ if __name__ == "__main__":
 
     ##################################################
     cols = ['k','b','r','g']
-
-    for ir in range(4):
+    for ir in range(2):
         rank = str(ir)
         f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "r")
 
