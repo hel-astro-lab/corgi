@@ -10,8 +10,10 @@ palette = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 
 class Conf:
-    #outdir = "out"
-    outdir = "out4_30x30"
+    outdir = "out"
+    #outdir = "out4_30x30"
+    #outdir = "out4_100x100"
+    #outdir = "out2_100x100"
 
 
 def reduce_image(img, val):
@@ -83,7 +85,7 @@ def analyze_contours(cnts, hierarchy):
 
     N = len(cnts)
     res['N'] = N
-    print("Number of clusters: {}".format(N))
+    #print("Number of clusters: {}".format(N))
 
     res['areas'] = []
     res['arcs'] = []
@@ -94,12 +96,12 @@ def analyze_contours(cnts, hierarchy):
     res['area_mean'] = np.mean(res['areas'])
     res['area_min']  = np.min( res['areas'])
     res['area_max']  = np.max( res['areas'])
-    print("area mean={} min={} max={}".format(res['area_mean'], res['area_min'], res['area_max']))
+    #print("area mean={} min={} max={}".format(res['area_mean'], res['area_min'], res['area_max']))
 
     res['arc_mean'] = np.mean(res['arcs'])
     res['arc_min']  = np.min( res['arcs'])
     res['arc_max']  = np.max( res['arcs'])
-    print("arc mean={} min={} max={}".format(res['arc_mean'], res['arc_min'], res['arc_max']))
+    #print("arc mean={} min={} max={}".format(res['arc_mean'], res['arc_min'], res['arc_max']))
 
     return res
 
@@ -130,8 +132,10 @@ if __name__ == "__main__":
     conf = Conf()
 
     ##################################################
+    nx, ny = 1,1
     cols = ['k','b','r','g']
-    for ir in range(4):
+    ranks = range(4)
+    for ir in ranks:
         col = cols[ir]
 
         rank = str(ir)
@@ -156,8 +160,7 @@ if __name__ == "__main__":
         nx, ny, nt = np.shape(imgs)
         print("image size nx {} ny {} nt {}".format(nx, ny, nt))
         for t in range(nt):
-        #for t in [50]:
-            print("t={}".format(t))
+            #print("t={}".format(t))
             img = imgs[:,:,t]
             img = reduce_image(img, ir)
 
@@ -191,6 +194,14 @@ if __name__ == "__main__":
         axs[3].fill_between(np.arange(len(area_mean)), 
                 area_min, area_max,
                 color=col, alpha=0.5, edgecolor=None)
+
+    # some theoretical estimates for minimum curve
+    area = nx*ny/len(ranks)
+    print("nx={} ny={}".format(nx,ny))
+    print("area per rank A_loc=",area)
+    sidelen = 4*np.sqrt(area)
+    print("arc length={}".format(sidelen))
+    print("N_vir/N_loc",sidelen/area)
 
 
     axs[0].set_ylabel(r'$N_{\mathrm{vir}}/N_{\mathrm{loc}}$')

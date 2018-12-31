@@ -274,8 +274,8 @@ def initialize_virtuals(n, conf):
 
 class Conf:
 
-    Nx  = 100
-    Ny  = 100
+    Nx  = 30
+    Ny  = 30
     Nz  = 1
 
     NxMesh = 1
@@ -337,7 +337,7 @@ if __name__ == "__main__":
     rank = str(node.rank())
     f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "w")
 
-    Nsamples = 101
+    Nsamples = 501
     f5.create_dataset("virtuals",   (Nsamples,), dtype='f')
     f5.create_dataset("locals",     (Nsamples,), dtype='f')
     f5.create_dataset("boundaries", (Nsamples,), dtype='f')
@@ -345,7 +345,7 @@ if __name__ == "__main__":
 
     ################################################## 
 
-    do_plots = False
+    do_plots = True
     if do_plots:
         plotNode(axs[0], node, conf)
         plotNode(axs[1], node, conf, mpigrid=True)

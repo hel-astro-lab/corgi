@@ -1087,8 +1087,8 @@ class Node
   private:
   std::vector<int> adoptions; 
   std::vector<int> kidnaps; 
-  int min_quota = 8;
-  int max_quota = 32;
+  int min_quota = 2;
+  int max_quota = 8;
 
 
   public:
@@ -1135,7 +1135,7 @@ class Node
     adoptions.clear();
     for(auto& vir : virtuals) {
 
-      if(vir.number_of_virtual_neighbors <= 3) continue;
+      //if(vir.number_of_virtual_neighbors <= 3) continue;
 
       // skip tiles where I am not the top owner
       if(vir.top_virtual_owner == comm.rank()) {
