@@ -362,9 +362,23 @@ class Node
     return id( std::get<Is>(tuple)... );
   }
 
+  template <size_t... Is>
+  index_type id_impl(
+      const corgi::internals::tuple_of<D, size_t>& tuple, 
+      std::index_sequence<Is...>) const
+  {
+    return id( std::get<Is>(tuple)... );
+  }
+
   /// unpack tuple into variadic argument list
   template<typename Indices = std::make_index_sequence<D>>
   index_type id( corgi::internals::tuple_of<D, size_t>& indices)
+  {
+      return id_impl(indices, Indices{} );
+  }
+
+  template<typename Indices = std::make_index_sequence<D>>
+  index_type id( const corgi::internals::tuple_of<D, size_t>& indices) const
   {
       return id_impl(indices, Indices{} );
   }
@@ -1087,13 +1101,14 @@ class Node
   private:
   std::vector<int> adoptions; 
   std::vector<int> kidnaps; 
-  int min_quota = 2;
-  int max_quota = 8;
+  int    min_quota = 2;
+  double max_quota = 0.1; // in fraction of all tiles
+
 
 
   public:
   /// Compute maximum number of new tiles I can adopt
-  int get_quota()
+  int get_quota(int rank)
   {
     // integrate over all work
     int N = 1;
@@ -1103,10 +1118,14 @@ class Node
     int work = N/comm.size();
 
     /// excess work I can do
-    int excess = (int)get_local_tiles().size() - work;
+    int workload = 0;
+    for(auto& val : _mpi_grid) {
+      if(val.second == rank) workload++;
+    }
+    int excess = workload - work;
     excess = excess > 0 ? excess : 0;
 
-    int quota = max_quota - excess;
+    int quota = max_quota*N - excess;
 
     return quota > min_quota ? quota : min_quota;
   }
@@ -1114,7 +1133,7 @@ class Node
   /// Propagate CA rules one step forward and decide who adopts who
   void adoption_council()
   {
-    int quota = get_quota();
+    int quota = get_quota(comm.rank());
 
     // collect virtual tiles and their metainfo into a container
     std::vector<Communication> virtuals;
@@ -1151,23 +1170,184 @@ class Node
 
   }
 
+  /// general N-dim implementation of wrap
+  size_t wrap(int ind, size_t d)
+  {
+    auto N = static_cast<int>(_lengths[d]);
+    while (ind < 0) { ind += N; }
+    while (ind >= N) { ind -= N; }
+    return static_cast<size_t>(ind);
+  }
+
+
+  /// return index of tiles in relative to my position
+  const corgi::internals::tuple_of<D, size_t> neighs(
+      corgi::internals::tuple_of<D, int> indices,
+      corgi::internals::tuple_of<D, int> indices_rel)
+  {
+    auto cur = corgi::internals::into_array(indices);
+    auto rel = corgi::internals::into_array(indices_rel);
+
+    for(size_t i=0; i<D; i++) {
+      cur[i] = static_cast<size_t>(
+          wrap( static_cast<int>(rel[i]) + 
+            static_cast<int>(cur[i]), i)
+          );
+    }
+
+    auto ret = corgi::internals::into_tuple(cur);
+    return ret;
+  }
+
+  /// Return full Moore neighborhood around me
+  std::vector< corgi::internals::tuple_of<D, size_t> > nhood(
+      corgi::internals::tuple_of<D, size_t> indices)
+  {
+    // FIXME; generalize the size (now assumes D=2)
+    std::vector< corgi::internals::tuple_of<D, size_t> > nh;
+    nh.reserve(8);
+
+    for(auto& reli : corgi::ca::moore_neighborhood<D>() ){
+      nh.push_back( neighs(indices, reli) );
+    }
+    return nh;
+  }
+
+
+  void adoption_council2()
+  {
+    int color;
+
+    adoptions.clear();
+    kidnaps.clear();
+    std::vector<int> alives(comm.size());
+
+    std::vector<int> transfers(comm.size());
+    std::fill(transfers.begin(), transfers.end(), 0); // reset vector
+
+    std::vector<int> quota(comm.size());
+    for(int rank=0; rank<comm.size(); rank++) quota[rank] = get_quota(rank);
+
+    // for updated values
+    corgi::tools::sparse_grid<int, D> new_mpi_grid(_mpi_grid);
+
+
+    // process the complete grid (including remote neighbors)
+    for(auto&& elem : _mpi_grid) {
+      auto& ind     = elem.first;
+      int old_color = elem.second;
+
+      uint64_t cid = id(ind);
+
+      std::fill(alives.begin(), alives.end(), -1); // reset vector
+
+      // resolve neighborhood; diffusion step
+      alives[old_color]++;
+      auto neigs = nhood(ind);
+      for(auto& nindx : neigs) {
+        color = _mpi_grid(nindx);
+        assert(0 <= color && color < comm.size());
+        alives[color]++; 
+      }
+
+      // get mode, i.e., most frequent color; sharpening step
+      int new_color = std::distance( alives.begin(), 
+          std::max_element(alives.begin(), alives.end()));
+
+      // stay alive if all values are the same; i.e., we are in equilibrium
+      bool equilibrium = true;
+      int ref_val = alives[0];
+      for(auto& val : alives) {
+        if(val != ref_val) {
+          equilibrium = false;
+          break;
+        }
+      }
+      if(equilibrium) continue;
+
+
+      if(transfers[new_color] > quota[new_color]) continue;
+      //if(transfers[new_color] > 5) continue;
+
+      // progress one step
+      new_mpi_grid(ind) = new_color;
+
+
+      // proceed processing results if there is a change in ownership
+      if(new_color != old_color) {
+        // FIXME
+        auto index = id2index(cid, _lengths);
+        std::cout << comm.rank() << ": tile " << cid 
+          << " has been kidnapped by evil " << new_color 
+          << " at (" << std::get<0>(index) << "," 
+          << " from " << old_color << " --- alives:";
+        for(auto val : alives) std::cout << " " << val;
+        std::cout << "\n";
+
+        // keep track of work / individual load
+        transfers[new_color]++;
+
+        // I have adopted a tile
+        if(new_color == comm.rank()) {
+          assert( tiles.count(cid) > 0 );
+          adoptions.push_back(cid);
+
+          // FIXME
+          std::cout << comm.rank() 
+            << ": adoption council marks " << cid << " to be adopted\n";
+            //<< " at " << tile.communication.indices[0] << " " << tile.communication.indices[1] << "\n";
+          auto& tile  = get_tile(cid);
+          tile.communication.owner = comm.rank();
+
+
+        // A tile has been kidnapped from me
+        } else if(old_color == comm.rank()) {
+          kidnaps.push_back(cid);
+
+          if(is_local(cid)) {
+            auto& tile  = get_tile(cid);
+            tile.communication.owner = new_color;
+
+            // FIXME
+            std::cout << comm.rank() << ": tile " << cid << " is mine! \n";
+          } else {
+            // something went wrong; I should have this tile but I do not?!
+            assert(false);
+          }
+
+        }
+        // third option is that somebody else was involved. 
+        // In this case, we just update _mpi_grid.
+        
+      }  // endif new_color != old_color
+
+      // next location/tile
+        
+    } // end of loop over elements
+
+
+    // global progress
+    _mpi_grid = std::move(new_mpi_grid);
+
+    return;
+  }
+
 
   /// iterate over tiles in adoption vector and claim them to me
   void adopt()
   {
     for(auto cid : adoptions){
       auto& vir = get_tile(cid);
-
-      vir.communication.owner = comm.rank();
-      //vir.communication.local = true;
-
-      _mpi_grid( vir.index ) = comm.rank();
-
       std::cout << comm.rank() 
         << ": adopting " << vir.cid
         << " at " << vir.communication.indices[0] << " " 
                   << vir.communication.indices[1] << "\n";
 
+
+      vir.communication.owner = comm.rank();
+      //vir.communication.local = true;
+
+      _mpi_grid( vir.index ) = comm.rank();
     }
   }
 

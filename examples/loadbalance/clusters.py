@@ -65,7 +65,7 @@ def compute_clusters(img):
             cv2.RETR_TREE,
             cv2.CHAIN_APPROX_SIMPLE)
 
-    cv2.drawContours(img2, contours, 1, (0,255,0), 3)
+    cv2.drawContours(img2, contours,-1, (0,255,0), 3)
 
     #tresh_min = 0.5
     #tresh_max = 1.0

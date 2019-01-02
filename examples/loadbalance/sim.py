@@ -125,18 +125,19 @@ def plotNode(ax, n, conf, mpigrid=False):
 
     # add text label about number of neighbors
     if True:
-        for cid in n.get_tile_ids():
-            c = n.get_tile( cid )
-            (i, j) = c.index
-            dx = n.get_xmax() - n.get_xmin()
-            dy = n.get_ymax() - n.get_ymin()
+        if not(mpigrid):
+            for cid in n.get_tile_ids():
+                c = n.get_tile( cid )
+                (i, j) = c.index
+                dx = n.get_xmax() - n.get_xmin()
+                dy = n.get_ymax() - n.get_ymin()
 
-            ix = n.get_xmin() + dx*(i+0.5)/n.get_Nx()
-            jy = n.get_ymin() + dy*(j+0.5)/n.get_Ny()
+                ix = n.get_xmin() + dx*(i+0.5)/n.get_Nx()
+                jy = n.get_ymin() + dy*(j+0.5)/n.get_Ny()
 
-            Nv = c.communication.number_of_virtual_neighbors
-            label = str(Nv)
-            ax.text(ix, jy, label, ha='center',va='center', size=8)
+                Nv = c.communication.number_of_virtual_neighbors
+                label = str(Nv)
+                ax.text(ix, jy, label, ha='center',va='center', size=8)
 
     #mark boundaries with hatch
     if False:
@@ -322,8 +323,8 @@ if __name__ == "__main__":
     node = pycorgi.Node( conf.Nx, conf.Ny ) 
     node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
     
-    loadMpiRandomly(node)
-    #loadMpiXStrides(node)
+    #loadMpiRandomly(node)
+    loadMpiXStrides(node)
 
     load_tiles(node, conf)
 
@@ -337,7 +338,7 @@ if __name__ == "__main__":
     rank = str(node.rank())
     f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "w")
 
-    Nsamples = 501
+    Nsamples = 51
     f5.create_dataset("virtuals",   (Nsamples,), dtype='f')
     f5.create_dataset("locals",     (Nsamples,), dtype='f')
     f5.create_dataset("boundaries", (Nsamples,), dtype='f')
@@ -368,22 +369,22 @@ if __name__ == "__main__":
         print("---lap: {}".format(lap))
 
         # corgi loadbalance 
-        #print("adoption_council")
-        node.adoption_council()
+        print("adoption_council")
+        node.adoption_council2()
         #print("adopt")
-        node.adopt()
+        #node.adopt()
         #print("communicate_adoptions")
-        node.communicate_adoptions()
+        #node.communicate_adoptions()
         #print("erase_virtuals")
         node.erase_virtuals()
 
-        #print("analyze_boundaries")
+        print("analyze_boundaries")
         node.analyze_boundaries()
-        #print("send_tiles")
+        print("send_tiles")
         node.send_tiles()
-        #print("recv_tiles")
+        print("recv_tiles")
         node.recv_tiles()
-        #print("initialize")
+        print("initialize")
         initialize_virtuals(node, conf)
 
         if (lap % 20 == 0):
