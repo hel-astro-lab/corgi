@@ -1216,11 +1216,9 @@ class Node
 
   void adoption_council2()
   {
-    int color;
-
     adoptions.clear();
     kidnaps.clear();
-    std::vector<int> alives(comm.size());
+    std::vector<double> alives(comm.size());
 
     std::vector<int> transfers(comm.size());
     std::fill(transfers.begin(), transfers.end(), 0); // reset vector
@@ -1231,6 +1229,10 @@ class Node
     // for updated values
     corgi::tools::sparse_grid<int, D> new_mpi_grid(_mpi_grid);
 
+    //int dt = sqrt(*std::max_element(_lengths.begin(), _lengths.end() )); // radius of Gaussian kernel
+    int dt = *std::max_element(_lengths.begin(), _lengths.end() )/2; // radius of Gaussian kernel
+
+
 
     // process the complete grid (including remote neighbors)
     for(auto&& elem : _mpi_grid) {
@@ -1239,31 +1241,48 @@ class Node
 
       uint64_t cid = id(ind);
 
-      std::fill(alives.begin(), alives.end(), -1); // reset vector
+      std::fill(alives.begin(), alives.end(), 0.0); // reset vector
 
       // resolve neighborhood; diffusion step
-      alives[old_color]++;
-      auto neigs = nhood(ind);
-      for(auto& nindx : neigs) {
+      alives[old_color] = 1.0;
+
+      // Limited Moore nearest neighborhood
+      //auto neigs = nhood(ind);
+      //for(auto& nindx : neigs) {
+      //  color = _mpi_grid(nindx);
+      //  assert(0 <= color && color < comm.size());
+
+      //  alives[color]++; 
+      //}
+
+      // full Gaussian kernel
+      double r;
+      int color;
+      for(auto& reli : corgi::ca::box_neighborhood<D>(dt) ){
+        auto nindx = neighs(ind, reli);
         color = _mpi_grid(nindx);
-        assert(0 <= color && color < comm.size());
-        alives[color]++; 
+
+        r = ca::distance<D>(reli);  
+        alives[color] += exp(-r*r/static_cast<double>(dt));
+        //alives[color] += exp(-r*r/(4.0*static_cast<double>(dt*dt)));
+        //alives[color] += r;
       }
+
 
       // get mode, i.e., most frequent color; sharpening step
       int new_color = std::distance( alives.begin(), 
           std::max_element(alives.begin(), alives.end()));
 
       // stay alive if all values are the same; i.e., we are in equilibrium
-      bool equilibrium = true;
-      int ref_val = alives[0];
-      for(auto& val : alives) {
-        if(val != ref_val) {
-          equilibrium = false;
-          break;
-        }
-      }
-      if(equilibrium) continue;
+      //bool equilibrium = true;
+      //int ref_val = alives[0];
+      //for(auto& val : alives) {
+      //  if(val != ref_val) {
+      //    equilibrium = false;
+      //    break;
+      //  }
+      //}
+      //if(equilibrium) continue;
 
 
       if(transfers[new_color] > quota[new_color]) continue;

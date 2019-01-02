@@ -323,8 +323,8 @@ if __name__ == "__main__":
     node = pycorgi.Node( conf.Nx, conf.Ny ) 
     node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
     
-    #loadMpiRandomly(node)
-    loadMpiXStrides(node)
+    loadMpiRandomly(node)
+    #loadMpiXStrides(node)
 
     load_tiles(node, conf)
 
@@ -387,7 +387,7 @@ if __name__ == "__main__":
         print("initialize")
         initialize_virtuals(node, conf)
 
-        if (lap % 20 == 0):
+        if (lap % 1 == 0):
             if do_plots:
                 plotNode(axs[0], node, conf)
                 plotNode(axs[1], node, conf, mpigrid=True)
