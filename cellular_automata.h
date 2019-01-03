@@ -8,6 +8,25 @@
 
 namespace corgi { namespace ca {
 
+// Manhattan distances
+//--------------------------------------------------
+//
+template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
+inline double distance(corgi::internals::tuple_of<1, int> rel)
+{
+  return (double) std::abs(std::get<0>(rel));
+}
+
+template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
+inline double distance(corgi::internals::tuple_of<2, int> rel)
+{
+  return sqrt( 
+      (double)std::pow(std::get<0>(rel),2) +
+      (double)std::pow(std::get<1>(rel),2)
+      );
+}
+
+
 
 /// Moore neighborhood of different dimensions
 // using SFINAE to pick dimensionality specialization
@@ -91,25 +110,32 @@ std::vector< corgi::internals::tuple_of<2,int> > box_neighborhood(int radius)
 }
 
 
-
-
-// Manhattan distances
+// Spherical distances
 //--------------------------------------------------
-//
 template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
-inline double distance(corgi::internals::tuple_of<1, int> rel)
+std::vector< corgi::internals::tuple_of<1,int> > sphere_neighborhood(int radius)
 {
-  return (double) std::abs(std::get<0>(rel));
+  return box_neighborhood<1>(radius);
 }
+
 
 template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
-inline double distance(corgi::internals::tuple_of<2, int> rel)
+std::vector< corgi::internals::tuple_of<2,int> > sphere_neighborhood(int radius)
 {
-  return sqrt( 
-      (double)std::pow(std::get<0>(rel),2) +
-      (double)std::pow(std::get<1>(rel),2)
-      );
+  std::vector<  corgi::internals::tuple_of<2,int> > ret;
+  for (int ir=-radius; ir<=radius; ir++)  
+  for (int jr=-radius; jr<=radius; jr++) {
+
+    auto rel = std::make_tuple(ir,jr);
+    if( distance<2>(rel) > (double)radius ) continue;
+
+    if (!( ir == 0 && jr == 0 )) {
+      ret.push_back( rel );
+    }
+  }
+  return ret;
 }
+
 
 
 

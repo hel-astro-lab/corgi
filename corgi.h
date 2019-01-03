@@ -1224,9 +1224,12 @@ class Node
     // for updated values
     corgi::tools::sparse_grid<int, D> new_mpi_grid(_mpi_grid);
 
-    //int dt = sqrt(*std::max_element(_lengths.begin(), _lengths.end() )); // radius of Gaussian kernel
-    int dt = *std::max_element(_lengths.begin(), _lengths.end() )/2; // radius of Gaussian kernel
+    int dt = sqrt(*std::max_element(_lengths.begin(), _lengths.end() )); // radius of Gaussian kernel
+    //int dt = *std::max_element(_lengths.begin(), _lengths.end() )/2; // radius of Gaussian kernel
+    //dt += 0.1*dt;
 
+    // gaussian kernel; i.e., relative indices how we convolve
+    auto kernel = corgi::ca::sphere_neighborhood<D>(dt);
 
 
     // process the complete grid (including remote neighbors)
@@ -1237,7 +1240,8 @@ class Node
       std::fill(alives.begin(), alives.end(), 0.0); // reset vector
 
       // resolve neighborhood; diffusion step
-      alives[old_color] = 1.0;
+      //alives[old_color] = 1.0;
+      alives[old_color] = (1.0/4.0/M_PI/static_cast<double>(dt));
 
       // Limited Moore nearest neighborhood
       //auto neigs = nhood(ind);
@@ -1251,14 +1255,16 @@ class Node
       // full Gaussian kernel
       double r;
       int color;
-      for(auto& reli : corgi::ca::box_neighborhood<D>(dt) ){
+      for(auto& reli : kernel ){
         auto nindx = neighs(ind, reli);
         color = _mpi_grid(nindx);
 
         r = ca::distance<D>(reli);  
-        alives[color] += exp(-r*r/static_cast<double>(dt));
-        //alives[color] += exp(-r*r/(4.0*static_cast<double>(dt*dt)));
+        //alives[color] += exp(-r*r/static_cast<double>(dt));
         //alives[color] += r;
+          
+        alives[color] += (1.0/4.0/M_PI/static_cast<double>(dt))
+                         *exp(-r*r/(4.0*static_cast<double>(dt)));
       }
 
 
