@@ -134,7 +134,7 @@ if __name__ == "__main__":
     ##################################################
     nx, ny = 1,1
     cols = ['k','b','r','g']
-    ranks = range(4)
+    ranks = range(2)
     for ir in ranks:
         col = cols[ir]
 
