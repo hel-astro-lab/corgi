@@ -1220,11 +1220,6 @@ class Node
     kidnaps.clear();
     std::vector<double> alives(comm.size());
 
-    std::vector<int> transfers(comm.size());
-    std::fill(transfers.begin(), transfers.end(), 0); // reset vector
-
-    std::vector<int> quota(comm.size());
-    for(int rank=0; rank<comm.size(); rank++) quota[rank] = get_quota(rank);
 
     // for updated values
     corgi::tools::sparse_grid<int, D> new_mpi_grid(_mpi_grid);
@@ -1238,8 +1233,6 @@ class Node
     for(auto&& elem : _mpi_grid) {
       auto& ind     = elem.first;
       int old_color = elem.second;
-
-      uint64_t cid = id(ind);
 
       std::fill(alives.begin(), alives.end(), 0.0); // reset vector
 
@@ -1285,63 +1278,100 @@ class Node
       //if(equilibrium) continue;
 
 
-      if(transfers[new_color] > quota[new_color]) continue;
-      //if(transfers[new_color] > 5) continue;
-
       // progress one step
       new_mpi_grid(ind) = new_color;
+    }
 
 
-      // proceed processing results if there is a change in ownership
-      if(new_color != old_color) {
+    //--------------------------------------------------
+
+    std::vector<int> transfers(comm.size());
+    std::fill(transfers.begin(), transfers.end(), 0); // reset vector
+
+    std::vector<int> quota(comm.size());
+    for(int rank=0; rank<comm.size(); rank++) quota[rank] = get_quota(rank);
+
+
+    // next, process changes of ownership
+    for(auto&& elem : _mpi_grid) {
+      auto& ind     = elem.first;
+      int old_color = elem.second;
+      int new_color = new_mpi_grid(ind);
+      uint64_t cid = id(ind);
+
+      // if no changes, then skip everything
+      if(new_color == old_color) continue;
+
+      // check if we exceed our quota; if yes, then must reinitialize grid
+      if(transfers[new_color] > quota[new_color]) {
+        new_mpi_grid(ind) = old_color;
+        continue;
+      }
+
+      // check that velocity is not too great; 
+      // i.e., change of boundary happens via virtual tiles
+      bool is_virtual = false;
+      int color;
+      for(auto& reli : corgi::ca::moore_neighborhood<D>() ){
+        auto nindx = neighs(ind, reli);
+        color = _mpi_grid(nindx);
+        if(color == new_color) {
+          is_virtual = true;
+          break;
+        }
+      }
+
+      // abort if this is not the case
+      if(!is_virtual) {
+        std::cout << comm.rank() << ": XXX tile " << cid 
+            << " is going too fast to: " << new_color << "\n";
+        new_mpi_grid(ind) = old_color;
+        continue;
+      }
+
+
+      // FIXME
+      auto index = id2index(cid, _lengths);
+      std::cout << comm.rank() << ": tile " << cid 
+        << " has been kidnapped by evil " << new_color 
+        << " at (" << std::get<0>(index) << "," 
+        << " from " << old_color << " --- alives:";
+      for(auto val : alives) std::cout << " " << val;
+      std::cout << "\n";
+
+      // keep track of work / individual load
+      transfers[new_color]++;
+
+      // I have adopted a tile
+      if(new_color == comm.rank()) {
+        assert( tiles.count(cid) > 0 );
+        adoptions.push_back(cid);
+
         // FIXME
-        auto index = id2index(cid, _lengths);
-        std::cout << comm.rank() << ": tile " << cid 
-          << " has been kidnapped by evil " << new_color 
-          << " at (" << std::get<0>(index) << "," 
-          << " from " << old_color << " --- alives:";
-        for(auto val : alives) std::cout << " " << val;
-        std::cout << "\n";
-
-        // keep track of work / individual load
-        transfers[new_color]++;
-
-        // I have adopted a tile
-        if(new_color == comm.rank()) {
-          assert( tiles.count(cid) > 0 );
-          adoptions.push_back(cid);
-
-          // FIXME
-          std::cout << comm.rank() 
-            << ": adoption council marks " << cid << " to be adopted\n";
+        std::cout << comm.rank() 
+          << ": adoption council marks " << cid << " to be adopted\n";
             //<< " at " << tile.communication.indices[0] << " " << tile.communication.indices[1] << "\n";
-          auto& tile  = get_tile(cid);
-          tile.communication.owner = comm.rank();
+        auto& tile  = get_tile(cid);
+        tile.communication.owner = comm.rank();
 
 
         // A tile has been kidnapped from me
-        } else if(old_color == comm.rank()) {
-          kidnaps.push_back(cid);
+      } else if(old_color == comm.rank()) {
+        kidnaps.push_back(cid);
 
-          if(is_local(cid)) {
-            auto& tile  = get_tile(cid);
-            tile.communication.owner = new_color;
+        if(is_local(cid)) {
+          auto& tile  = get_tile(cid);
+          tile.communication.owner = new_color;
 
-            // FIXME
-            std::cout << comm.rank() << ": tile " << cid << " is mine! \n";
-          } else {
-            // something went wrong; I should have this tile but I do not?!
-            assert(false);
-          }
-
+          // FIXME
+          std::cout << comm.rank() << ": oh gosh tile " << cid << " is mine! \n";
+        } else {
+          // something went wrong; I should have this tile but I do not?!
+          assert(false);
         }
-        // third option is that somebody else was involved. 
-        // In this case, we just update _mpi_grid.
-        
-      }  // endif new_color != old_color
+      }  
+      // third option is that somebody else was involved. 
 
-      // next location/tile
-        
     } // end of loop over elements
 
 
