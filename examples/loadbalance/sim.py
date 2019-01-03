@@ -338,7 +338,7 @@ if __name__ == "__main__":
     rank = str(node.rank())
     f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "w")
 
-    Nsamples = 51
+    Nsamples = 201
     f5.create_dataset("virtuals",   (Nsamples,), dtype='f')
     f5.create_dataset("locals",     (Nsamples,), dtype='f')
     f5.create_dataset("boundaries", (Nsamples,), dtype='f')
@@ -369,13 +369,17 @@ if __name__ == "__main__":
         print("---lap: {}".format(lap))
 
         # corgi loadbalance 
-        print("adoption_council")
-        node.adoption_council2()
+        #print("adoption_council")
+        #node.adoption_council()
         #print("adopt")
         #node.adopt()
         #print("communicate_adoptions")
         #node.communicate_adoptions()
         #print("erase_virtuals")
+        #node.erase_virtuals()
+
+        print("adoption_council2")
+        node.adoption_council2()
         node.erase_virtuals()
 
         print("analyze_boundaries")
@@ -387,7 +391,7 @@ if __name__ == "__main__":
         print("initialize")
         initialize_virtuals(node, conf)
 
-        if (lap % 1 == 0):
+        if (lap % 10 == 0):
             if do_plots:
                 plotNode(axs[0], node, conf)
                 plotNode(axs[1], node, conf, mpigrid=True)

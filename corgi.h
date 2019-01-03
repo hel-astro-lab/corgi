@@ -1101,8 +1101,8 @@ class Node
   private:
   std::vector<int> adoptions; 
   std::vector<int> kidnaps; 
-  int    min_quota = 2;
-  double max_quota = 0.1; // in fraction of all tiles
+  int    min_quota = 0;
+  double max_quota = 0.4; // in fraction of all tiles per color
 
 
 
@@ -1114,18 +1114,17 @@ class Node
     int N = 1;
     for (size_t i = 0; i<D; i++) N *= _lengths[i];
     
-    // work for me
-    int work = N/comm.size();
+    // ideal work for me
+    int ideal_work = N/comm.size();
 
     /// excess work I can do
-    int workload = 0;
-    for(auto& val : _mpi_grid) {
-      if(val.second == rank) workload++;
-    }
-    int excess = workload - work;
+    int current_workload = 0;
+    for(auto& val : _mpi_grid) if(val.second == rank) current_workload++;
+    int excess = ideal_work - current_workload;
     excess = excess > 0 ? excess : 0;
 
-    int quota = max_quota*N - excess;
+    //int quota = max_quota*N/comm.size() - excess;
+    int quota = excess > max_quota*N/comm.size() ? max_quota*N/comm.size() : excess;
 
     return quota > min_quota ? quota : min_quota;
   }
@@ -1308,11 +1307,6 @@ class Node
       // if no changes, then skip everything
       if(new_color == old_color) continue;
 
-      // check if we exceed our quota; if yes, then must reinitialize grid
-      if(transfers[new_color] > quota[new_color]) {
-        new_mpi_grid(ind) = old_color;
-        continue;
-      }
 
       // check that velocity is not too great; 
       // i.e., change of boundary happens via virtual tiles
@@ -1335,6 +1329,15 @@ class Node
         continue;
       }
 
+      // check if we exceed our quota; if yes, then must reinitialize grid
+      if(transfers[new_color] > quota[new_color]) {
+        new_mpi_grid(ind) = old_color;
+        continue;
+      }
+        
+      // keep track of work / individual load
+      transfers[new_color]++;
+
 
       // FIXME
       auto index = id2index(cid, _lengths);
@@ -1345,8 +1348,6 @@ class Node
       for(auto val : alives) std::cout << " " << val;
       std::cout << "\n";
 
-      // keep track of work / individual load
-      transfers[new_color]++;
 
       // I have adopted a tile
       if(new_color == comm.rank()) {
