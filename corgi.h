@@ -114,7 +114,7 @@ class Node
   // get element
   template<typename... Indices>
   corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
-  corgi::internals::are_integral<Indices...>::value, int > 
+  corgi::internals::are_integral<Indices...>::value, double > 
   py_get_work_grid(Indices... indices)  /*const*/
   {
     return _work_grid(indices...);
@@ -124,7 +124,7 @@ class Node
   template<typename... Indices>
   corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
   corgi::internals::are_integral<Indices...>::value, void > 
-  py_set_work_grid(int val, Indices... indices) {
+  py_set_work_grid(double val, Indices... indices) {
     _work_grid(indices...) = val;
   }
 
@@ -1185,38 +1185,55 @@ class Node
   private:
   std::vector<int> adoptions; 
   std::vector<int> kidnaps; 
-  int    min_quota = 0;
-  double max_quota = 0.4; // in fraction of all tiles per color
+  double min_quota =  0.05;
+  double max_quota =  0.05; // in fraction of all tiles per color
 
 
 
   public:
   /// Compute maximum number of new tiles I can adopt
-  int get_quota(int rank)
+  double get_quota(int rank)
   {
     // integrate over all work
     int N = 1;
     for (size_t i = 0; i<D; i++) N *= _lengths[i];
     
-    // ideal work for me
-    int ideal_work = N/comm.size();
+    // ideal work balance
+    double ideal_work = 0.0;
+    for(auto& elem : _work_grid) ideal_work += elem.second;
+    ideal_work /= comm.size();
+
+    // current work load
+    double current_workload = 0.0;
+    for(auto& elem : _mpi_grid) {
+      if(elem.second == rank) {
+        current_workload += _work_grid( elem.first );
+      }
+    }
 
     /// excess work I can do
-    int current_workload = 0;
-    for(auto& val : _mpi_grid) if(val.second == rank) current_workload++;
-    int excess = ideal_work - current_workload;
-    excess = excess > 0 ? excess : 0;
+    double excess = ideal_work - current_workload;
+    //excess = excess > 0.0 ? excess : 0.0;
 
-    //int quota = max_quota*N/comm.size() - excess;
-    int quota = excess > max_quota*N/comm.size() ? max_quota*N/comm.size() : excess;
 
-    return quota > min_quota ? quota : min_quota;
+    if(rank == comm.rank()) {
+    std::cout << comm.rank() << " get_quota for rank gives "
+      << "ideal_work:" << ideal_work
+      << "current   :" << current_workload
+      << "excess   :" << excess
+      << "\n";
+    }
+
+    return excess;
+
+    double quota = excess > max_quota*ideal_work ? max_quota*ideal_work : excess;
+    return quota > -min_quota*ideal_work ? quota : -min_quota*ideal_work;
   }
   
   /// Propagate CA rules one step forward and decide who adopts who
   void adoption_council()
   {
-    int quota = get_quota(comm.rank());
+    int quota = (int)get_quota(comm.rank());
 
     // collect virtual tiles and their metainfo into a container
     std::vector<Communication> virtuals;
@@ -1303,6 +1320,7 @@ class Node
     kidnaps.clear();
     std::vector<double> alives(comm.size());
 
+    int myrank = comm.rank();
 
     // for updated values
     corgi::tools::sparse_grid<int, D> new_mpi_grid(_mpi_grid);
@@ -1321,6 +1339,25 @@ class Node
     std::fill(obtained.begin(), obtained.end(), 0); // reset vector
     std::fill(lost.begin(), lost.end(), 0); // reset vector
 
+    // transferred work
+    std::vector<double> transfers(comm.size());
+    std::fill(transfers.begin(), transfers.end(), 0.0); // reset vector
+
+    // absolute quota in units of work
+    std::vector<double> quota(comm.size());
+    for(int rank=0; rank<comm.size(); rank++) quota[rank] = get_quota(rank);
+
+    // relative quota
+    std::vector<double> rel_quota(comm.size());
+    double total_work = 0.0;
+    for(auto& elem : _work_grid) total_work += elem.second;
+    for(size_t i=0; i<rel_quota.size(); i++) rel_quota[i] = comm.size()*quota[i]/total_work;
+
+    std::cout << comm.rank() << ": my quota : " << quota[myrank] 
+      << " (" << rel_quota[myrank] << ")"
+      << "\n";
+
+    //--------------------------------------------------
 
     // process the complete grid (including remote neighbors)
     int new_color;
@@ -1344,6 +1381,7 @@ class Node
       //  alives[color]++; 
       //}
 
+
       // full Gaussian kernel
       double r;
       int color;
@@ -1363,10 +1401,15 @@ class Node
         //alives[color] += exp(-r*r/4.0);
       }
 
+
       // normalize
       double norm = 0.0;
       for(auto& val : alives) norm += val;
       for(auto& val : alives) val /= norm;
+
+      // add relative quota for balance 
+      for(size_t i=0; i<alives.size(); i++) alives[i] += 0.5*rel_quota[i];
+
 
       //auto maxe = std::max_element(alives.begin(), alives.end());
       //if(*maxe >= 0.5/( (double)comm.size() ) ) {
@@ -1413,19 +1456,12 @@ class Node
       new_mpi_grid(ind) = new_color;
     }
 
-    int myrank = comm.rank();
     std::cout << comm.rank() << ": rank gained/lost= " 
       << obtained[myrank] << "/" << lost[myrank] 
       << " in += " << obtained[myrank] - lost[myrank] << "\n";
 
 
     //--------------------------------------------------
-
-    std::vector<int> transfers(comm.size());
-    std::fill(transfers.begin(), transfers.end(), 0); // reset vector
-
-    std::vector<int> quota(comm.size());
-    for(int rank=0; rank<comm.size(); rank++) quota[rank] = get_quota(rank);
 
 
     // next, process changes of ownership
@@ -1452,24 +1488,23 @@ class Node
         }
       }
 
-      // abort if this is not the case
+      // abort if this is not virtual
       if(!is_virtual) {
         //std::cout << comm.rank() << ": XXX tile " << cid 
         //    << " is going too fast to: " << new_color << "\n";
         new_mpi_grid(ind) = old_color;
         continue;
       }
+        
+      // keep track of work / individual load
+      transfers[new_color] += _work_grid(ind);
 
       // check if we exceed our quota; if yes, then must reinitialize grid
       //if(transfers[new_color] > quota[new_color]) {
       //  new_mpi_grid(ind) = old_color;
+      //  transfers[new_color] -= _work_grid(ind);
       //  continue;
       //}
-        
-      // keep track of work / individual load
-      transfers[new_color]++;
-
-
 
       // I have adopted a tile
       if(new_color == comm.rank()) {

@@ -294,13 +294,17 @@ def initialize_virtuals(n, conf):
 
 def add_virtual_work(n, lap, conf):
 
-    ic = n.get_Nx()/2
-    jc = n.get_Ny()/2
+    #ic = 0.0
+    ic = n.get_Nx()/2.0
+    jc = n.get_Ny()/2.0
 
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
+            oldw = node.get_work_grid(i,j)
+
             rvec2 = (i-ic)**2.0 + (j-jc)**2.0
-            nw = lap*np.exp(-rvec2/10.0)
+            sig = 1000.0
+            nw = 4.0*np.exp(-rvec2/sig)
 
             node.set_work_grid(i,j, nw)
 
@@ -309,8 +313,8 @@ def add_virtual_work(n, lap, conf):
 
 class Conf:
 
-    Nx  = 30
-    Ny  = 30
+    Nx  = 100
+    Ny  = 100
     Nz  = 1
 
     NxMesh = 1
@@ -373,7 +377,7 @@ if __name__ == "__main__":
     rank = str(node.rank())
     f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "w")
 
-    Nsamples = 51
+    Nsamples = 101
     f5.create_dataset("virtuals",   (Nsamples,), dtype='f')
     f5.create_dataset("locals",     (Nsamples,), dtype='f')
     f5.create_dataset("boundaries", (Nsamples,), dtype='f')
@@ -394,21 +398,23 @@ if __name__ == "__main__":
     initialize_virtuals(node, conf)
     node.allgather_work_grid()
 
-    analyze(node, f5, 0, conf)
+    add_virtual_work(node, 0, conf)
 
+    analyze(node, f5, 0, conf)
     if do_plots:
         plotNode(axs[0], node, conf)
         plotNode(axs[1], node, conf, mpigrid=True)
         plotWork(axs[2], node, conf)
         saveVisz(0, node, conf)
 
+
     ##################################################
     for lap in range(1, Nsamples):
         print("---lap: {}".format(lap))
 
-        add_virtual_work(node, lap, conf)
+        #add_virtual_work(node, lap, conf)
         #node.update_work()
-        node.allgather_work_grid()
+        #node.allgather_work_grid()
 
         if False:
             # corgi loadbalance 
@@ -436,7 +442,7 @@ if __name__ == "__main__":
         print("initialize")
         initialize_virtuals(node, conf)
 
-        if (lap % 1 == 0):
+        if (lap % 10 == 0):
             if do_plots:
                 plotNode(axs[0], node, conf)
                 plotNode(axs[1], node, conf, mpigrid=True)
