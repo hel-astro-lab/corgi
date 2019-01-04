@@ -189,6 +189,23 @@ def analyze(n, f5, lap, conf):
     f5['grid'][:,:,lap] = grid
 
 
+def plotWork(ax, n, conf):
+    tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
+    for i in range(n.get_Nx()):
+        for j in range(n.get_Ny()):
+            tmp_grid[i,j] = node.get_work_grid(i,j)
+
+    print("{}: min/max work {}/{}".format(n.rank(), np.min(tmp_grid), np.max(tmp_grid)))
+
+    maxv = np.max(tmp_grid)
+
+    imshow(ax, tmp_grid, 
+           n.get_xmin(), n.get_xmax(), n.get_ymin(), n.get_ymax(),
+           cmap = 'plasma',
+           vmin = 0.0,
+           vmax = maxv,
+           )
+
 
 #load tiles into each node
 def load_tiles(n, conf):
@@ -199,6 +216,8 @@ def load_tiles(n, conf):
             if n.get_mpi_grid(i,j) == n.rank():
                 c = pycorgi.Tile()
                 n.add_tile(c, (i,j)) 
+
+    n.update_work()
 
 
 #inject plasma into (individual) cells
@@ -273,6 +292,21 @@ def initialize_virtuals(n, conf):
         #initialize_tile(c, i,j,n, conf)
 
 
+def add_virtual_work(n, lap, conf):
+
+    ic = n.get_Nx()/2
+    jc = n.get_Ny()/2
+
+    for i in range(n.get_Nx()):
+        for j in range(n.get_Ny()):
+            rvec2 = (i-ic)**2.0 + (j-jc)**2.0
+            nw = lap*np.exp(-rvec2/10.0)
+
+            node.set_work_grid(i,j, nw)
+
+
+
+
 class Conf:
 
     Nx  = 30
@@ -303,17 +337,18 @@ class Conf:
 if __name__ == "__main__":
 
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(8,4))
+    plt.fig = plt.figure(1, figsize=(12,4))
     plt.rc('font', family='serif', size=12)
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(1, 2)
+    gs = plt.GridSpec(1, 3)
     gs.update(hspace = 0.5)
     
     axs = []
     axs.append( plt.subplot(gs[0]) )
     axs.append( plt.subplot(gs[1]) )
+    axs.append( plt.subplot(gs[2]) )
     
 
     #setup node
@@ -350,23 +385,30 @@ if __name__ == "__main__":
     if do_plots:
         plotNode(axs[0], node, conf)
         plotNode(axs[1], node, conf, mpigrid=True)
+        plotWork(axs[2], node, conf)
         saveVisz(-1, node, conf)
     
     node.analyze_boundaries()
     node.send_tiles()
     node.recv_tiles()
     initialize_virtuals(node, conf)
+    node.allgather_work_grid()
 
     analyze(node, f5, 0, conf)
 
     if do_plots:
         plotNode(axs[0], node, conf)
         plotNode(axs[1], node, conf, mpigrid=True)
+        plotWork(axs[2], node, conf)
         saveVisz(0, node, conf)
 
     ##################################################
     for lap in range(1, Nsamples):
         print("---lap: {}".format(lap))
+
+        add_virtual_work(node, lap, conf)
+        #node.update_work()
+        node.allgather_work_grid()
 
         if False:
             # corgi loadbalance 
@@ -398,6 +440,7 @@ if __name__ == "__main__":
             if do_plots:
                 plotNode(axs[0], node, conf)
                 plotNode(axs[1], node, conf, mpigrid=True)
+                plotWork(axs[2], node, conf)
                 saveVisz(lap, node, conf)
     
         analyze(node, f5, lap, conf)
@@ -406,6 +449,8 @@ if __name__ == "__main__":
 
     #plotNode(axs[0], node, conf)
     #plotNode(axs[1], node, conf, mpigrid=True)
+    #plotWork(axs[2], node, conf)
+
     #saveVisz(, node, conf)
 
 

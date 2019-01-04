@@ -258,6 +258,14 @@ class Tile
     }
 
 
+    /// Local computational work estimate for this tile
+    virtual double get_work()
+    {
+      return 1.0;
+    }
+
+
+
 }; // end of Tile class
 
 } // end of namespace corgi

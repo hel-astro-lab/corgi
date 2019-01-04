@@ -67,6 +67,10 @@ class Node
    */
   corgi::tools::sparse_grid<int, D> _mpi_grid;
 
+  /// global large scale block grid where load balance 
+  //information is stored
+  corgi::tools::sparse_grid<double, D> _work_grid;
+
   // --------------------------------------------------
   private:
     
@@ -107,6 +111,23 @@ class Node
   }
 
 
+  // get element
+  template<typename... Indices>
+  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+  corgi::internals::are_integral<Indices...>::value, int > 
+  py_get_work_grid(Indices... indices)  /*const*/
+  {
+    return _work_grid(indices...);
+  }
+
+  // set element
+  template<typename... Indices>
+  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+  corgi::internals::are_integral<Indices...>::value, void > 
+  py_set_work_grid(int val, Indices... indices) {
+    _work_grid(indices...) = val;
+  }
+
 
   public:
 
@@ -141,6 +162,7 @@ class Node
   Node(DimensionLength... dimension_lengths) :
     _lengths {{static_cast<size_type>(dimension_lengths)...}},
     _mpi_grid(dimension_lengths...),
+    _work_grid(dimension_lengths...),
     env(),
     comm()
   { }
@@ -908,7 +930,7 @@ class Node
       tmp = _mpi_grid.serialize();
     } else {
       tmp.resize(N);
-      for(int k=0; k<N; k++) {tmp[k] = -1.0;};
+      for(int k=0; k<N; k++) {tmp[k] = -1;};
     }
 
     MPI_Bcast(&tmp[0],
@@ -923,6 +945,68 @@ class Node
       _mpi_grid.deserialize(tmp, _lengths);
     }
   }
+
+  /// update work arrays from other nodes and send mine
+  void allgather_work_grid() 
+  {
+
+    // total size
+    int N = 1;
+    for (size_t i = 0; i<D; i++) N *= _lengths[i];
+
+    // message buffers
+    std::vector<double> recv(N*comm.size());
+    std::vector<double> orig = _work_grid.serialize();
+
+    // mask all work values that are not mine
+    std::vector<int> ranks   = _mpi_grid.serialize();
+    for(size_t i=0; i<ranks.size(); i++) {
+      if( ranks[i] != comm.rank() ) orig[i] = -1.0;
+    }
+
+    MPI_Allgather(
+        &orig[0],
+        orig.size(), 
+        MPI_DOUBLE, 
+        &recv[0], 
+        orig.size(),
+        MPI_DOUBLE,
+        MPI_COMM_WORLD
+        );
+    
+  
+    std::vector<double> new_work(N);
+    std::fill(new_work.begin(), new_work.end(), -1.0);
+
+    double val;
+    for(int j=0; j<comm.size(); j++) {
+      for(int i=0; i<N; i++) {
+        val = recv[j*N + i];
+        if(val != -1.0) {
+          assert(new_work[i] == -1.0); // test that we dont overwrite
+          new_work[i] = val;
+        }
+      }
+    }
+      
+    // test that we did not miss elements
+    for(auto& val : new_work) assert(val != -1.0); 
+
+    // upload back to grid
+    _work_grid.deserialize(new_work, _lengths);
+
+  }
+
+
+  // Update work load grid from my local tiles
+  void update_work()
+  {
+    for(auto& cid : get_local_tiles()) {
+      auto& tile = get_tile(cid);
+     _work_grid( tile.index ) = tile.get_work();
+    }
+  }
+
 
 
   /// Issue isends to everywhere

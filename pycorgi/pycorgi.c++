@@ -72,6 +72,9 @@ auto declare_node(
         .def_readwrite("send_queue",         &corgi::Node<D>::send_queue)
         .def_readwrite("send_queue_address", &corgi::Node<D>::send_queue_address)
         .def("bcast_mpi_grid",          &corgi::Node<D>::bcast_mpi_grid)
+        .def("allgather_work_grid",     &corgi::Node<D>::allgather_work_grid)
+        .def("update_work",             &corgi::Node<D>::update_work)
+
         .def("send_tiles",              &corgi::Node<D>::send_tiles)
         .def("recv_tiles",              &corgi::Node<D>::recv_tiles)
         .def("send_data",               &corgi::Node<D>::send_data)
@@ -160,6 +163,7 @@ PYBIND11_MODULE(pycorgi, m_base) {
             )
           { n.set_grid_lims({{xmin}}, {{xmax}}); });
 
+    // mpi grid py bindings
     n1
       .def("get_mpi_grid", [](corgi::Node<1> &n, const size_t i){ 
           const auto val = n.py_get_mpi_grid(i); 
@@ -170,7 +174,21 @@ PYBIND11_MODULE(pycorgi, m_base) {
           return val;
           })
       .def("set_mpi_grid", [](corgi::Node<1> &n, size_t i, int val){ n.py_set_mpi_grid(val, i); })
-      .def("set_mpi_grid", [](corgi::Node<1> &n, size_t i, size_t /*j*/, int val){ n.py_set_mpi_grid(val, i); })
+      .def("set_mpi_grid", [](corgi::Node<1> &n, size_t i, size_t /*j*/, int val){ n.py_set_mpi_grid(val, i); });
+
+    // work grid py bindings
+    n1
+      .def("get_work_grid", [](corgi::Node<1> &n, const size_t i){ 
+          const auto val = n.py_get_work_grid(i); 
+          return val;
+          })
+      .def("get_work_grid", [](corgi::Node<1> &n, const size_t i, const size_t ){ 
+          const auto val = n.py_get_work_grid(i); 
+          return val;
+          })
+      .def("set_work_grid", [](corgi::Node<1> &n, size_t i, double val){ n.py_set_work_grid(val, i); })
+      .def("set_work_grid", [](corgi::Node<1> &n, size_t i, size_t /*j*/, double val){ n.py_set_work_grid(val, i); })
+
       .def("id", [](const corgi::Node<1> &n, const size_t i){ return n.id(i);});
       
 
@@ -218,6 +236,13 @@ PYBIND11_MODULE(pycorgi, m_base) {
           return val;
           })
       .def("set_mpi_grid", [](corgi::Node<2> &n, size_t i, size_t j, int val){ n.py_set_mpi_grid(val, i, j); })
+
+      .def("get_work_grid", [](corgi::Node<2> &n, const size_t i, const size_t j){ 
+          const auto val = n.py_get_work_grid(i,j); 
+          return val;
+          })
+      .def("set_work_grid", [](corgi::Node<2> &n, size_t i, size_t j, double val){ n.py_set_work_grid(val, i, j); })
+
       .def("id", [](const corgi::Node<2> &n, const size_t i, const size_t j){ return n.id(i,j);});
 
 
