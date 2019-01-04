@@ -1159,9 +1159,9 @@ class Node
       if(vir.top_virtual_owner == comm.rank()) {
         adoptions.push_back( vir.cid );
 
-        std::cout << comm.rank() 
-          << ": adoption council marks " << vir.cid
-          << " at " << vir.indices[0] << " " << vir.indices[1] << "\n";
+        //std::cout << comm.rank() 
+        //  << ": adoption council marks " << vir.cid
+        //  << " at " << vir.indices[0] << " " << vir.indices[1] << "\n";
       }
 
       if( (int)adoptions.size() >= quota) break;
@@ -1223,15 +1223,23 @@ class Node
     // for updated values
     corgi::tools::sparse_grid<int, D> new_mpi_grid(_mpi_grid);
 
-    int dt = sqrt(*std::max_element(_lengths.begin(), _lengths.end() )); // radius of Gaussian kernel
-    //int dt = *std::max_element(_lengths.begin(), _lengths.end() )/2; // radius of Gaussian kernel
+    // radius of Gaussian kernel
+    int dt = sqrt(*std::max_element(_lengths.begin(), _lengths.end() )); 
+    //int dt = *std::max_element(_lengths.begin(), _lengths.end() )/2; 
     //dt += 0.1*dt;
 
     // gaussian kernel; i.e., relative indices how we convolve
     auto kernel = corgi::ca::sphere_neighborhood<D>(dt);
 
 
+    // keep track of tile changes
+    std::vector<int> obtained(comm.size()), lost(comm.size());
+    std::fill(obtained.begin(), obtained.end(), 0); // reset vector
+    std::fill(lost.begin(), lost.end(), 0); // reset vector
+
+
     // process the complete grid (including remote neighbors)
+    int new_color;
     for(auto&& elem : _mpi_grid) {
       auto& ind     = elem.first;
       int old_color = elem.second;
@@ -1241,6 +1249,7 @@ class Node
       // resolve neighborhood; diffusion step
       //alives[old_color] = 1.0;
       alives[old_color] = (1.0/4.0/M_PI/static_cast<double>(dt));
+      //alives[old_color] = sqrt(0.5/M_PI);
 
       // Limited Moore nearest neighborhood
       //auto neigs = nhood(ind);
@@ -1254,21 +1263,36 @@ class Node
       // full Gaussian kernel
       double r;
       int color;
-      for(auto& reli : kernel ){
+      for(auto& reli : kernel ) {
         auto nindx = neighs(ind, reli);
         color = _mpi_grid(nindx);
 
         r = ca::distance<D>(reli);  
         //alives[color] += exp(-r*r/static_cast<double>(dt));
-        //alives[color] += r;
+        //alives[color] += r/(2.0*M_PI*static_cast<double>(dt));
           
         alives[color] += (1.0/4.0/M_PI/static_cast<double>(dt))
                          *exp(-r*r/(4.0*static_cast<double>(dt)));
+          
+        //alives[color] += sqrt(0.5/M_PI)*exp(-r*r/(2.0));
+
+        //alives[color] += exp(-r*r/4.0);
       }
 
+      // normalize
+      double norm = 0.0;
+      for(auto& val : alives) norm += val;
+      for(auto& val : alives) val /= norm;
+
+      //auto maxe = std::max_element(alives.begin(), alives.end());
+      //if(*maxe >= 0.5/( (double)comm.size() ) ) {
+      //  new_color = std::distance(alives.begin(), maxe);
+      //} else {
+      //  new_color = old_color;
+      //}
 
       // get mode, i.e., most frequent color; sharpening step
-      int new_color = std::distance( alives.begin(), 
+      new_color = std::distance( alives.begin(), 
           std::max_element(alives.begin(), alives.end()));
 
       // stay alive if all values are the same; i.e., we are in equilibrium
@@ -1283,9 +1307,32 @@ class Node
       //if(equilibrium) continue;
 
 
+      // FIXME
+      //if (new_color != old_color) {
+      //  uint64_t cid = id(ind);
+      //  auto index = id2index(cid, _lengths);
+      //  std::cout << comm.rank() << ": tile " << cid 
+      //    << " has been kidnapped by evil " << new_color 
+      //    << " at (" << std::get<0>(index) << "," 
+      //    << " from " << old_color << " --- alives:";
+      //  for(auto val : alives) std::cout << " " << val;
+      //  double sum = 0.0;
+      //  for(auto val : alives) sum += val;
+      //  std::cout << " sum: " << sum;
+      //  std::cout << "\n";
+      //}
+
+      obtained[new_color]++;
+      lost[old_color]++;
+
       // progress one step
       new_mpi_grid(ind) = new_color;
     }
+
+    int myrank = comm.rank();
+    std::cout << comm.rank() << ": rank gained/lost= " 
+      << obtained[myrank] << "/" << lost[myrank] 
+      << " in += " << obtained[myrank] - lost[myrank] << "\n";
 
 
     //--------------------------------------------------
@@ -1323,30 +1370,21 @@ class Node
 
       // abort if this is not the case
       if(!is_virtual) {
-        std::cout << comm.rank() << ": XXX tile " << cid 
-            << " is going too fast to: " << new_color << "\n";
+        //std::cout << comm.rank() << ": XXX tile " << cid 
+        //    << " is going too fast to: " << new_color << "\n";
         new_mpi_grid(ind) = old_color;
         continue;
       }
 
       // check if we exceed our quota; if yes, then must reinitialize grid
-      if(transfers[new_color] > quota[new_color]) {
-        new_mpi_grid(ind) = old_color;
-        continue;
-      }
+      //if(transfers[new_color] > quota[new_color]) {
+      //  new_mpi_grid(ind) = old_color;
+      //  continue;
+      //}
         
       // keep track of work / individual load
       transfers[new_color]++;
 
-
-      // FIXME
-      auto index = id2index(cid, _lengths);
-      std::cout << comm.rank() << ": tile " << cid 
-        << " has been kidnapped by evil " << new_color 
-        << " at (" << std::get<0>(index) << "," 
-        << " from " << old_color << " --- alives:";
-      for(auto val : alives) std::cout << " " << val;
-      std::cout << "\n";
 
 
       // I have adopted a tile
@@ -1355,9 +1393,9 @@ class Node
         adoptions.push_back(cid);
 
         // FIXME
-        std::cout << comm.rank() 
-          << ": adoption council marks " << cid << " to be adopted\n";
-            //<< " at " << tile.communication.indices[0] << " " << tile.communication.indices[1] << "\n";
+        //std::cout << comm.rank() 
+        //  << ": adoption council marks " << cid << " to be adopted\n";
+        //    //<< " at " << tile.communication.indices[0] << " " << tile.communication.indices[1] << "\n";
         auto& tile  = get_tile(cid);
         tile.communication.owner = comm.rank();
 
@@ -1371,7 +1409,7 @@ class Node
           tile.communication.owner = new_color;
 
           // FIXME
-          std::cout << comm.rank() << ": oh gosh tile " << cid << " is mine! \n";
+          //std::cout << comm.rank() << ": oh gosh tile " << cid << " is mine! \n";
         } else {
           // something went wrong; I should have this tile but I do not?!
           assert(false);
@@ -1394,10 +1432,10 @@ class Node
   {
     for(auto cid : adoptions){
       auto& vir = get_tile(cid);
-      std::cout << comm.rank() 
-        << ": adopting " << vir.cid
-        << " at " << vir.communication.indices[0] << " " 
-                  << vir.communication.indices[1] << "\n";
+      //std::cout << comm.rank() 
+      //  << ": adopting " << vir.cid
+      //  << " at " << vir.communication.indices[0] << " " 
+      //            << vir.communication.indices[1] << "\n";
 
 
       vir.communication.owner = comm.rank();
@@ -1465,11 +1503,11 @@ class Node
 
         auto index = id2index(kidnapped_cid, _lengths);
 
-        std::cout << comm.rank() << ": tile " << kidnapped_cid 
-          << " has been kidnapped by evil " << orig << "\n";
+        //std::cout << comm.rank() << ": tile " << kidnapped_cid 
+        //  << " has been kidnapped by evil " << orig << "\n";
 
         if(is_local(kidnapped_cid)) {
-          std::cout << comm.rank() << ": tile " << kidnapped_cid << " is mine! \n";
+          //std::cout << comm.rank() << ": tile " << kidnapped_cid << " is mine! \n";
           //tiles.erase(kidnapped_cid);
 
           auto& tile = get_tile(kidnapped_cid);

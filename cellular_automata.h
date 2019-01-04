@@ -26,6 +26,15 @@ inline double distance(corgi::internals::tuple_of<2, int> rel)
       );
 }
 
+template<std::size_t D, typename T = std::enable_if_t<(D==3),int> >
+inline double distance(corgi::internals::tuple_of<3, int> rel)
+{
+  return sqrt( 
+      (double)std::pow(std::get<0>(rel),2) +
+      (double)std::pow(std::get<1>(rel),2) +
+      (double)std::pow(std::get<2>(rel),2)
+      );
+}
 
 
 /// Moore neighborhood of different dimensions
@@ -127,7 +136,7 @@ std::vector< corgi::internals::tuple_of<2,int> > sphere_neighborhood(int radius)
   for (int jr=-radius; jr<=radius; jr++) {
 
     auto rel = std::make_tuple(ir,jr);
-    if( distance<2>(rel) > (double)radius ) continue;
+    if( distance<2>(rel) >= (double)radius ) continue;
 
     if (!( ir == 0 && jr == 0 )) {
       ret.push_back( rel );
