@@ -6,8 +6,11 @@ import palettable as pal
 palette = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 import networkx as nx
+from networkx.drawing.nx_agraph import graphviz_layout
+
 from pylab import *
 import matplotlib.pyplot as plt
+import matplotlib 
 
 class Conf:
     outdir = "out"
@@ -43,20 +46,25 @@ if __name__ == "__main__":
     rank = str(ir)
     f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "r")
 
+    norm = matplotlib.colors.Normalize(vmin=0.0, vmax=4.0)
+
     virs = f5['virtuals']
     boun = f5['boundaries']
     locs = f5['locals']
         
-    imgs = f5['grid'][:,:,:]
+    imgs  = f5['grid'][:,:,:]
+    works = f5['work'][:,:,:]
 
     Nx, Ny, Nt = np.shape(imgs)
-    Nx, Ny = 10,10
+    #Nx, Ny = 10,10
     print("image size nx {} ny {} nt {}".format(Nx, Ny, Nt))
     #for t in range(Nt):
-    for t in [0]:
-        img = imgs[:,:,t]
+    for t in range(0,101,1):
+        print("-------------------", t)
+        img  = imgs[:,:,t]
+        work = works[:,:,t]
 
-        G = nx.grid_2d_graph(Nx,Ny, periodic=False) 
+        G = nx.grid_2d_graph(Nx,Ny, periodic=True) 
         
         pos = dict(zip(G.nodes(),G.nodes()))                                            
         ordering = [(y,Nx-1-x) for y in range(Ny) for x in range(Nx)]
@@ -70,20 +78,34 @@ if __name__ == "__main__":
         labels = {}
         for (i,j) in G.nodes():
             #print(i,j)
-            node_sizes.append(100*i+1)
+            node_sizes.append( 20.0*work[i,j] )
 
-            if i < 5:
-                col = 'black'
-            else:
-                col = 'blue'
+            crank = img[i,j]
+            col = palette(norm(crank))
             node_cols.append(col)
         
+        for i,j,d in G.edges(data=True):
+            w1 = work[i]
+            w2 = work[j]
+            #d['weight'] = 2.0/(w1 + w2)
+
+            r1 = img[i]
+            r2 = img[j]
+            if r1 == r2:
+                v = 0.1
+            else:
+                v = 10.0
+            d['weight'] = v
+
         nx.draw_networkx(
                 G, 
                 #pos=pos, 
-                pos = nx.spectral_layout(G),
+                #pos = nx.spectral_layout(G, dim=2),
                 #pos = nx.circular_layout(G),
                 #pos = nx.shell_layout(G),
+                #pos = nx.spring_layout(G,pos=pos, iterations=1, scale=10.0),
+                #pos = graphviz_layout(G, prog='neato'),
+                pos = nx.kamada_kawai_layout(G),
                 with_labels=False, 
                 node_size = node_sizes,
                 node_shape='s',
@@ -98,4 +120,8 @@ if __name__ == "__main__":
         
         plt.axis('off')                                                                 
         #plt.show()
-        plt.savefig('graph.pdf')
+
+        slap = str(t).rjust(4, '0')
+        plt.savefig(conf.outdir+'/xgraph_'+slap+'.png')
+
+

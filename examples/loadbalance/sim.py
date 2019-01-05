@@ -174,6 +174,13 @@ def get_mpi_grid(n, conf):
             tmp[i,j] = node.get_mpi_grid(i,j)
     return tmp
 
+def get_work_grid(n, conf):
+
+    tmp = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
+    for i in range(n.get_Nx()):
+        for j in range(n.get_Ny()):
+            tmp[i,j] = node.get_work_grid(i,j)
+    return tmp
 
 def analyze(n, f5, lap, conf):
 
@@ -187,6 +194,9 @@ def analyze(n, f5, lap, conf):
 
     grid = get_mpi_grid(n, conf)
     f5['grid'][:,:,lap] = grid
+
+    work = get_work_grid(n, conf)
+    f5['work'][:,:,lap] = work
 
 
 def plotWork(ax, n, conf):
@@ -382,6 +392,7 @@ if __name__ == "__main__":
     f5.create_dataset("locals",     (Nsamples,), dtype='f')
     f5.create_dataset("boundaries", (Nsamples,), dtype='f')
     f5.create_dataset("grid", (conf.Nx, conf.Ny, Nsamples), dtype='f')
+    f5.create_dataset("work", (conf.Nx, conf.Ny, Nsamples), dtype='f')
 
     ################################################## 
 
