@@ -26,8 +26,6 @@
 
 namespace corgi {
 
-namespace mpi = mpi4cpp::mpi;
-
 
 /*! Individual node object that stores patches of grid in it.
  *
