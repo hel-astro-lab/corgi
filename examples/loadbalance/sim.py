@@ -316,7 +316,9 @@ def add_virtual_work(n, lap, conf):
             sig = 1000.0
             nw = 4.0*np.exp(-rvec2/sig)
 
-            node.set_work_grid(i,j, nw)
+            #node.set_work_grid(i,j, nw)
+
+            node.set_work_grid(i,j, 1.0)
 
 
 
@@ -331,7 +333,7 @@ class Conf:
     NyMesh = 1
     NzMesh = 1
 
-    outdir = "out"
+    outdir = "out100x100"
 
     def update_bbox(self):
         self.xmin = 0.0
@@ -350,19 +352,22 @@ class Conf:
 
 if __name__ == "__main__":
 
+    do_plots = False
+
     # set up plotting and figure
-    plt.fig = plt.figure(1, figsize=(12,4))
-    plt.rc('font', family='serif', size=12)
-    plt.rc('xtick')
-    plt.rc('ytick')
-    
-    gs = plt.GridSpec(1, 3)
-    gs.update(hspace = 0.5)
-    
-    axs = []
-    axs.append( plt.subplot(gs[0]) )
-    axs.append( plt.subplot(gs[1]) )
-    axs.append( plt.subplot(gs[2]) )
+    if do_plots:
+        plt.fig = plt.figure(1, figsize=(12,4))
+        plt.rc('font', family='serif', size=12)
+        plt.rc('xtick')
+        plt.rc('ytick')
+        
+        gs = plt.GridSpec(1, 3)
+        gs.update(hspace = 0.5)
+        
+        axs = []
+        axs.append( plt.subplot(gs[0]) )
+        axs.append( plt.subplot(gs[1]) )
+        axs.append( plt.subplot(gs[2]) )
     
 
     #setup node
@@ -387,7 +392,8 @@ if __name__ == "__main__":
     rank = str(node.rank())
     f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "w")
 
-    Nsamples = 101
+    #Nsamples = 201
+    Nsamples = 3
     f5.create_dataset("virtuals",   (Nsamples,), dtype='f')
     f5.create_dataset("locals",     (Nsamples,), dtype='f')
     f5.create_dataset("boundaries", (Nsamples,), dtype='f')
@@ -396,7 +402,6 @@ if __name__ == "__main__":
 
     ################################################## 
 
-    do_plots = True
     if do_plots:
         plotNode(axs[0], node, conf)
         plotNode(axs[1], node, conf, mpigrid=True)
@@ -438,9 +443,9 @@ if __name__ == "__main__":
             #print("erase_virtuals")
             node.erase_virtuals()
         else:
-            #print("adoption_council2")
+            print("adoption_council2")
             node.adoption_council2()
-            #print("erase_virtuals")
+            print("erase_virtuals")
             node.erase_virtuals()
 
 
@@ -453,14 +458,17 @@ if __name__ == "__main__":
         print("initialize")
         initialize_virtuals(node, conf)
 
+        analyze(node, f5, lap, conf)
+
         if (lap % 10 == 0):
             if do_plots:
                 plotNode(axs[0], node, conf)
                 plotNode(axs[1], node, conf, mpigrid=True)
                 plotWork(axs[2], node, conf)
                 saveVisz(lap, node, conf)
+            f5.flush()
+
     
-        analyze(node, f5, lap, conf)
 
     f5.close()
 
