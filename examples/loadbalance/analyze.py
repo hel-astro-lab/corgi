@@ -36,10 +36,9 @@ if __name__ == "__main__":
 
     ##################################################
     cols = ['k','b','r','g']
-    for ir in range(2):
+    for ir in range(4):
         rank = str(ir)
         f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "r")
-
         
         virs = f5['virtuals']
         boun = f5['boundaries']
