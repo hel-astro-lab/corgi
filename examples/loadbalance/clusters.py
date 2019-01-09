@@ -140,6 +140,8 @@ if __name__ == "__main__":
     cmap = matplotlib.cm.get_cmap('tab20c')
     #cmap = matplotlib.cm.get_cmap('gist_rainbow')
 
+
+
     ranks = range(10)
     for ir in ranks:
         #col = cols[ir]

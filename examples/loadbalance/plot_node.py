@@ -49,13 +49,6 @@ def imshow(ax, img):
               aspect='auto',
               )
 
-def read_h5_img(ir):
-    rank = str(ir)
-    fn = fname + rank + ".h5"
-    f5 = h5py.File(fn, "r")
-    imgs = f5['grid'][:,:,:]
-
-    return imgs
 
 def combine_ranks(fname):
 
