@@ -6,8 +6,8 @@ import h5py
 class Conf:
 
 
-    outdir = "out200x200n10"
-    #outdir = "out200x200n100"
+    #outdir = "out200x200n10"
+    outdir = "out200x200n100"
     #outdir = "out4_30x30"
     #outdir = "out4_100x100"
     #outdir = "out2_100x100"
@@ -77,22 +77,24 @@ if __name__ == "__main__":
     conf = Conf()
     fname = conf.outdir+"/run-"
 
-    nranks = 10
-    f5 = h5py.File(conf.outdir+"/run-merged.h5", "w")
+    nranks = 100
+    f5all = h5py.File(conf.outdir+"/run-merged.h5", "w")
 
     Nsamples = 201
 
-    f5.create_dataset("virtuals",   (Nsamples,nranks), dtype='f')
-    f5.create_dataset("locals",     (Nsamples,nranks), dtype='f')
-    f5.create_dataset("boundaries", (Nsamples,nranks), dtype='f')
-
-
+    f5all.create_dataset("virtuals",   (Nsamples,nranks), dtype='f')
+    f5all.create_dataset("locals",     (Nsamples,nranks), dtype='f')
+    f5all.create_dataset("boundaries", (Nsamples,nranks), dtype='f')
 
 
     ##################################################
     # img + virtuals/locals/boundaries
-    imgs = combine_ranks(fname, f5)
-    f5.create_dataset("grid", data=imgs)
+    imgs = combine_ranks(fname, f5all)
+
+    print(imgs[:,:,0])
+    print(imgs[:,:,1])
+
+    f5all.create_dataset("grid", data=imgs)
 
     ##################################################
     # work
@@ -100,13 +102,13 @@ if __name__ == "__main__":
     fn = fname + rank + ".h5"
     f5t = h5py.File(fn, "r")
     work = f5t['work'][:,:,:]
-    f5.create_dataset("work", data=work)
+    f5all.create_dataset("work", data=work)
     f5t.close()
 
 
     ##################################################
     #close
-    f5.close()
+    f5all.close()
 
 
 

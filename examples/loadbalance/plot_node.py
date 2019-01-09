@@ -110,8 +110,14 @@ if __name__ == "__main__":
     #ranks = range(1)
     #for ir in ranks:
 
-    fname = conf.outdir+"/run-"
-    imgs = combine_ranks(fname)
+    #fname = conf.outdir+"/run-"
+    #imgs = combine_ranks(fname)
+
+    nranks = 100
+    f5all = h5py.File(conf.outdir+"/run-merged.h5", "r")
+    imgs = f5all['grid'][:,:,:]
+    imgs = imgs / nranks
+
 
     nx, ny, nt = np.shape(imgs)
     print("image size nx {} ny {} nt {}".format(nx, ny, nt))

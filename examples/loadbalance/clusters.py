@@ -11,8 +11,8 @@ palette = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 
 class Conf:
-    outdir = "out200x200n10"
-    #outdir = "out200x200n100"
+    #outdir = "out200x200n10"
+    outdir = "out200x200n100"
     #outdir = "out4_30x30"
     #outdir = "out4_100x100"
     #outdir = "out2_100x100"
@@ -135,26 +135,42 @@ if __name__ == "__main__":
 
     ##################################################
     nx, ny = 1,1
+
+    nranks = 100
+
     #cols = ['k','b','r','g']
-    norm = matplotlib.colors.Normalize(vmin=0.0, vmax=99.0)
+    norm = matplotlib.colors.Normalize(vmin=0.0, vmax=nranks)
     cmap = matplotlib.cm.get_cmap('tab20c')
     #cmap = matplotlib.cm.get_cmap('gist_rainbow')
 
 
+    f5all = h5py.File(conf.outdir+"/run-merged.h5", "r")
 
-    ranks = range(10)
+
+    ranks = range(nranks)
     for ir in ranks:
+        print("rank={}".format(ir))
+
         #col = cols[ir]
         col = cmap(norm(ir))
 
         rank = str(ir)
-        f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "r")
+        #f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "r")
+        #virs = f5['virtuals']
+        #boun = f5['boundaries']
+        #locs = f5['locals']
+        #imgs = f5['grid'][:,:,:]
 
-        virs = f5['virtuals']
-        boun = f5['boundaries']
-        locs = f5['locals']
-        
-        imgs = f5['grid'][:,:,:]
+        virs = f5all['virtuals'][:,ir]
+        boun = f5all['boundaries'][:,ir]
+        locs = f5all['locals'][:,ir]
+        imgs = f5all['grid'][:,:,:]
+
+        imgs = imgs / nranks
+
+        #print(imgs[:,:,1])
+        #print(np.min(imgs))
+        #print(np.max(imgs))
 
         N = []
 
@@ -173,7 +189,12 @@ if __name__ == "__main__":
         for t in range(nt):
             #print("t={}".format(t))
             img = imgs[:,:,t]
+
+            if np.count_nonzero(img) == 0:
+                break
+
             img = reduce_image(img, ir)
+
 
             cnts, hier = compute_clusters(img)
             data = analyze_contours(cnts, hier)
