@@ -5,12 +5,14 @@ import cv2
 
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import matplotlib 
 import palettable as pal
 palette = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 
 class Conf:
-    outdir = "out"
+    outdir = "out200x200n10"
+    #outdir = "out200x200n100"
     #outdir = "out4_30x30"
     #outdir = "out4_100x100"
     #outdir = "out2_100x100"
@@ -133,10 +135,15 @@ if __name__ == "__main__":
 
     ##################################################
     nx, ny = 1,1
-    cols = ['k','b','r','g']
-    ranks = range(2)
+    #cols = ['k','b','r','g']
+    norm = matplotlib.colors.Normalize(vmin=0.0, vmax=99.0)
+    cmap = matplotlib.cm.get_cmap('tab20c')
+    #cmap = matplotlib.cm.get_cmap('gist_rainbow')
+
+    ranks = range(10)
     for ir in ranks:
-        col = cols[ir]
+        #col = cols[ir]
+        col = cmap(norm(ir))
 
         rank = str(ir)
         f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "r")
@@ -159,6 +166,8 @@ if __name__ == "__main__":
 
         nx, ny, nt = np.shape(imgs)
         print("image size nx {} ny {} nt {}".format(nx, ny, nt))
+
+        #nt = 40
         for t in range(nt):
             #print("t={}".format(t))
             img = imgs[:,:,t]
@@ -181,7 +190,7 @@ if __name__ == "__main__":
 
         #axs[0].plot(locs, linestyle='solid' , color=cols[ir] )
         #axs[0].plot(virs, linestyle='solid', color=cols[ir] )
-        axs[0].plot(np.array(virs)/np.array(locs), linestyle='solid', color=cols[ir] )
+        axs[0].plot(np.array(virs)/np.array(locs), linestyle='solid', color=col, alpha=0.6)
 
         axs[1].plot(N, color=col)
 
@@ -199,9 +208,15 @@ if __name__ == "__main__":
     area = nx*ny/len(ranks)
     print("nx={} ny={}".format(nx,ny))
     print("area per rank A_loc=",area)
+
     sidelen = 4*np.sqrt(area)
     print("arc length={}".format(sidelen))
+
     print("N_vir/N_loc",sidelen/area)
+
+    axs[0].hlines(y=sidelen/area, xmin=0, xmax=nt, color="k", linestyle='dashed')
+    axs[2].hlines(y=sidelen, xmin=0, xmax=nt,      color="k", linestyle='dashed')
+    axs[3].hlines(y=area, xmin=0, xmax=nt,         color="k", linestyle='dashed')
 
 
     axs[0].set_ylabel(r'$N_{\mathrm{vir}}/N_{\mathrm{loc}}$')
@@ -213,6 +228,8 @@ if __name__ == "__main__":
     #for ax in axs:
     #    ax.set_yscale('log')
     #    #ax.set_xscale('log')
+
+    axs[0].set_yscale('log')
 
     axs[1].set_yscale('log')
     axs[2].set_yscale('log')
