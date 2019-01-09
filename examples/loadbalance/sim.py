@@ -325,15 +325,15 @@ def add_virtual_work(n, lap, conf):
 
 class Conf:
 
-    Nx  = 100
-    Ny  = 100
+    Nx  = 200
+    Ny  = 200
     Nz  = 1
 
     NxMesh = 1
     NyMesh = 1
     NzMesh = 1
 
-    outdir = "out100x100"
+    outdir = "out200x200n500"
 
     def update_bbox(self):
         self.xmin = 0.0
@@ -392,8 +392,7 @@ if __name__ == "__main__":
     rank = str(node.rank())
     f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "w")
 
-    #Nsamples = 201
-    Nsamples = 3
+    Nsamples = 201
     f5.create_dataset("virtuals",   (Nsamples,), dtype='f')
     f5.create_dataset("locals",     (Nsamples,), dtype='f')
     f5.create_dataset("boundaries", (Nsamples,), dtype='f')
@@ -429,8 +428,8 @@ if __name__ == "__main__":
         print("---lap: {}".format(lap))
 
         #add_virtual_work(node, lap, conf)
-        #node.update_work()
-        #node.allgather_work_grid()
+        node.update_work()
+        node.allgather_work_grid()
 
         if False:
             # corgi loadbalance 
