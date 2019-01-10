@@ -7,7 +7,11 @@ class Conf:
 
 
     #outdir = "out200x200n10"
-    outdir = "out200x200n100"
+    #outdir = "out200x200n100"
+    #outdir = "out200x200n500"
+    #outdir = "out200x200n1000"
+    #outdir = "out500x500n500"
+    outdir = "out500x500n1000"
     #outdir = "out4_30x30"
     #outdir = "out4_100x100"
     #outdir = "out2_100x100"
@@ -62,6 +66,8 @@ def combine_ranks(fname, f5all):
         f5all['boundaries'][:,ir] = boun
         f5all['locals'][:,ir]     = locs
 
+        #if ir > 700:
+        #    break
 
         ir += 1
         f5.close()
@@ -77,7 +83,7 @@ if __name__ == "__main__":
     conf = Conf()
     fname = conf.outdir+"/run-"
 
-    nranks = 100
+    nranks = 1000
     f5all = h5py.File(conf.outdir+"/run-merged.h5", "w")
 
     Nsamples = 201

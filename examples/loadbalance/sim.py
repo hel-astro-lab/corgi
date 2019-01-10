@@ -325,15 +325,15 @@ def add_virtual_work(n, lap, conf):
 
 class Conf:
 
-    Nx  = 200
-    Ny  = 200
+    Nx  = 500
+    Ny  = 500
     Nz  = 1
 
     NxMesh = 1
     NyMesh = 1
     NzMesh = 1
 
-    outdir = "out200x200n500"
+    outdir = "out500x500n100"
 
     def update_bbox(self):
         self.xmin = 0.0
