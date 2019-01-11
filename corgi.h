@@ -1214,13 +1214,13 @@ class Node
     //excess = excess > 0.0 ? excess : 0.0;
 
 
-    if(rank == comm.rank()) {
-    std::cout << comm.rank() << " get_quota for rank gives "
-      << "ideal_work:" << ideal_work
-      << "current   :" << current_workload
-      << "excess   :" << excess
-      << "\n";
-    }
+    //if(rank == comm.rank()) {
+    //std::cout << comm.rank() << " get_quota for rank gives "
+    //  << "ideal_work:" << ideal_work
+    //  << "current   :" << current_workload
+    //  << "excess   :" << excess
+    //  << "\n";
+    //}
 
     return excess;
 
@@ -1318,7 +1318,7 @@ class Node
     kidnaps.clear();
     std::vector<double> alives(comm.size());
 
-    int myrank = comm.rank();
+    //int myrank = comm.rank();
 
     // for updated values
     corgi::tools::sparse_grid<int, D> new_mpi_grid(_mpi_grid);
@@ -1329,7 +1329,7 @@ class Node
     //dt += 0.1*dt;
 
     // gaussian kernel; i.e., relative indices how we convolve
-    auto kernel = corgi::ca::sphere_neighborhood<D>(dt);
+    auto kernel = corgi::ca::chessboard_neighborhood<D>(dt);
 
 
     // keep track of tile changes
@@ -1351,9 +1351,9 @@ class Node
     for(auto& elem : _work_grid) total_work += elem.second;
     for(size_t i=0; i<rel_quota.size(); i++) rel_quota[i] = comm.size()*quota[i]/total_work;
 
-    std::cout << comm.rank() << ": my quota : " << quota[myrank] 
-      << " (" << rel_quota[myrank] << ")"
-      << "\n";
+    //std::cout << comm.rank() << ": my quota : " << quota[myrank] 
+    //  << " (" << rel_quota[myrank] << ")"
+    //  << "\n";
 
     //--------------------------------------------------
 
@@ -1387,7 +1387,10 @@ class Node
         auto nindx = neighs(ind, reli);
         color = _mpi_grid(nindx);
 
-        r = ca::distance<D>(reli);  
+        //r = geom::eulerian_distance(reli);  
+        r = geom::manhattan_distance(reli);  
+        //r = geom::chessboard_distance<D>(reli);  
+
         //alives[color] += exp(-r*r/static_cast<double>(dt));
         //alives[color] += r/(2.0*M_PI*static_cast<double>(dt));
           
@@ -1454,9 +1457,9 @@ class Node
       new_mpi_grid(ind) = new_color;
     }
 
-    std::cout << comm.rank() << ": rank gained/lost= " 
-      << obtained[myrank] << "/" << lost[myrank] 
-      << " in += " << obtained[myrank] - lost[myrank] << "\n";
+    //std::cout << comm.rank() << ": rank gained/lost= " 
+    //  << obtained[myrank] << "/" << lost[myrank] 
+    //  << " in += " << obtained[myrank] - lost[myrank] << "\n";
 
 
     //--------------------------------------------------

@@ -205,7 +205,7 @@ def plotWork(ax, n, conf):
         for j in range(n.get_Ny()):
             tmp_grid[i,j] = node.get_work_grid(i,j)
 
-    print("{}: min/max work {}/{}".format(n.rank(), np.min(tmp_grid), np.max(tmp_grid)))
+    #print("{}: min/max work {}/{}".format(n.rank(), np.min(tmp_grid), np.max(tmp_grid)))
 
     maxv = np.max(tmp_grid)
 
@@ -325,15 +325,15 @@ def add_virtual_work(n, lap, conf):
 
 class Conf:
 
-    Nx  = 500
-    Ny  = 500
+    Nx  = 50
+    Ny  = 50
     Nz  = 1
 
     NxMesh = 1
     NyMesh = 1
     NzMesh = 1
 
-    outdir = "out500x500n100"
+    outdir = "out50x50n4"
 
     def update_bbox(self):
         self.xmin = 0.0
@@ -352,7 +352,7 @@ class Conf:
 
 if __name__ == "__main__":
 
-    do_plots = False
+    do_plots = True
 
     # set up plotting and figure
     if do_plots:
@@ -392,7 +392,7 @@ if __name__ == "__main__":
     rank = str(node.rank())
     f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "w")
 
-    Nsamples = 201
+    Nsamples = 101
     f5.create_dataset("virtuals",   (Nsamples,), dtype='f')
     f5.create_dataset("locals",     (Nsamples,), dtype='f')
     f5.create_dataset("boundaries", (Nsamples,), dtype='f')
@@ -459,7 +459,7 @@ if __name__ == "__main__":
 
         analyze(node, f5, lap, conf)
 
-        if (lap % 10 == 0):
+        if (lap % 20 == 0):
             if do_plots:
                 plotNode(axs[0], node, conf)
                 plotNode(axs[1], node, conf, mpigrid=True)

@@ -5,36 +5,12 @@
 #include <cmath>
 
 #include "internals.h"
+#include "geometry/distance.h"
 
 namespace corgi { namespace ca {
 
-// Manhattan distances
-//--------------------------------------------------
-//
-template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
-inline double distance(corgi::internals::tuple_of<1, int> rel)
-{
-  return (double) std::abs(std::get<0>(rel));
-}
 
-template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
-inline double distance(corgi::internals::tuple_of<2, int> rel)
-{
-  return sqrt( 
-      (double)std::pow(std::get<0>(rel),2) +
-      (double)std::pow(std::get<1>(rel),2)
-      );
-}
 
-template<std::size_t D, typename T = std::enable_if_t<(D==3),int> >
-inline double distance(corgi::internals::tuple_of<3, int> rel)
-{
-  return sqrt( 
-      (double)std::pow(std::get<0>(rel),2) +
-      (double)std::pow(std::get<1>(rel),2) +
-      (double)std::pow(std::get<2>(rel),2)
-      );
-}
 
 
 /// Moore neighborhood of different dimensions
@@ -65,10 +41,11 @@ std::vector< corgi::internals::tuple_of<2,int> > moore_neighborhood()
   //};
   std::vector<  corgi::internals::tuple_of<2,int> > ret;
   ret.reserve(8);
-  for (int ir=-1; ir<=1; ir++)  
   for (int jr=-1; jr<=1; jr++) {
-    if (!( ir == 0 && jr == 0  )) {
-      ret.push_back( std::make_tuple(ir, jr) );
+    for (int ir=-1; ir<=1; ir++) {
+      if (!( ir == 0 && jr == 0  )) {
+        ret.push_back( std::make_tuple(ir, jr) );
+      }
     }
   }
   return ret;
@@ -79,11 +56,13 @@ std::vector< corgi::internals::tuple_of<3,int> > moore_neighborhood()
 {
   std::vector<  corgi::internals::tuple_of<3,int> > ret;
   ret.reserve(26);
-  for (int ir=-1; ir<=1; ir++)  
-  for (int jr=-1; jr<=1; jr++)  
   for (int kr=-1; kr<=1; kr++) {
-    if (!( ir == 0 && jr == 0 && kr == 0 )) {
-      ret.push_back( std::make_tuple(ir, jr, kr) );
+    for (int jr=-1; jr<=1; jr++) {
+      for (int ir=-1; ir<=1; ir++) {
+        if (!( ir == 0 && jr == 0 && kr == 0 )) {
+          ret.push_back( std::make_tuple(ir, jr, kr) );
+        }
+      }
     }
   }
   return ret;
@@ -93,7 +72,7 @@ std::vector< corgi::internals::tuple_of<3,int> > moore_neighborhood()
 // Box distances
 //--------------------------------------------------
 template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
-std::vector< corgi::internals::tuple_of<1,int> > box_neighborhood(int radius)
+std::vector< corgi::internals::tuple_of<1,int> > chessboard_neighborhood(int radius)
 {
   std::vector<  corgi::internals::tuple_of<1,int> > ret;
   for (int ir=-radius; ir<=radius; ir++) {
@@ -106,13 +85,14 @@ std::vector< corgi::internals::tuple_of<1,int> > box_neighborhood(int radius)
 
 
 template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
-std::vector< corgi::internals::tuple_of<2,int> > box_neighborhood(int radius)
+std::vector< corgi::internals::tuple_of<2,int> > chessboard_neighborhood(int radius)
 {
   std::vector<  corgi::internals::tuple_of<2,int> > ret;
-  for (int ir=-radius; ir<=radius; ir++)  
   for (int jr=-radius; jr<=radius; jr++) {
-    if (!( ir == 0 && jr == 0 )) {
-      ret.push_back( std::make_tuple(ir, jr) );
+    for (int ir=-radius; ir<=radius; ir++)  {
+      if (!( ir == 0 && jr == 0 )) {
+        ret.push_back( std::make_tuple(ir, jr) );
+      }
     }
   }
   return ret;
@@ -122,24 +102,25 @@ std::vector< corgi::internals::tuple_of<2,int> > box_neighborhood(int radius)
 // Spherical distances
 //--------------------------------------------------
 template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
-std::vector< corgi::internals::tuple_of<1,int> > sphere_neighborhood(int radius)
+std::vector< corgi::internals::tuple_of<1,int> > euler_neighborhood(int radius)
 {
-  return box_neighborhood<1>(radius);
+  return chessboard_neighborhood<1>(radius);
 }
 
 
 template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
-std::vector< corgi::internals::tuple_of<2,int> > sphere_neighborhood(int radius)
+std::vector< corgi::internals::tuple_of<2,int> > euler_neighborhood(int radius)
 {
   std::vector<  corgi::internals::tuple_of<2,int> > ret;
-  for (int ir=-radius; ir<=radius; ir++)  
   for (int jr=-radius; jr<=radius; jr++) {
+    for (int ir=-radius; ir<=radius; ir++) {
 
-    auto rel = std::make_tuple(ir,jr);
-    if( distance<2>(rel) >= (double)radius ) continue;
+      auto rel = std::make_tuple(ir,jr);
+      if( ::corgi::geom::eulerian_distance(rel) >= (double)radius ) continue;
 
-    if (!( ir == 0 && jr == 0 )) {
-      ret.push_back( rel );
+      if (!( ir == 0 && jr == 0 )) {
+        ret.push_back( rel );
+      }
     }
   }
   return ret;
