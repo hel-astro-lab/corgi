@@ -3,6 +3,7 @@ from mpi4py import MPI
 import numpy as np
 import os, sys
 import h5py
+import argparse
 
 try:
     import matplotlib.pyplot as plt
@@ -333,7 +334,18 @@ class Conf:
     NyMesh = 1
     NzMesh = 1
 
-    outdir = "out50x50n4"
+    def __init__(self):
+        self.outdir = 'out'+str(self.Nx)+'x'+str(self.Ny)+'n'+str(1)
+
+    def __init__(self, Nx, Ny, Nz, Nr):
+        self.Nx = Nx
+        self.Ny = Ny
+        self.Nz = Nz
+
+        self.Nr = Nr
+
+        self.outdir = 'out'+str(Nx)+'x'+str(Ny)+'n'+str(Nr)
+
 
     def update_bbox(self):
         self.xmin = 0.0
@@ -351,6 +363,17 @@ class Conf:
 ##################################################
 
 if __name__ == "__main__":
+
+
+    # parse command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--Nx', dest='Nx', type=int, default=500)
+    parser.add_argument('--Ny', dest='Ny', type=int, default=500)
+    parser.add_argument('--Nz', dest='Nz', type=int, default=1)
+    parser.add_argument('--Nt', dest='Nt', type=int, default=500)
+    parser.add_argument('--Nr', dest='Nr', type=int, default=100)
+    args = parser.parse_args()
+
 
     do_plots = True
 
@@ -371,7 +394,7 @@ if __name__ == "__main__":
     
 
     #setup node
-    conf = Conf()
+    conf = Conf(args.Nx, args.Ny, args.Nz, args.Nr)
     conf.update_bbox()
     
     node = pycorgi.Node( conf.Nx, conf.Ny ) 
@@ -386,13 +409,14 @@ if __name__ == "__main__":
     if node.master:
         if not os.path.exists( conf.outdir):
             os.makedirs(conf.outdir)
-
+    MPI.COMM_WORLD.barrier()
+    
 
     ################################################## 
     rank = str(node.rank())
     f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "w")
 
-    Nsamples = 101
+    Nsamples = args.Nt + 1
     f5.create_dataset("virtuals",   (Nsamples,), dtype='f')
     f5.create_dataset("locals",     (Nsamples,), dtype='f')
     f5.create_dataset("boundaries", (Nsamples,), dtype='f')
