@@ -1388,7 +1388,7 @@ class Node
         color = _mpi_grid(nindx);
 
         //r = geom::eulerian_distance(reli);  
-        r = geom::manhattan_distance(reli);  
+        r = geom::manhattan_distance<D>(reli);  
         //r = geom::chessboard_distance<D>(reli);  
 
         //alives[color] += exp(-r*r/static_cast<double>(dt));

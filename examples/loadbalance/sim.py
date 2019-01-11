@@ -335,7 +335,7 @@ class Conf:
     NzMesh = 1
 
     def __init__(self):
-        self.outdir = 'out'+str(self.Nx)+'x'+str(self.Ny)+'n'+str(1)
+        self.outdir = 'out2'+str(self.Nx)+'x'+str(self.Ny)+'n'+str(1)
 
     def __init__(self, Nx, Ny, Nz, Nr):
         self.Nx = Nx
@@ -344,7 +344,7 @@ class Conf:
 
         self.Nr = Nr
 
-        self.outdir = 'out'+str(Nx)+'x'+str(Ny)+'n'+str(Nr)
+        self.outdir = 'out2'+str(Nx)+'x'+str(Ny)+'n'+str(Nr)
 
 
     def update_bbox(self):
@@ -452,8 +452,9 @@ if __name__ == "__main__":
         print("---lap: {}".format(lap))
 
         #add_virtual_work(node, lap, conf)
-        node.update_work()
-        node.allgather_work_grid()
+        #node.update_work()
+        #node.allgather_work_grid()
+        MPI.COMM_WORLD.barrier()
 
         if False:
             # corgi loadbalance 
