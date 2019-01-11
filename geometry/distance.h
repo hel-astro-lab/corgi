@@ -14,27 +14,63 @@ namespace corgi {
 
 
     // L_1 norm
-    template<class Tuple>
-    decltype(auto) manhattan_distance(const Tuple& tup)
-    {
-      auto norm = [](auto const&... e)->decltype(auto) 
-      { 
-        return ( std::abs(e) +...); 
-      };
+    //
+    // FIXME: C++17 expression not supported by INTEL
+    //
+    //template<class Tuple>
+    //decltype(auto) manhattan_distance(const Tuple& tup)
+    //{
+    //  auto norm = [](auto const&... e)->decltype(auto) 
+    //  { 
+    //    return ( std::abs(e) +...); 
+    //  };
 
-      return static_cast<double>( notstd::apply( norm, tup ) );
+    //  return static_cast<double>( notstd::apply( norm, tup ) );
+    //}
+
+    template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
+    decltype(auto) manhattan_distance(
+        const corgi::internals::tuple_of<1, T>& tup)
+    {
+      return std::abs(std::get<0>(tup));
     }
 
-    // L_2 norm
-    template<class Tuple>
-    decltype(auto) eulerian_distance(const Tuple& tup)
+    template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
+    decltype(auto) manhattan_distance(
+        const corgi::internals::tuple_of<2, T>& tup)
     {
-      auto norm = [](auto const&... e)->decltype(auto) 
-      { 
-        return ( (e*e) +...); 
-      };
+      return std::abs(std::get<0>(tup)) + std::abs(std::get<1>(tup));
+    }
 
-      return sqrt( static_cast<double>( notstd::apply( norm, tup ) ) );
+
+
+    // L_2 norm
+    //
+    // FIXME: C++17 expression not supported by INTEL
+    //
+    //template<class Tuple>
+    //decltype(auto) eulerian_distance(const Tuple& tup)
+    //{
+    //  auto norm = [](auto const&... e)->decltype(auto) 
+    //  { 
+    //    return ( (e*e) +...); 
+    //  };
+
+    //  return sqrt( static_cast<double>( notstd::apply( norm, tup ) ) );
+    //}
+
+    template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
+    decltype(auto) euler_distance(
+        const corgi::internals::tuple_of<1, T>& tup)
+    {
+      return std::abs(std::get<0>(tup));
+    }
+
+    template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
+    decltype(auto) euler_distance(
+        const corgi::internals::tuple_of<2, T>& tup)
+    {
+      return std::sqrt(std::pow(std::get<0>(tup),2) + std::pow(std::get<1>(tup),2));
     }
 
 
