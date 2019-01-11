@@ -12,7 +12,10 @@ palette = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 class Conf:
     #outdir = "out200x200n10"
-    outdir = "out200x200n100"
+    #outdir = "out200x200n100"
+    #outdir = "out200x200n500"
+    #outdir = "out200x200n1000"
+    outdir = "out500x500n1000"
     #outdir = "out4_30x30"
     #outdir = "out4_100x100"
     #outdir = "out2_100x100"
@@ -136,13 +139,15 @@ if __name__ == "__main__":
     ##################################################
     nx, ny = 1,1
 
-    nranks = 100
+
+    nranks = 1000
 
     #cols = ['k','b','r','g']
     norm = matplotlib.colors.Normalize(vmin=0.0, vmax=nranks)
-    cmap = matplotlib.cm.get_cmap('tab20c')
+    #cmap = matplotlib.cm.get_cmap('tab20c')
     #cmap = matplotlib.cm.get_cmap('gist_rainbow')
-
+    cmap = matplotlib.cm.get_cmap('viridis')
+    alpha = 0.3
 
     f5all = h5py.File(conf.outdir+"/run-merged.h5", "r")
 
@@ -150,6 +155,9 @@ if __name__ == "__main__":
     ranks = range(nranks)
     for ir in ranks:
         print("rank={}".format(ir))
+
+        #if ir > 700:
+        #    continue
 
         #col = cols[ir]
         col = cmap(norm(ir))
@@ -167,8 +175,9 @@ if __name__ == "__main__":
         imgs = f5all['grid'][:,:,:]
 
         imgs = imgs / nranks
+        #imgs = imgs / 702
 
-        #print(imgs[:,:,1])
+        print(imgs[:,:,0])
         #print(np.min(imgs))
         #print(np.max(imgs))
 
@@ -185,7 +194,7 @@ if __name__ == "__main__":
         nx, ny, nt = np.shape(imgs)
         print("image size nx {} ny {} nt {}".format(nx, ny, nt))
 
-        #nt = 40
+        nt = 180
         for t in range(nt):
             #print("t={}".format(t))
             img = imgs[:,:,t]
@@ -213,19 +222,19 @@ if __name__ == "__main__":
 
         #axs[0].plot(locs, linestyle='solid' , color=cols[ir] )
         #axs[0].plot(virs, linestyle='solid', color=cols[ir] )
-        axs[0].plot(np.array(virs)/np.array(locs), linestyle='solid', color=col, alpha=0.6)
+        axs[0].plot(np.array(virs)/np.array(locs), linestyle='solid', color=col, alpha=alpha)
 
-        axs[1].plot(N, color=col)
+        axs[1].plot(N, color=col, alpha=alpha)
 
-        axs[2].plot(arc_mean, linestyle='solid', color=col)
+        axs[2].plot(arc_mean, linestyle='solid', color=col, alpha=alpha)
         axs[2].fill_between(np.arange(len(arc_mean)), 
                 arc_min, arc_max,
-                color=col, alpha=0.5, edgecolor=None)
+                color=col, alpha=alpha, edgecolor=None)
 
-        axs[3].plot(area_mean, linestyle='solid', color=col)
+        axs[3].plot(area_mean, linestyle='solid', color=col, alpha=alpha)
         axs[3].fill_between(np.arange(len(area_mean)), 
                 area_min, area_max,
-                color=col, alpha=0.5, edgecolor=None)
+                color=col, alpha=alpha, edgecolor=None)
 
     # some theoretical estimates for minimum curve
     area = nx*ny/len(ranks)

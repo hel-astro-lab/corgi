@@ -10,7 +10,10 @@ palette = pal.wesanderson.Moonrise1_5.mpl_colormap
 
 class Conf:
     #outdir = "out200x200n10"
-    outdir = "out200x200n100"
+    #outdir = "out200x200n100"
+    #outdir = "out200x200n500"
+    #outdir = "out200x200n1000"
+    outdir = "out500x500n1000"
     #outdir = "out4_30x30"
     #outdir = "out4_100x100"
     #outdir = "out2_100x100"
@@ -43,7 +46,8 @@ def imshow(ax, img):
               extent=extent,
               origin='lower',
               interpolation='nearest',
-              cmap = 'tab20c',
+              #cmap = 'tab20c',
+              cmap = 'viridis',
               vmin = 0,
               vmax = np.max(img),
               aspect='auto',
@@ -113,7 +117,7 @@ if __name__ == "__main__":
     #fname = conf.outdir+"/run-"
     #imgs = combine_ranks(fname)
 
-    nranks = 100
+    nranks = 1000
     f5all = h5py.File(conf.outdir+"/run-merged.h5", "r")
     imgs = f5all['grid'][:,:,:]
     imgs = imgs / nranks
@@ -122,7 +126,7 @@ if __name__ == "__main__":
     nx, ny, nt = np.shape(imgs)
     print("image size nx {} ny {} nt {}".format(nx, ny, nt))
     for t in range(nt):
-    #for t in range(41):
+    #for t in range(47):
         print("t={}".format(t))
         img = imgs[:,:,t]
 
