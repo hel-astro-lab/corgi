@@ -2,7 +2,7 @@
 #### (...or some other combination of relevant words that spell out another funny word.)
 ---
 
-<img align="right" src="examples/loadbalance/lbal.gif">
+<img align="right" src="examples/loadbalance/lbal2.gif">
 
 `corgi` is a c++ template library for building massively parallel grids. 
 

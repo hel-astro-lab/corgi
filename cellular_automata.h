@@ -116,7 +116,7 @@ std::vector< corgi::internals::tuple_of<2,int> > euler_neighborhood(int radius)
     for (int ir=-radius; ir<=radius; ir++) {
 
       auto rel = std::make_tuple(ir,jr);
-      if( ::corgi::geom::eulerian_distance(rel) >= (double)radius ) continue;
+      if( ::corgi::geom::eulerian_distance<D>(rel) >= (double)radius ) continue;
 
       if (!( ir == 0 && jr == 0 )) {
         ret.push_back( rel );

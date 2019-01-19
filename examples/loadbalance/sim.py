@@ -305,21 +305,22 @@ def initialize_virtuals(n, conf):
 
 def add_virtual_work(n, lap, conf):
 
-    #ic = 0.0
-    ic = n.get_Nx()/2.0
+    ic = 0.0
+    #ic = n.get_Nx()/2.0
     jc = n.get_Ny()/2.0
 
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
             oldw = node.get_work_grid(i,j)
 
-            rvec2 = (i-ic)**2.0 + (j-jc)**2.0
-            sig = 1000.0
+            #rvec2 = (i-ic)**2.0 + (j-jc)**2.0
+            rvec2 = (i-ic)**2.0 #+ (j-jc)**2.0
+            sig = 100.0
             nw = 4.0*np.exp(-rvec2/sig)
 
-            #node.set_work_grid(i,j, nw)
+            node.set_work_grid(i,j, nw)
 
-            node.set_work_grid(i,j, 1.0)
+            #node.set_work_grid(i,j, 1.0)
 
 
 
@@ -451,7 +452,7 @@ if __name__ == "__main__":
     for lap in range(1, Nsamples):
         print("---lap: {}".format(lap))
 
-        #add_virtual_work(node, lap, conf)
+        add_virtual_work(node, lap, conf)
         #node.update_work()
         #node.allgather_work_grid()
         MPI.COMM_WORLD.barrier()

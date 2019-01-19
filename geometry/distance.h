@@ -60,14 +60,14 @@ namespace corgi {
     //}
 
     template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
-    decltype(auto) euler_distance(
+    decltype(auto) eulerian_distance(
         const corgi::internals::tuple_of<1, T>& tup)
     {
       return std::abs(std::get<0>(tup));
     }
 
     template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
-    decltype(auto) euler_distance(
+    decltype(auto) eulerian_distance(
         const corgi::internals::tuple_of<2, T>& tup)
     {
       return std::sqrt(std::pow(std::get<0>(tup),2) + std::pow(std::get<1>(tup),2));

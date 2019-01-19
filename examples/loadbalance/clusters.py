@@ -15,7 +15,8 @@ class Conf:
     #outdir = "out200x200n100"
     #outdir = "out200x200n500"
     #outdir = "out200x200n1000"
-    outdir = "out500x500n1000"
+    outdir = "out500x500n100"
+    #outdir = "out500x500n1000"
     #outdir = "out4_30x30"
     #outdir = "out4_100x100"
     #outdir = "out2_100x100"
@@ -115,14 +116,14 @@ if __name__ == "__main__":
 
     # set up plotting and figure
     #plt.fig = plt.figure(1, figsize=(3.4,2.5))
-    fig = plt.figure(figsize=(3.54, 4.5)) #single column fig
+    fig = plt.figure(figsize=(3.54, 5.0)) #single column fig
     #fig = plt.figure(figsize=(7.48, 4.0))  #two column figure
 
     plt.rc('font', family='serif', size=8)
     plt.rc('xtick')
     plt.rc('ytick')
     
-    gs = plt.GridSpec(4, 1)
+    gs = plt.GridSpec(5, 1)
     gs.update(hspace = 0.0)
     
     axs = []
@@ -130,6 +131,7 @@ if __name__ == "__main__":
     axs.append( plt.subplot(gs[1]) )
     axs.append( plt.subplot(gs[2]) )
     axs.append( plt.subplot(gs[3]) )
+    axs.append( plt.subplot(gs[4]) )
 
     for ax in axs:
         ax.minorticks_on()
@@ -140,7 +142,7 @@ if __name__ == "__main__":
     nx, ny = 1,1
 
 
-    nranks = 1000
+    nranks = 100
 
     #cols = ['k','b','r','g']
     norm = matplotlib.colors.Normalize(vmin=0.0, vmax=nranks)
@@ -194,6 +196,9 @@ if __name__ == "__main__":
         nx, ny, nt = np.shape(imgs)
         print("image size nx {} ny {} nt {}".format(nx, ny, nt))
 
+        #ideal amount of work
+
+
         nt = 180
         for t in range(nt):
             #print("t={}".format(t))
@@ -203,7 +208,7 @@ if __name__ == "__main__":
                 break
 
             img = reduce_image(img, ir)
-
+            Ntiles = np.count_nonzero(img)
 
             cnts, hier = compute_clusters(img)
             data = analyze_contours(cnts, hier)
