@@ -110,6 +110,7 @@ namespace commType {
     enum {
         NTILES,   //! Number of incoming tiles,
         TILEDATA, //! Tile data array
+        ADOPT,
         N_COMMTYPES
     };
 }

@@ -12,8 +12,6 @@
 
 namespace prtcls {
 
-namespace mpi = mpi4cpp::mpi;
-
 
 
 /// Particle tile
@@ -42,30 +40,30 @@ class Tile : public corgi::Tile<2> {
 
   //--------------------------------------------------
   // MPI send
-  virtual std::vector<mpi::request> 
-  send_data( mpi::communicator&, int orig, int tag) override;
+  virtual std::vector<mpi4cpp::mpi::request> 
+  send_data( mpi4cpp::mpi::communicator&, int orig, int tag) override;
 
   /// actual tag=0 send
-  std::vector<mpi::request> 
-  send_particle_data( mpi::communicator&, int orig);
+  std::vector<mpi4cpp::mpi::request> 
+  send_particle_data( mpi4cpp::mpi::communicator&, int orig);
 
   /// actual tag=1 send
-  std::vector<mpi::request> 
-  send_particle_extra_data( mpi::communicator&, int orig);
+  std::vector<mpi4cpp::mpi::request> 
+  send_particle_extra_data( mpi4cpp::mpi::communicator&, int orig);
 
 
   //--------------------------------------------------
   // MPI recv
-  virtual std::vector<mpi::request> 
-  recv_data(mpi::communicator&, int dest, int tag) override;
+  virtual std::vector<mpi4cpp::mpi::request> 
+  recv_data(mpi4cpp::mpi::communicator&, int dest, int tag) override;
 
   /// actual tag=0 recv
-  std::vector<mpi::request> 
-  recv_particle_data(mpi::communicator&, int dest);
+  std::vector<mpi4cpp::mpi::request> 
+  recv_particle_data(mpi4cpp::mpi::communicator&, int dest);
 
   /// actual tag=1 recv
-  std::vector<mpi::request> 
-  recv_particle_extra_data(mpi::communicator&, int dest);
+  std::vector<mpi4cpp::mpi::request> 
+  recv_particle_extra_data(mpi4cpp::mpi::communicator&, int dest);
   //--------------------------------------------------
 
 

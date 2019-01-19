@@ -133,10 +133,13 @@ namespace internal {
 template< typename T, int D>
 class sparse_grid {
 
+  using map_t = std::map< corgi::internals::tuple_of<D, size_t>, T>;
+
+
   private:
 
   /// internal data storage
-  std::map< corgi::internals::tuple_of<D, size_t>, int> _data;
+  map_t _data;
     
   /// number of elements in each dimension
   std::array<size_t, D> _lengths;
@@ -195,6 +198,26 @@ class sparse_grid {
   // ctor without grid size
   sparse_grid() {};
 
+  // copy ctor
+  sparse_grid(const sparse_grid& p)
+  {
+    _lengths = p._lengths;
+    _data = p._data;
+  }
+
+  // move assignment ctor
+  sparse_grid& operator= (sparse_grid&& other) 
+  {
+    //std::move(other._data.begin(), other._data.end(), 
+    //    _data.begin());
+    //std::copy(other._lengths.begin(), other._lengths.end(),
+    //    _lengths.begin());
+    _lengths = std::move(other._lengths);
+    _data = std::move(other._data);
+
+    return *this;
+  }
+
   virtual ~sparse_grid() = default;
 
 
@@ -252,6 +275,31 @@ class sparse_grid {
   void clear() {
     _data.clear();
   }
+
+
+  //-------------------------------------------------- 
+  // iterators
+
+  typename map_t::iterator begin()
+  { 
+    return _data.begin();
+  }
+
+  typename map_t::const_iterator cbegin()
+  { 
+    return _data.cbegin();
+  }
+
+  typename map_t::iterator end()
+  { 
+    return _data.end();
+  }
+
+  typename map_t::const_iterator cend()
+  { 
+    return _data.cend();
+  }
+
 
 
 };

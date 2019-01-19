@@ -1,6 +1,9 @@
 #include <array>
 #include <vector>
 #include <iostream>
+#include <algorithm>
+
+#include <cassert>
 
 #include "container.h"
 #include "wrap.h"

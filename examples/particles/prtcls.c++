@@ -6,7 +6,6 @@
 
 
 using namespace prtcls;
-using namespace mpi4cpp;
 
 
 void Tile::check_outgoing_particles()
@@ -82,16 +81,16 @@ int get_extra_tag(int cid, int extra_param)
 }
 
 
-std::vector<mpi::request> Tile::send_data( mpi::communicator& comm, int dest, int tag)
+std::vector<mpi4cpp::mpi::request> Tile::send_data( mpi4cpp::mpi::communicator& comm, int dest, int tag)
 {
   if(tag == 0)      return Tile::send_particle_data(comm, dest);
   else if(tag == 1) return Tile::send_particle_extra_data(comm,dest);
   else assert(false);
 }
 
-std::vector<mpi::request> Tile::send_particle_data( mpi::communicator& comm, int dest)
+std::vector<mpi4cpp::mpi::request> Tile::send_particle_data( mpi4cpp::mpi::communicator& comm, int dest)
 {
-  std::vector<mpi::request> reqs;
+  std::vector<mpi4cpp::mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
 
@@ -106,9 +105,9 @@ std::vector<mpi::request> Tile::send_particle_data( mpi::communicator& comm, int
 }
 
 
-std::vector<mpi::request> Tile::send_particle_extra_data( mpi::communicator& comm, int dest)
+std::vector<mpi4cpp::mpi::request> Tile::send_particle_extra_data( mpi4cpp::mpi::communicator& comm, int dest)
 {
-  std::vector<mpi::request> reqs;
+  std::vector<mpi4cpp::mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
 
@@ -124,7 +123,7 @@ std::vector<mpi::request> Tile::send_particle_extra_data( mpi::communicator& com
 }
 
 
-std::vector<mpi::request> Tile::recv_data( mpi::communicator& comm, int orig, int tag)
+std::vector<mpi4cpp::mpi::request> Tile::recv_data( mpi4cpp::mpi::communicator& comm, int orig, int tag)
 {
   if(tag == 0)      return Tile::recv_particle_data(comm,orig);
   else if(tag == 1) return Tile::recv_particle_extra_data(comm,orig);
@@ -132,9 +131,9 @@ std::vector<mpi::request> Tile::recv_data( mpi::communicator& comm, int orig, in
 }
 
 
-std::vector<mpi::request> Tile::recv_particle_data( mpi::communicator& comm, int orig)
+std::vector<mpi4cpp::mpi::request> Tile::recv_particle_data( mpi4cpp::mpi::communicator& comm, int orig)
 {
-  std::vector<mpi::request> reqs;
+  std::vector<mpi4cpp::mpi::request> reqs;
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
     container.incoming_particles.resize( container.optimal_message_size );
@@ -150,9 +149,9 @@ std::vector<mpi::request> Tile::recv_particle_data( mpi::communicator& comm, int
 }
 
 
-std::vector<mpi::request> Tile::recv_particle_extra_data( mpi::communicator& comm, int orig )
+std::vector<mpi4cpp::mpi::request> Tile::recv_particle_extra_data( mpi4cpp::mpi::communicator& comm, int orig )
 {
-  std::vector<mpi::request> reqs;
+  std::vector<mpi4cpp::mpi::request> reqs;
 
   // this assumes that wait for the first message is already called
   // and passed.

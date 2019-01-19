@@ -26,8 +26,6 @@
 
 namespace corgi {
 
-namespace mpi = mpi4cpp::mpi;
-
 
 /*! Individual node object that stores patches of grid in it.
  *
@@ -67,6 +65,10 @@ class Node
    */
   corgi::tools::sparse_grid<int, D> _mpi_grid;
 
+  /// global large scale block grid where load balance 
+  //information is stored
+  corgi::tools::sparse_grid<double, D> _work_grid;
+
   // --------------------------------------------------
   private:
     
@@ -74,7 +76,7 @@ class Node
   using TileID_t = uint64_t;
   using Tile_t   = corgi::Tile<D>;
   using Tileptr  = std::shared_ptr<Tile_t>;
-  using Tile_map  = std::unordered_map<TileID_t, Tileptr>;
+  using Tile_map = std::unordered_map<TileID_t, Tileptr>;
 
 
 
@@ -106,6 +108,23 @@ class Node
     _mpi_grid(indices...) = val;
   }
 
+
+  // get element
+  template<typename... Indices>
+  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+  corgi::internals::are_integral<Indices...>::value, double > 
+  py_get_work_grid(Indices... indices)  /*const*/
+  {
+    return _work_grid(indices...);
+  }
+
+  // set element
+  template<typename... Indices>
+  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
+  corgi::internals::are_integral<Indices...>::value, void > 
+  py_set_work_grid(double val, Indices... indices) {
+    _work_grid(indices...) = val;
+  }
 
 
   public:
@@ -141,6 +160,7 @@ class Node
   Node(DimensionLength... dimension_lengths) :
     _lengths {{static_cast<size_type>(dimension_lengths)...}},
     _mpi_grid(dimension_lengths...),
+    _work_grid(dimension_lengths...),
     env(),
     comm()
   { }
@@ -362,13 +382,66 @@ class Node
     return id( std::get<Is>(tuple)... );
   }
 
+  template <size_t... Is>
+  index_type id_impl(
+      const corgi::internals::tuple_of<D, size_t>& tuple, 
+      std::index_sequence<Is...>) const
+  {
+    return id( std::get<Is>(tuple)... );
+  }
+
   /// unpack tuple into variadic argument list
   template<typename Indices = std::make_index_sequence<D>>
   index_type id( corgi::internals::tuple_of<D, size_t>& indices)
   {
       return id_impl(indices, Indices{} );
   }
+
+  template<typename Indices = std::make_index_sequence<D>>
+  index_type id( const corgi::internals::tuple_of<D, size_t>& indices) const
+  {
+      return id_impl(indices, Indices{} );
+  }
   
+  /// Inverse Morton Z-code
+  //
+  // TODO: make N-dimensional
+  corgi::internals::tuple_of<1, index_type> id2index(
+      uint64_t cid, 
+      std::array<size_type,1> /*lengths*/)
+  {
+    corgi::internals::tuple_of<1, index_type> indices = std::make_tuple(cid);
+
+    return indices;
+  }
+
+  corgi::internals::tuple_of<2, index_type> id2index(
+      uint64_t cid,
+      std::array<size_type,2> lengths)
+  {
+    corgi::internals::tuple_of<2, index_type> indices = std::make_tuple
+      (
+       cid % lengths[0],
+      (cid / lengths[0]) % (lengths[1] )
+       );
+
+    return indices;
+  }
+
+  corgi::internals::tuple_of<3, index_type> id2index(
+      uint64_t cid,
+      std::array<size_type,3> lengths)
+  {
+    corgi::internals::tuple_of<3, index_type> indices = std::make_tuple
+      (
+       cid % lengths[0],
+      (cid / lengths[0]) % (lengths[1] ),
+       cid /(lengths[0] * lengths[1] )
+       );
+
+    return indices;
+  }
+
 
   public:
 
@@ -441,6 +514,8 @@ class Node
     
   /// Add local tile to the node
   // void add_tile(Tile& tile) {
+  //
+  // FIXME
   void add_tile(
     Tileptr tileptr,
     corgi::internals::tuple_of<D, size_t> indices
@@ -461,9 +536,8 @@ class Node
     tileptr->cid                 = cid;
     tileptr->communication.cid   = cid;
     tileptr->communication.owner = comm.rank();
-    tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
+    //tileptr->communication.local = true; //TODO Catch error if tile is not already mine?
     tileptr->lengths             = _lengths;
-
 
     // copy indices from tuple into D=3 array in Communication obj
     auto tmp = corgi::internals::into_array(indices);
@@ -472,16 +546,44 @@ class Node
     // tiles.emplace(cid, std::move(tileptr)); // unique_ptr needs to be moved
     tiles.emplace(cid, tileptr); // NOTE using c++14 emplace to avoid copying
     //tiles.insert( std::make_pair(cid, tileptr) ); // NOTE using c++14 emplace to avoid copying
-    //tiles[cid] = tileptr;
-    //tiles[cid] = tileptr;
       
     // add to my internal listing
     _mpi_grid( indices ) = comm.rank();
   }
 
 
+  /// Replace/add incoming tile
+  //
+  // FIXME
+  void replace_tile(
+    Tileptr tileptr,
+    corgi::internals::tuple_of<D, size_t> indices
+    )
+  {
+    // calculate unique global tile ID
+    uint64_t cid = id(indices);
+
+    // add tile if it does not exist
+    if(tiles.count(cid) == 0) return add_tile(tileptr, indices);
+
+    // else replace previous one; copy Communication object
+    auto& tile = get_tile(cid);
+    auto cm = tile.communication;
+
+    tileptr->index   = indices;
+    tileptr->cid     = cid;
+    tileptr->lengths = _lengths;
+
+    tiles.erase(cid);
+    tiles.emplace(cid, tileptr); 
+
+    update_tile(cm);
+  }
+
+
   /// Shortcut for creating raw tiles with only the internal meta info.
   // to be used with message passing (w.r.t. add_tile that is for use with initialization)
+  // FIXME
   void create_tile(Communication& cm)
   {
     auto tileptr = std::make_shared<Tile_t>();
@@ -498,6 +600,7 @@ class Node
   }
 
   /// Update tile metadata
+  // FIXME
   void update_tile(Communication& cm)
   {
     auto& tile = get_tile(cm.cid);
@@ -508,7 +611,8 @@ class Node
 
   /*! Return a vector of tile indices that fulfill a given criteria.  */
   std::vector<uint64_t> get_tile_ids(
-      const bool sorted=false ) {
+      const bool sorted=false ) 
+  {
     std::vector<uint64_t> ret;
 
     for (auto& it: tiles) ret.push_back( it.first );
@@ -592,39 +696,58 @@ class Node
       const bool sorted=false ) {
 
     std::vector<uint64_t> tile_list = get_tile_ids(sorted);
+    std::vector<uint64_t> ret;
+    ret.reserve(tile_list.size());
 
-    size_t i = 0, len = tile_list.size();
-    while (i < len) {
-      if (!tiles.at( tile_list[i] )->communication.local) {
-        std::swap(tile_list[i], tile_list.back());
-        tile_list.pop_back();
-        len -= 1;
-      } else {
-        i++;
+    for(auto elem : tile_list) {
+      if(tiles.at( elem )->communication.owner == comm.rank() ) {
+        ret.push_back(elem);
       }
     }
+    return ret;
 
-    return tile_list;
+    //size_t i = 0, len = tile_list.size();
+    //while(i < len) {
+    //  std::cout << comm.rank() << ": " << i << "/" << len << "\n";
+    //  if(!tiles.at( tile_list[i] )->communication.local) {
+    //    std::swap(tile_list[i], tile_list.back());
+    //    tile_list.pop_back();
+    //    len--;
+    //  } else {
+    //    i++;
+    //  }
+    //}
+    //return tile_list;
   }
 
 
   /// Return all tiles that are of VIRTUAL type.
   std::vector<uint64_t> get_virtuals(
-      const bool sorted=false ) {
-    std::vector<uint64_t> tile_list = get_tile_ids(sorted);
+      const bool sorted=false ) 
+  {
 
-    size_t i = 0, len = tile_list.size();
-    while (i < len) {
-      if (tiles.at( tile_list[i] )->communication.local) {
-        std::swap(tile_list[i], tile_list.back());
-        tile_list.pop_back();
-        len -= 1;
-      } else {
-        i++;
+    std::vector<uint64_t> tile_list = get_tile_ids(sorted);
+    std::vector<uint64_t> ret;
+    ret.reserve(tile_list.size());
+
+    for(auto elem : tile_list) {
+      if(tiles.at( elem )->communication.owner != comm.rank() ) {
+        ret.push_back(elem);
       }
     }
+    return ret;
 
-    return tile_list;
+    //size_t i = 0, len = tile_list.size();
+    //while(i < len) {
+    //  if (tiles.at( tile_list[i] )->communication.local) {
+    //    std::swap(tile_list[i], tile_list.back());
+    //    tile_list.pop_back();
+    //    len--;
+    //  } else {
+    //    i++;
+    //  }
+    //}
+    //return tile_list;
   }
 
   /// Return all local boundary tiles
@@ -634,7 +757,7 @@ class Node
     std::vector<uint64_t> tile_list = get_tile_ids(sorted);
 
     size_t i = 0, len = tile_list.size();
-    while (i < len) {
+    while(i < len) {
 
       // remove if there are no virtual nbors and tile is not mine -> opposite means its boundary
       if (tiles.at( tile_list[i] )-> communication.number_of_virtual_neighbors == 0 || 
@@ -656,10 +779,10 @@ class Node
   bool is_local(uint64_t cid) {
     bool local = false;
 
-    // Do we have it on the list=
+    // Do we have it on the list?
     if (tiles.count( cid ) > 0) {
       // is it local (i.e., not virtual)
-      if ( tiles.at(cid)->communication.local ) {
+      if ( tiles.at(cid)->communication.owner == comm.rank() ) {
         local = true;
       }
     }
@@ -669,21 +792,19 @@ class Node
 
 
   /// return all virtual tiles around the given tile
-  std::vector<int> virtual_nhood(uint64_t cid) {
-
+  std::vector<int> virtual_nhood(uint64_t cid) 
+  {
     auto& c = get_tile(cid);
     auto neigs = c.nhood();
     //std::vector< corgi::internals::tuple_of<D, size_t> > neigs = c.nhood();
     std::vector<int> virtual_owners;
-    for (auto& indx: neigs) {
+    for(auto& indx: neigs) {
 
       // Get tile id from index notation
-      uint64_t cid = id(indx);
+      //uint64_t ncid = id(indx);
+      int whoami = _mpi_grid(indx); 
 
-      if (!is_local( cid )) {
-        int whoami = _mpi_grid(indx); 
-        virtual_owners.push_back( whoami );
-      }
+      if(whoami != comm.rank()) virtual_owners.push_back( whoami );
     }
 
     return virtual_owners;
@@ -703,9 +824,11 @@ class Node
   //  * */
   void analyze_boundaries() {
 
-    for (auto cid: get_local_tiles()) {
+    for(auto cid: get_local_tiles()) {
+      //std::cout << comm.rank() << ": ab: " << cid << "\n";
       std::vector<int> virtual_owners = virtual_nhood(cid);
       size_t N = virtual_owners.size();
+      //std::cout << comm.rank() << ": ab: " << cid << "N:" << N << "\n";
 
       // If N > 0 then this is a boundary tile.
       // other criteria could also apply but here we assume
@@ -744,15 +867,20 @@ class Node
         c.communication.top_virtual_owner = top_owner;
         c.communication.communications    = virtual_owners.size();
         c.communication.number_of_virtual_neighbors = N;
-        c.communication.virtual_owners = virtual_owners;
+        c.communication.virtual_owners    = virtual_owners;
 
-        if (std::find( send_queue.begin(), send_queue.end(),
-              cid) == send_queue.end()
-           ) {
+        if (std::find( send_queue.begin(), send_queue.end(), cid) 
+            == send_queue.end()) 
+        {
           send_queue.push_back( cid );
           send_queue_address.push_back( virtual_owners );
         }
+      } else { // else N == 0
+        auto& c = get_tile(cid);
+        c.communication.number_of_virtual_neighbors = 0;
+        c.communication.communications              = 0;
       }
+
     }
   }
 
@@ -785,6 +913,8 @@ class Node
   std::vector<mpi::request> recv_tile_messages;
   std::vector< std::vector<mpi::request> > recv_data_messages;
 
+  std::vector<mpi::request> sent_adoption_messages;
+  std::vector<mpi::request> recv_adoption_messages;
 
   // /// Broadcast master ranks mpi_grid to everybody
   void bcast_mpi_grid() {
@@ -798,7 +928,7 @@ class Node
       tmp = _mpi_grid.serialize();
     } else {
       tmp.resize(N);
-      for(int k=0; k<N; k++) {tmp[k] = -1.0;};
+      for(int k=0; k<N; k++) {tmp[k] = -1;};
     }
 
     MPI_Bcast(&tmp[0],
@@ -814,6 +944,68 @@ class Node
     }
   }
 
+  /// update work arrays from other nodes and send mine
+  void allgather_work_grid() 
+  {
+
+    // total size
+    int N = 1;
+    for (size_t i = 0; i<D; i++) N *= _lengths[i];
+
+    // message buffers
+    std::vector<double> recv(N*comm.size());
+    std::vector<double> orig = _work_grid.serialize();
+
+    // mask all work values that are not mine
+    std::vector<int> ranks   = _mpi_grid.serialize();
+    for(size_t i=0; i<ranks.size(); i++) {
+      if( ranks[i] != comm.rank() ) orig[i] = -1.0;
+    }
+
+    MPI_Allgather(
+        &orig[0],
+        orig.size(), 
+        MPI_DOUBLE, 
+        &recv[0], 
+        orig.size(),
+        MPI_DOUBLE,
+        MPI_COMM_WORLD
+        );
+    
+  
+    std::vector<double> new_work(N);
+    std::fill(new_work.begin(), new_work.end(), -1.0);
+
+    double val;
+    for(int j=0; j<comm.size(); j++) {
+      for(int i=0; i<N; i++) {
+        val = recv[j*N + i];
+        if(val != -1.0) {
+          assert(new_work[i] == -1.0); // test that we dont overwrite
+          new_work[i] = val;
+        }
+      }
+    }
+      
+    // test that we did not miss elements
+    for(auto& val : new_work) assert(val != -1.0); 
+
+    // upload back to grid
+    _work_grid.deserialize(new_work, _lengths);
+
+  }
+
+
+  // Update work load grid from my local tiles
+  void update_work()
+  {
+    for(auto& cid : get_local_tiles()) {
+      auto& tile = get_tile(cid);
+     _work_grid( tile.index ) = tile.get_work();
+    }
+  }
+
+
 
   /// Issue isends to everywhere
   // First we send a warning message of how many tiles to expect.
@@ -828,7 +1020,7 @@ class Node
 
       int i = 0;
       std::vector<int> to_be_sent;
-      for (std::vector<int> address: send_queue_address) {
+      for(std::vector<int> address: send_queue_address) {
         if( std::find( address.begin(),
               address.end(),
               dest) != address.end()) 
@@ -912,7 +1104,7 @@ class Node
     //  << "\n";
 
     // next need to build tile
-    rcom.local = false; // received tiles are automatically virtuals
+    //rcom.local = false; // received tiles are automatically virtuals
     create_tile(rcom);
 
     return;
@@ -924,7 +1116,7 @@ class Node
     recv_info_messages.clear();
     recv_tile_messages.clear();
 
-    size_t i = 0;
+    //size_t i = 0;
     for (int source=0; source<comm.size(); source++) {
       if (source == comm.rank() ) continue; // do not receive from myself
 
@@ -955,7 +1147,6 @@ class Node
       //          << "\n";
 
       // Now receive the tiles themselves
-      size_t j = recv_tile_messages.size();
       for (int ic=0; ic<number_of_incoming_tiles; ic++) {
         mpi::request reqc;
         Communication rcom;
@@ -966,21 +1157,521 @@ class Node
         reqc.wait();
         recv_tile_messages.push_back( reqc );
           
-        j++;
-
         if(this->tiles.count(rcom.cid) == 0) { // Tile does not exist yet; create it
-
           // TODO: Check validity of the tile better
-          rcom.local = false; // received tiles are automatically virtuals
           create_tile(rcom);
-
         } else { // Tile is already on my virtual list; update
           update_tile(rcom);  
         };
+
+        // update and make non-local virtual
+        //auto& new_tile = get_tile(rcom.cid);
+        //new_tile.communication.local = false;
       }
-      i++;
+    }
+
+    clear_send_queue();
+  }
+
+
+
+  // Decide who to adopt
+  //
+  // Every node has their own council, but they should all come to same 
+  // conclusion.
+  
+  private:
+  std::vector<int> adoptions; 
+  std::vector<int> kidnaps; 
+  double min_quota =  0.05;
+  double max_quota =  0.05; // in fraction of all tiles per color
+
+
+
+  public:
+  /// Compute maximum number of new tiles I can adopt
+  double get_quota(int rank)
+  {
+    // integrate over all work
+    int N = 1;
+    for (size_t i = 0; i<D; i++) N *= _lengths[i];
+    
+    // ideal work balance
+    double ideal_work = 0.0;
+    for(auto& elem : _work_grid) ideal_work += elem.second;
+    ideal_work /= comm.size();
+
+    // current work load
+    double current_workload = 0.0;
+    for(auto& elem : _mpi_grid) {
+      if(elem.second == rank) {
+        current_workload += _work_grid( elem.first );
+      }
+    }
+
+    /// excess work I can do
+    double excess = ideal_work - current_workload;
+    //excess = excess > 0.0 ? excess : 0.0;
+
+
+    //if(rank == comm.rank()) {
+    //std::cout << comm.rank() << " get_quota for rank gives "
+    //  << "ideal_work:" << ideal_work
+    //  << "current   :" << current_workload
+    //  << "excess   :" << excess
+    //  << "\n";
+    //}
+
+    return excess;
+
+    double quota = excess > max_quota*ideal_work ? max_quota*ideal_work : excess;
+    return quota > -min_quota*ideal_work ? quota : -min_quota*ideal_work;
+  }
+  
+  /// Propagate CA rules one step forward and decide who adopts who
+  void adoption_council()
+  {
+    int quota = (int)get_quota(comm.rank());
+
+    // collect virtual tiles and their metainfo into a container
+    std::vector<Communication> virtuals;
+    for(auto cid : get_virtuals() ) {
+      auto& tile = get_tile(cid);
+      virtuals.push_back(tile.communication);
+    }
+
+    // sort in descending order using lambda function
+    std::sort(virtuals.begin(), virtuals.end(), 
+        [](const auto& lhs, const auto& rhs) 
+    {
+      return lhs.number_of_virtual_neighbors > rhs.number_of_virtual_neighbors;
+    });
+
+
+    // now loop over all virtual tiles and check if I can adopt someone
+    adoptions.clear();
+    for(auto& vir : virtuals) {
+
+      //if(vir.number_of_virtual_neighbors <= 3) continue;
+
+      // skip tiles where I am not the top owner
+      if(vir.top_virtual_owner == comm.rank()) {
+        adoptions.push_back( vir.cid );
+
+        //std::cout << comm.rank() 
+        //  << ": adoption council marks " << vir.cid
+        //  << " at " << vir.indices[0] << " " << vir.indices[1] << "\n";
+      }
+
+      if( (int)adoptions.size() >= quota) break;
+    }
+
+  }
+
+  /// general N-dim implementation of wrap
+  size_t wrap(int ind, size_t d)
+  {
+    auto N = static_cast<int>(_lengths[d]);
+    while (ind < 0) { ind += N; }
+    while (ind >= N) { ind -= N; }
+    return static_cast<size_t>(ind);
+  }
+
+
+  /// return index of tiles in relative to my position
+  const corgi::internals::tuple_of<D, size_t> neighs(
+      corgi::internals::tuple_of<D, int> indices,
+      corgi::internals::tuple_of<D, int> indices_rel)
+  {
+    auto cur = corgi::internals::into_array(indices);
+    auto rel = corgi::internals::into_array(indices_rel);
+
+    for(size_t i=0; i<D; i++) {
+      cur[i] = static_cast<size_t>(
+          wrap( static_cast<int>(rel[i]) + 
+            static_cast<int>(cur[i]), i)
+          );
+    }
+
+    auto ret = corgi::internals::into_tuple(cur);
+    return ret;
+  }
+
+  /// Return full Moore neighborhood around me
+  std::vector< corgi::internals::tuple_of<D, size_t> > nhood(
+      corgi::internals::tuple_of<D, size_t> indices)
+  {
+    // FIXME; generalize the size (now assumes D=2)
+    std::vector< corgi::internals::tuple_of<D, size_t> > nh;
+    nh.reserve(8);
+
+    for(auto& reli : corgi::ca::moore_neighborhood<D>() ){
+      nh.push_back( neighs(indices, reli) );
+    }
+    return nh;
+  }
+
+
+  void adoption_council2()
+  {
+    adoptions.clear();
+    kidnaps.clear();
+    std::vector<double> alives(comm.size());
+
+    //int myrank = comm.rank();
+
+    // for updated values
+    corgi::tools::sparse_grid<int, D> new_mpi_grid(_mpi_grid);
+
+    // radius of Gaussian kernel
+    int dt = sqrt(*std::max_element(_lengths.begin(), _lengths.end() )); 
+    //int dt = *std::max_element(_lengths.begin(), _lengths.end() )/2; 
+    //dt += 0.1*dt;
+
+    // gaussian kernel; i.e., relative indices how we convolve
+    auto kernel = corgi::ca::chessboard_neighborhood<D>(dt);
+
+
+    // keep track of tile changes
+    std::vector<int> obtained(comm.size()), lost(comm.size());
+    std::fill(obtained.begin(), obtained.end(), 0); // reset vector
+    std::fill(lost.begin(), lost.end(), 0); // reset vector
+
+    // transferred work
+    std::vector<double> transfers(comm.size());
+    std::fill(transfers.begin(), transfers.end(), 0.0); // reset vector
+
+    // absolute quota in units of work
+    std::vector<double> quota(comm.size());
+    for(int rank=0; rank<comm.size(); rank++) quota[rank] = get_quota(rank);
+
+    // relative quota
+    std::vector<double> rel_quota(comm.size());
+    double total_work = 0.0;
+    for(auto& elem : _work_grid) total_work += elem.second;
+    for(size_t i=0; i<rel_quota.size(); i++) rel_quota[i] = comm.size()*quota[i]/total_work;
+
+    //std::cout << comm.rank() << ": my quota : " << quota[myrank] 
+    //  << " (" << rel_quota[myrank] << ")"
+    //  << "\n";
+
+    //--------------------------------------------------
+
+    // process the complete grid (including remote neighbors)
+    int new_color;
+    for(auto&& elem : _mpi_grid) {
+      auto& ind     = elem.first;
+      int old_color = elem.second;
+
+      std::fill(alives.begin(), alives.end(), 0.0); // reset vector
+
+      // resolve neighborhood; diffusion step
+      //alives[old_color] = 1.0;
+      alives[old_color] = (1.0/4.0/M_PI/static_cast<double>(dt));
+      //alives[old_color] = sqrt(0.5/M_PI);
+
+      // Limited Moore nearest neighborhood
+      //auto neigs = nhood(ind);
+      //for(auto& nindx : neigs) {
+      //  color = _mpi_grid(nindx);
+      //  assert(0 <= color && color < comm.size());
+
+      //  alives[color]++; 
+      //}
+
+
+      // full Gaussian kernel
+      double r;
+      int color;
+      for(auto& reli : kernel ) {
+        auto nindx = neighs(ind, reli);
+        color = _mpi_grid(nindx);
+
+        //r = geom::eulerian_distance(reli);  
+        r = geom::manhattan_distance<D>(reli);  
+        //r = geom::chessboard_distance<D>(reli);  
+
+        //alives[color] += exp(-r*r/static_cast<double>(dt));
+        //alives[color] += r/(2.0*M_PI*static_cast<double>(dt));
+          
+        alives[color] += (1.0/4.0/M_PI/static_cast<double>(dt))
+                         *exp(-r*r/(4.0*static_cast<double>(dt)));
+          
+        //alives[color] += sqrt(0.5/M_PI)*exp(-r*r/(2.0));
+
+        //alives[color] += exp(-r*r/4.0);
+      }
+
+
+      // normalize
+      double norm = 0.0;
+      for(auto& val : alives) norm += val;
+      for(auto& val : alives) val /= norm;
+
+      // add relative quota for balance 
+      for(size_t i=0; i<alives.size(); i++) alives[i] += 0.5*rel_quota[i];
+
+
+      //auto maxe = std::max_element(alives.begin(), alives.end());
+      //if(*maxe >= 0.5/( (double)comm.size() ) ) {
+      //  new_color = std::distance(alives.begin(), maxe);
+      //} else {
+      //  new_color = old_color;
+      //}
+
+      // get mode, i.e., most frequent color; sharpening step
+      new_color = std::distance( alives.begin(), 
+          std::max_element(alives.begin(), alives.end()));
+
+      // stay alive if all values are the same; i.e., we are in equilibrium
+      //bool equilibrium = true;
+      //int ref_val = alives[0];
+      //for(auto& val : alives) {
+      //  if(val != ref_val) {
+      //    equilibrium = false;
+      //    break;
+      //  }
+      //}
+      //if(equilibrium) continue;
+
+
+      // FIXME
+      //if (new_color != old_color) {
+      //  uint64_t cid = id(ind);
+      //  auto index = id2index(cid, _lengths);
+      //  std::cout << comm.rank() << ": tile " << cid 
+      //    << " has been kidnapped by evil " << new_color 
+      //    << " at (" << std::get<0>(index) << "," 
+      //    << " from " << old_color << " --- alives:";
+      //  for(auto val : alives) std::cout << " " << val;
+      //  double sum = 0.0;
+      //  for(auto val : alives) sum += val;
+      //  std::cout << " sum: " << sum;
+      //  std::cout << "\n";
+      //}
+
+      obtained[new_color]++;
+      lost[old_color]++;
+
+      // progress one step
+      new_mpi_grid(ind) = new_color;
+    }
+
+    //std::cout << comm.rank() << ": rank gained/lost= " 
+    //  << obtained[myrank] << "/" << lost[myrank] 
+    //  << " in += " << obtained[myrank] - lost[myrank] << "\n";
+
+
+    //--------------------------------------------------
+
+
+    // next, process changes of ownership
+    for(auto&& elem : _mpi_grid) {
+      auto& ind     = elem.first;
+      int old_color = elem.second;
+      int new_color = new_mpi_grid(ind);
+      uint64_t cid = id(ind);
+
+      // if no changes, then skip everything
+      if(new_color == old_color) continue;
+
+
+      // check that velocity is not too great; 
+      // i.e., change of boundary happens via virtual tiles
+      bool is_virtual = false;
+      int color;
+      for(auto& reli : corgi::ca::moore_neighborhood<D>() ){
+        auto nindx = neighs(ind, reli);
+        color = _mpi_grid(nindx);
+        if(color == new_color) {
+          is_virtual = true;
+          break;
+        }
+      }
+
+      // abort if this is not virtual
+      if(!is_virtual) {
+        //std::cout << comm.rank() << ": XXX tile " << cid 
+        //    << " is going too fast to: " << new_color << "\n";
+        new_mpi_grid(ind) = old_color;
+        continue;
+      }
+        
+      // keep track of work / individual load
+      transfers[new_color] += _work_grid(ind);
+
+      // check if we exceed our quota; if yes, then must reinitialize grid
+      //if(transfers[new_color] > quota[new_color]) {
+      //  new_mpi_grid(ind) = old_color;
+      //  transfers[new_color] -= _work_grid(ind);
+      //  continue;
+      //}
+
+      // I have adopted a tile
+      if(new_color == comm.rank()) {
+        assert( tiles.count(cid) > 0 );
+        adoptions.push_back(cid);
+
+        // FIXME
+        //std::cout << comm.rank() 
+        //  << ": adoption council marks " << cid << " to be adopted\n";
+        //    //<< " at " << tile.communication.indices[0] << " " << tile.communication.indices[1] << "\n";
+        auto& tile  = get_tile(cid);
+        tile.communication.owner = comm.rank();
+
+
+        // A tile has been kidnapped from me
+      } else if(old_color == comm.rank()) {
+        kidnaps.push_back(cid);
+
+        if(is_local(cid)) {
+          auto& tile  = get_tile(cid);
+          tile.communication.owner = new_color;
+
+          // FIXME
+          //std::cout << comm.rank() << ": oh gosh tile " << cid << " is mine! \n";
+        } else {
+          // something went wrong; I should have this tile but I do not?!
+          assert(false);
+        }
+      }  
+      // third option is that somebody else was involved. 
+
+    } // end of loop over elements
+
+
+    // global progress
+    _mpi_grid = std::move(new_mpi_grid);
+
+    return;
+  }
+
+
+  /// iterate over tiles in adoption vector and claim them to me
+  void adopt()
+  {
+    for(auto cid : adoptions){
+      auto& vir = get_tile(cid);
+      //std::cout << comm.rank() 
+      //  << ": adopting " << vir.cid
+      //  << " at " << vir.communication.indices[0] << " " 
+      //            << vir.communication.indices[1] << "\n";
+
+
+      vir.communication.owner = comm.rank();
+      //vir.communication.local = true;
+
+      _mpi_grid( vir.index ) = comm.rank();
     }
   }
+
+
+
+  /// send MPI message of my adoptions to everybody
+  void send_adoptions()
+  {
+    sent_adoption_messages.clear();
+
+    // ensure that adoptions vector is of standard length
+    //if(adoptions.size() < max_quota) adoptions.resize(max_quota);
+    while((int)adoptions.size() < max_quota) adoptions.push_back(-1);
+
+    for (int dest = 0; dest<comm.size(); dest++) {
+      if( dest == comm.rank() ) { continue; } // do not send to myself
+
+      mpi::request req;
+      req = comm.isend(dest, commType::ADOPT, adoptions.data(), max_quota);
+      sent_adoption_messages.push_back( req );
+    }
+  }
+
+  /// receive MPI adoption messages from others
+  void recv_adoptions()
+  {
+    recv_adoption_messages.clear();
+
+    // ensure that the receiving array is of correct size
+    kidnaps.resize(comm.size()*max_quota);
+
+    for (int orig = 0; orig<comm.size(); orig++) {
+      if( orig == comm.rank() ) { continue; } // do not recv from myself
+
+      mpi::request req;
+      req = comm.irecv(orig, commType::ADOPT, &kidnaps[orig*max_quota], max_quota);
+      recv_adoption_messages.push_back( req );
+    }
+
+  }
+
+  /// wait and unpack MPI adoption messages
+  //
+  // Here we try to keep track of all the ownership changes,
+  // even if they are remote and do not consider me.
+  void wait_adoptions()
+  {
+    // wait
+    mpi::wait_all(recv_adoption_messages.begin(), recv_adoption_messages.end());
+
+    // unpack
+    int kidnapped_cid;
+    for (int orig = 0; orig<comm.size(); orig++) {
+      if( orig == comm.rank() ) { continue; } // do not process myself
+
+      for(int i=0; i<max_quota; i++) {
+        kidnapped_cid = kidnaps[orig*max_quota + i];
+        if(kidnapped_cid == -1) continue;
+
+        auto index = id2index(kidnapped_cid, _lengths);
+
+        //std::cout << comm.rank() << ": tile " << kidnapped_cid 
+        //  << " has been kidnapped by evil " << orig << "\n";
+
+        if(is_local(kidnapped_cid)) {
+          //std::cout << comm.rank() << ": tile " << kidnapped_cid << " is mine! \n";
+          //tiles.erase(kidnapped_cid);
+
+          auto& tile = get_tile(kidnapped_cid);
+          tile.communication.owner = orig;
+          //tile.communication.local = false;
+        }
+
+        // update global status irrespective of if it is mine or not
+        _mpi_grid(index) = orig;
+      }
+    }
+  }
+
+  /// shortcut for calling blocking version of adoption messaging
+  void communicate_adoptions()
+  {
+    send_adoptions();
+    recv_adoptions();
+    wait_adoptions();
+  }
+
+
+  /// loop over all virtuals and remove them
+  void erase_virtuals()
+  {
+
+    int whoami;
+    for(auto cid : get_virtuals() ) {
+
+      // check if virtual tile is still needed
+      auto& c = get_tile(cid);
+      auto neigs = c.nhood();
+      for(auto& indx: neigs) {
+        whoami = _mpi_grid(indx); 
+        if(whoami == comm.rank()) continue;
+      }
+
+      tiles.erase(cid);
+    }
+  }
+
+
+  // --------------------------------------------------
+  // user-data message routines
 
   /// Initialize vector of vector if needed
   void initialize_message_array(
@@ -1034,6 +1725,11 @@ class Node
     assert( tag < (int)recv_data_messages.size() );
     mpi::wait_all(recv_data_messages[tag].begin(), recv_data_messages[tag].end());
   }
+
+
+
+
+
 
 
 

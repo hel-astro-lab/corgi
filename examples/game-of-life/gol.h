@@ -11,8 +11,6 @@
 
 namespace gol {
 
-namespace mpi = mpi4cpp::mpi;
-
 
 
 /// Snapshot patch of a CA simulation
@@ -115,11 +113,11 @@ class Tile : public corgi::Tile<2> {
     /// step forward
     void cycle() { data.cycle(); }
 
-    virtual std::vector<mpi::request> 
-    send_data( mpi::communicator&, int orig, int tag) override;
+    virtual std::vector<mpi4cpp::mpi::request> 
+    send_data( mpi4cpp::mpi::communicator&, int orig, int tag) override;
 
-    virtual std::vector<mpi::request> 
-    recv_data( mpi::communicator&, int dest, int tag) override;
+    virtual std::vector<mpi4cpp::mpi::request> 
+    recv_data( mpi4cpp::mpi::communicator&, int dest, int tag) override;
 
 };
 

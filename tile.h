@@ -54,6 +54,7 @@ struct Communication {
   /// my virtual owners; not communicated along the metainfo
   std::vector<int> virtual_owners;
 
+
 };
 
 
@@ -114,41 +115,6 @@ class Tile
 
     }
 
-
-    /*
-
-    /// default periodic x boundary condition
-    corgi::internals::enable_if_t< (D>=1), size_t>
-    xwrap(int iw) {
-      auto Nx = static_cast<int>(lengths[0]);
-
-      while (iw < 0) { iw += Nx; }
-      while (iw >= Nx) { iw -= Nx; }
-      return static_cast<size_t>(iw);
-    }
-
-
-    /// default periodic y boundary condition
-    corgi::internals::enable_if_t< (D>=2), size_t>
-    ywrap(int jw) {
-      auto Ny = static_cast<int>(lengths[1]);
-
-      while (jw < 0) { jw += Ny; }
-      while (jw >= Ny) { jw -= Ny; }
-      return static_cast<size_t>(jw);
-    }
-
-    /// default periodic z boundary condition
-    corgi::internals::enable_if_t< (D>=3), size_t>
-    zwrap(int kw) {
-      auto Nz = static_cast<int>(lengths[2]);
-
-      while (kw < 0) { kw += Nz; }
-      while (kw >= Nz) { kw -= Nz; }
-      return static_cast<size_t>(kw);
-    }
-
-    */
 
     /// general N-dim implementation of wrap
     size_t wrap(int ind, size_t d)
@@ -290,6 +256,14 @@ class Tile
 
       return reqs;
     }
+
+
+    /// Local computational work estimate for this tile
+    virtual double get_work()
+    {
+      return 1.0;
+    }
+
 
 
 }; // end of Tile class
