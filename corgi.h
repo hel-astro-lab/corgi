@@ -907,13 +907,13 @@ class Node
 
   std::vector<mpi::request> sent_info_messages;
   std::vector<mpi::request> sent_tile_messages;
-  //std::vector< std::vector<mpi::request> > sent_data_messages;
   std::unordered_map<int, std::vector<mpi::request>> sent_data_messages;
+  //std::unordered_map<int, std::vector<MPI_Request>> sent_data_messages;
 
   std::vector<mpi::request> recv_info_messages;
   std::vector<mpi::request> recv_tile_messages;
-  //std::vector< std::vector<mpi::request> > recv_data_messages;
   std::unordered_map<int, std::vector<mpi::request>> recv_data_messages;
+  //std::unordered_map<int, std::vector<MPI_Request>> recv_data_messages;
 
   std::vector<mpi::request> sent_adoption_messages;
   std::vector<mpi::request> recv_adoption_messages;
@@ -1171,6 +1171,15 @@ class Node
         //new_tile.communication.local = false;
       }
     }
+
+    // process all mpi requests; otherwise we leak memory
+    mpi::wait_all(recv_info_messages.begin(), recv_info_messages.end());
+    mpi::wait_all(sent_info_messages.begin(), sent_info_messages.end());
+
+    mpi::wait_all(recv_tile_messages.begin(), recv_tile_messages.end());
+    mpi::wait_all(sent_tile_messages.begin(), sent_tile_messages.end());
+
+
 
     clear_send_queue();
   }
@@ -1613,6 +1622,7 @@ class Node
   {
     // wait
     mpi::wait_all(recv_adoption_messages.begin(), recv_adoption_messages.end());
+    mpi::wait_all(sent_adoption_messages.begin(), sent_adoption_messages.end());
 
     // unpack
     int kidnapped_cid;
@@ -1700,7 +1710,7 @@ class Node
       for(auto dest: tile.communication.virtual_owners) {
         auto reqs = tile.send_data(comm, dest, tag);
         
-        for(auto& req : reqs) sent_data_messages.at(tag).push_back(req);
+        for(auto req : reqs) sent_data_messages.at(tag).push_back(req);
       }
     }
   }
@@ -1716,12 +1726,17 @@ class Node
     recv_data_messages[tag] = {};
     //std::vector<mpi::request>().swap( recv_data_messages[tag] );
 
+    //int nc = 0, nv = 0;
     for(auto cid : get_virtuals() ) {
       auto& tile = get_tile(cid);
       auto reqs = tile.recv_data(comm, tile.communication.owner, tag);
 
-      for(auto& req : reqs) recv_data_messages.at(tag).push_back(req);
+      for(auto req : reqs) recv_data_messages.at(tag).push_back(req);
+      //nc += reqs.size();
+      //nv++;
     }
+
+    //std::cout << comm.rank() << ": recv buffer size " << nc << " nv: " << nv << "\n";
   }
 
   /// barrier until all (primary) data is received
@@ -1731,7 +1746,23 @@ class Node
     assert( sent_data_messages.count(tag) > 0 );
     assert( recv_data_messages.count(tag) > 0 );
     
-    mpi::wait_all(recv_data_messages[tag].begin(), recv_data_messages[tag].end());
+    mpi::wait_all( recv_data_messages[tag].begin(), recv_data_messages[tag].end() );
+    mpi::wait_all( sent_data_messages[tag].begin(), sent_data_messages[tag].end() );
+    //for(auto& req : recv_data_messages[tag]) req.wait();
+
+    // vanilla MPI
+    //MPI_Status stats[2];
+    //MPI_Waitall( 
+    //    recv_data_messages[tag].size(),
+    //    &recv_data_messages[tag][0], 
+    //    MPI_STATUSES_IGNORE
+    //    )
+    
+    //int n1 = 0;
+    //for(auto& vec : sent_data_messages){ n1 += vec.second.size(); }
+    //int n2 = 0;
+    //for(auto& vec : recv_data_messages){ n2 += vec.second.size(); }
+    //std::cout << comm.rank() << ": wait buffer size " << n1 << " " << n2 << "\n";
 
     // erase (do not force capacity change)
     sent_data_messages[tag] = {};
@@ -1741,11 +1772,6 @@ class Node
     //std::vector<mpi::request>().swap( sent_data_messages[tag] );
     //std::vector<mpi::request>().swap( recv_data_messages[tag] );
     
-    //int n1 = 0;
-    //for(auto& vec : sent_data_messages){ n1 += vec.second.size(); }
-    //int n2 = 0;
-    //for(auto& vec : recv_data_messages){ n2 += vec.second.size(); }
-    //std::cout << "wait buffer size " << n1 << " " << n2 << "\n";
   }
 
 
