@@ -907,11 +907,13 @@ class Node
 
   std::vector<mpi::request> sent_info_messages;
   std::vector<mpi::request> sent_tile_messages;
-  std::vector< std::vector<mpi::request> > sent_data_messages;
+  //std::vector< std::vector<mpi::request> > sent_data_messages;
+  std::unordered_map<int, std::vector<mpi::request>> sent_data_messages;
 
   std::vector<mpi::request> recv_info_messages;
   std::vector<mpi::request> recv_tile_messages;
-  std::vector< std::vector<mpi::request> > recv_data_messages;
+  //std::vector< std::vector<mpi::request> > recv_data_messages;
+  std::unordered_map<int, std::vector<mpi::request>> recv_data_messages;
 
   std::vector<mpi::request> sent_adoption_messages;
   std::vector<mpi::request> recv_adoption_messages;
@@ -1674,23 +1676,24 @@ class Node
   // user-data message routines
 
   /// Initialize vector of vector if needed
-  void initialize_message_array(
-      std::vector<std::vector<mpi::request>>& arr, 
-      int tag)
-  {
-    while((int)arr.size() <= tag) {
-      std::vector<mpi::request> arri(0);
-      arr.push_back( arri );
-    }
-  }
+  //void initialize_message_array(
+  //    std::vector<std::vector<mpi::request>>& arr, 
+  //    int tag)
+  //{
+  //  while((int)arr.size() <= tag) {
+  //    std::vector<mpi::request> arri(0);
+  //    arr.push_back( arri );
+  //  }
+  //}
 
   /// Call mpi send routines from tile for the boundary regions
   // NOTE: we bounce sending back to tile members,
   //       this way they can be extended for different types of send.
   void send_data(int tag)
   {
-    initialize_message_array(sent_data_messages, tag);
-    sent_data_messages.at(tag).clear();
+    //initialize_message_array(sent_data_messages, tag);
+    sent_data_messages[tag] = {};
+    //std::vector<mpi::request>().swap( sent_data_messages[tag] );
 
     for(auto cid : get_boundary_tiles() ) {
       auto& tile = get_tile(cid);
@@ -1708,8 +1711,10 @@ class Node
   //       this way they can be extended for different types of recv.
   void recv_data(int tag)
   {
-    initialize_message_array(recv_data_messages, tag);
-    recv_data_messages.at(tag).clear();
+    //initialize_message_array(recv_data_messages, tag);
+    //recv_data_messages.at(tag).clear();
+    recv_data_messages[tag] = {};
+    //std::vector<mpi::request>().swap( recv_data_messages[tag] );
 
     for(auto cid : get_virtuals() ) {
       auto& tile = get_tile(cid);
@@ -1722,8 +1727,25 @@ class Node
   /// barrier until all (primary) data is received
   void wait_data(int tag)
   {
-    assert( tag < (int)recv_data_messages.size() );
+    //assert( tag < (int)recv_data_messages.size() );
+    assert( sent_data_messages.count(tag) > 0 );
+    assert( recv_data_messages.count(tag) > 0 );
+    
     mpi::wait_all(recv_data_messages[tag].begin(), recv_data_messages[tag].end());
+
+    // erase (do not force capacity change)
+    sent_data_messages[tag] = {};
+    recv_data_messages[tag] = {};
+
+    // erase and force clean
+    //std::vector<mpi::request>().swap( sent_data_messages[tag] );
+    //std::vector<mpi::request>().swap( recv_data_messages[tag] );
+    
+    //int n1 = 0;
+    //for(auto& vec : sent_data_messages){ n1 += vec.second.size(); }
+    //int n2 = 0;
+    //for(auto& vec : recv_data_messages){ n2 += vec.second.size(); }
+    //std::cout << "wait buffer size " << n1 << " " << n2 << "\n";
   }
 
 
