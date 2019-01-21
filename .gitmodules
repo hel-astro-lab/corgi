@@ -1,6 +1,8 @@
 [submodule "pybind11"]
 	path = pybind11
 	url = https://github.com/pybind/pybind11.git
+	branch = master
 [submodule "mpi4cpp"]
 	path = mpi4cpp
 	url = https://github.com/natj/mpi4cpp.git
+	branch = master
