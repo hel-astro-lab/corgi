@@ -1732,6 +1732,7 @@ class Node
   {
     //initialize_message_array(sent_data_messages, tag);
     sent_data_messages[tag] = {};
+    sent_data_messages[tag].reserve( 3*get_boundary_tiles().size() );
     //std::vector<mpi::request>().swap( sent_data_messages[tag] );
 
     for(auto cid : get_boundary_tiles() ) {
@@ -1754,6 +1755,7 @@ class Node
     //initialize_message_array(recv_data_messages, tag);
     //recv_data_messages.at(tag).clear();
     recv_data_messages[tag] = {};
+    recv_data_messages[tag].reserve( 3*get_virtuals().size() );
     //std::vector<mpi::request>().swap( recv_data_messages[tag] );
 
     //int nc = 0, nv = 0;
