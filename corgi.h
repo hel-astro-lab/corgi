@@ -1044,9 +1044,9 @@ class Node
       //          << number_of_incoming_tiles
       //          << "\n";
 
-      mpi::request req;
-      req = comm.isend(dest, commType::NTILES, number_of_incoming_tiles);
-      sent_info_messages.push_back( req );
+      sent_info_messages.emplace_back( 
+        comm.isend(dest, commType::NTILES, number_of_incoming_tiles)
+      );
 
     }
 
@@ -1058,11 +1058,9 @@ class Node
     for(auto cid: send_queue) {
       auto& tile = get_tile(cid);
       for(int dest: send_queue_address[i]) {
-
-        mpi::request req;
-        req = comm.isend(dest, commType::TILEDATA, tile.communication);
-
-        sent_tile_messages.push_back( req );
+        sent_tile_messages.emplace_back( 
+          comm.isend(dest, commType::TILEDATA, tile.communication)
+        );
       }
       i++;
     }
@@ -1795,7 +1793,7 @@ class Node
     //for(auto& vec : recv_data_messages){ n2 += vec.second.size(); }
     //std::cout << comm.rank() << ": wait buffer size " << n1 << " " << n2 << "\n";
 
-    // erase (do not force capacity change)
+    // erase (do not enforce capacity change)
     sent_data_messages[tag] = {};
     recv_data_messages[tag] = {};
 
