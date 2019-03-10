@@ -1017,6 +1017,10 @@ class Node
     sent_info_messages.clear();
     sent_tile_messages.clear();
 
+
+    // reserve to avoid emplace_slow_path
+    sent_info_messages.reserve(comm.size());
+
     for (int dest = 0; dest<comm.size(); dest++) {
       if( dest == comm.rank() ) { continue; } // do not send to myself
 
@@ -1054,6 +1058,13 @@ class Node
     // We optimize this by only packing the tile data
     // once, and then sending the same thing to everybody who needs it.
     // FIXME: not really...
+
+    // reserve again to avoid emplace_slow_path
+    size_t nsends = 0;
+    for(auto& addresses: send_queue_address) nsends += addresses.size();
+    sent_tile_messages.reserve(nsends);
+
+
     int i = 0;
     for(auto cid: send_queue) {
       auto& tile = get_tile(cid);
