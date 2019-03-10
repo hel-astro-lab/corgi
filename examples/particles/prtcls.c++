@@ -81,59 +81,72 @@ int get_extra_tag(int cid, int extra_param)
 }
 
 
-std::vector<mpi4cpp::mpi::request> Tile::send_data( mpi4cpp::mpi::communicator& comm, int dest, int tag)
+void Tile::send_data( 
+    mpi4cpp::mpi::communicator& comm, int dest, int tag,
+    std::vector<mpi4cpp::mpi::request>& reqs
+    )
 {
-  if(tag == 0)      return Tile::send_particle_data(comm, dest);
-  else if(tag == 1) return Tile::send_particle_extra_data(comm,dest);
+  if(tag == 0)      return Tile::send_particle_data(comm, dest, reqs);
+  else if(tag == 1) return Tile::send_particle_extra_data(comm,dest,reqs);
   else assert(false);
 }
 
-std::vector<mpi4cpp::mpi::request> Tile::send_particle_data( mpi4cpp::mpi::communicator& comm, int dest)
+void
+Tile::send_particle_data( 
+    mpi4cpp::mpi::communicator& comm, int dest,
+    std::vector<mpi4cpp::mpi::request>& reqs 
+    )
 {
-  std::vector<mpi4cpp::mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
 
-    reqs.push_back(
+    reqs.emplace_back(
         comm.isend(dest, get_tag(cid, ispc), 
           container.outgoing_particles.data(), 
           container.outgoing_particles.size())
         );
   }
-
-  return reqs;
 }
 
 
-std::vector<mpi4cpp::mpi::request> Tile::send_particle_extra_data( mpi4cpp::mpi::communicator& comm, int dest)
+void
+Tile::send_particle_extra_data( 
+    mpi4cpp::mpi::communicator& comm, int dest,
+    std::vector<mpi4cpp::mpi::request>& reqs
+    )
 {
-  std::vector<mpi4cpp::mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
 
     if(!container.outgoing_extra_particles.empty()) {
-      reqs.push_back(
+      reqs.emplace_back(
           comm.isend(dest, get_extra_tag(cid, ispc), 
             container.outgoing_extra_particles.data(), 
             container.outgoing_extra_particles.size())
           );
     }
   }
-  return reqs;
 }
 
 
-std::vector<mpi4cpp::mpi::request> Tile::recv_data( mpi4cpp::mpi::communicator& comm, int orig, int tag)
+void
+Tile::recv_data( 
+    mpi4cpp::mpi::communicator& comm, int orig, int tag,
+    std::vector<mpi4cpp::mpi::request>& reqs
+)
 {
-  if(tag == 0)      return Tile::recv_particle_data(comm,orig);
-  else if(tag == 1) return Tile::recv_particle_extra_data(comm,orig);
+  if(tag == 0)      return Tile::recv_particle_data(comm,orig, reqs);
+  else if(tag == 1) return Tile::recv_particle_extra_data(comm,orig, reqs);
   else assert(false);
 }
 
 
-std::vector<mpi4cpp::mpi::request> Tile::recv_particle_data( mpi4cpp::mpi::communicator& comm, int orig)
+void
+Tile::recv_particle_data( 
+    mpi4cpp::mpi::communicator& comm, int orig,
+    std::vector<mpi4cpp::mpi::request>& reqs 
+    )
 {
-  std::vector<mpi4cpp::mpi::request> reqs;
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
     container.incoming_particles.resize( container.optimal_message_size );
@@ -144,15 +157,15 @@ std::vector<mpi4cpp::mpi::request> Tile::recv_particle_data( mpi4cpp::mpi::commu
           container.optimal_message_size)
         );
   }
-
-  return reqs;
 }
 
 
-std::vector<mpi4cpp::mpi::request> Tile::recv_particle_extra_data( mpi4cpp::mpi::communicator& comm, int orig )
+void
+Tile::recv_particle_extra_data( 
+    mpi4cpp::mpi::communicator& comm, int orig,
+    std::vector<mpi4cpp::mpi::request>& reqs
+    )
 {
-  std::vector<mpi4cpp::mpi::request> reqs;
-
   // this assumes that wait for the first message is already called
   // and passed.
 
@@ -166,7 +179,7 @@ std::vector<mpi4cpp::mpi::request> Tile::recv_particle_extra_data( mpi4cpp::mpi:
     if(extra_size > 0) {
       container.incoming_extra_particles.resize(extra_size);
 
-      reqs.push_back(
+      reqs.emplace_back(
           comm.irecv(orig, get_extra_tag(cid, ispc),
             container.incoming_extra_particles.data(),
             extra_size)
@@ -179,8 +192,6 @@ std::vector<mpi4cpp::mpi::request> Tile::recv_particle_extra_data( mpi4cpp::mpi:
     //container.optimal_message_size = msginfo.size();
 
   }
-
-  return reqs;
 }
 
 

@@ -1618,9 +1618,10 @@ class Node
     for (int dest = 0; dest<comm.size(); dest++) {
       if( dest == comm.rank() ) { continue; } // do not send to myself
 
-      mpi::request req;
-      req = comm.isend(dest, commType::ADOPT, adoptions.data(), max_quota);
-      sent_adoption_messages.push_back( req );
+      sent_adoption_messages.emplace_back( 
+        comm.isend(dest, commType::ADOPT, adoptions.data(), max_quota)
+      );
+
     }
   }
 
@@ -1635,9 +1636,9 @@ class Node
     for (int orig = 0; orig<comm.size(); orig++) {
       if( orig == comm.rank() ) { continue; } // do not recv from myself
 
-      mpi::request req;
-      req = comm.irecv(orig, commType::ADOPT, &kidnaps[orig*max_quota], max_quota);
-      recv_adoption_messages.push_back( req );
+      recv_adoption_messages.emplace_back( 
+        comm.irecv(orig, commType::ADOPT, &kidnaps[orig*max_quota], max_quota)
+      );
     }
 
   }
@@ -1736,9 +1737,10 @@ class Node
     for(auto cid : get_boundary_tiles() ) {
       auto& tile = get_tile(cid);
       for(auto dest: tile.communication.virtual_owners) {
-        auto reqs = tile.send_data(comm, dest, tag);
-        
-        for(auto req : reqs) sent_data_messages.at(tag).push_back(req);
+        //auto reqs = tile.send_data(comm, dest, tag);
+        //for(auto req : reqs) sent_data_messages.at(tag).push_back(req);
+
+        tile.send_data(comm, dest, tag, sent_data_messages.at(tag));
       }
     }
   }
@@ -1757,11 +1759,10 @@ class Node
     //int nc = 0, nv = 0;
     for(auto cid : get_virtuals() ) {
       auto& tile = get_tile(cid);
-      auto reqs = tile.recv_data(comm, tile.communication.owner, tag);
-
-      for(auto req : reqs) recv_data_messages.at(tag).push_back(req);
-      //nc += reqs.size();
-      //nv++;
+      //auto reqs = tile.recv_data(comm, tile.communication.owner, tag);
+      //for(auto req : reqs) recv_data_messages.at(tag).push_back(req);
+        
+      tile.recv_data(comm, tile.communication.owner, tag, recv_data_messages.at(tag));
     }
 
     //std::cout << comm.rank() << ": recv buffer size " << nc << " nv: " << nv << "\n";
