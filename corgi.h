@@ -1115,8 +1115,11 @@ class Node
   /// Receive incoming stuff
   void recv_tiles() {
 
+    std::cout << "recv_tiles clearing...\n";
     recv_info_messages.clear();
+    std::cout << "recv_tiles cleared 1\n";
     recv_tile_messages.clear();
+    std::cout << "recv_tiles cleared 2\n";
 
     //size_t i = 0;
     for (int source=0; source<comm.size(); source++) {
@@ -1130,13 +1133,25 @@ class Node
       // TODO: encapsulate into vector that can be received & 
       // processed more later on
 
+      std::cout << "recv_tiles inside loop\n";
       int number_of_incoming_tiles;
-      mpi::request req;
-      req = comm.irecv(source, commType::NTILES, number_of_incoming_tiles);
+      //mpi::request req;
+      //req = comm.irecv(source, commType::NTILES, number_of_incoming_tiles);
+      //recv_info_messages.emplace_back( 
+      //  comm.irecv(source, commType::NTILES, number_of_incoming_tiles)
+      //);
 
       // TODO: Remove this code block and do in background instead
-      req.wait();
-      recv_info_messages.push_back( req );
+      //std::cout << "recv_tiles req wait..\n";
+      //req.wait();
+      //recv_info_messages.back().wait();
+      //std::cout << "recv_tiles req waited\n";
+      //recv_info_messages.push_back( req );
+      //std::cout << "recv_tiles req push back\n";
+
+      // simple blokking version
+      comm.recv(source, commType::NTILES, number_of_incoming_tiles);
+
 
       /*
          fmt::print("{}: I got a message! Waiting {} tiles from {}\n",
@@ -1150,14 +1165,23 @@ class Node
 
       // Now receive the tiles themselves
       for (int ic=0; ic<number_of_incoming_tiles; ic++) {
-        mpi::request reqc;
+        //mpi::request reqc;
         Communication rcom;
 
-        reqc = comm.irecv(source, commType::TILEDATA, rcom);
+        //reqc = comm.irecv(source, commType::TILEDATA, rcom);
+        //recv_tile_messages.emplace_back( 
+        //  comm.irecv(source, commType::TILEDATA, rcom)
+        //);
         
         // TODO non blocking
-        reqc.wait();
-        recv_tile_messages.push_back( reqc );
+        //std::cout << "recv_tiles reqc waiting...\n";
+        //reqc.wait();
+        //recv_tile_messages.back().wait();
+        //std::cout << "recv_tiles reqc waited\n";
+        //recv_tile_messages.push_back( reqc );
+        //std::cout << "recv_tiles reqc push back\n";
+
+        comm.recv(source, commType::TILEDATA, rcom);
           
         if(this->tiles.count(rcom.cid) == 0) { // Tile does not exist yet; create it
           // TODO: Check validity of the tile better
@@ -1173,10 +1197,14 @@ class Node
     }
 
     // process all mpi requests; otherwise we leak memory
+    std::cout << "recv_tiles: wait all info 1\n";
     mpi::wait_all(recv_info_messages.begin(), recv_info_messages.end());
+    std::cout << "recv_tiles: wait all info 2\n";
     mpi::wait_all(sent_info_messages.begin(), sent_info_messages.end());
 
+    std::cout << "recv_tiles: wait all info 3\n";
     mpi::wait_all(recv_tile_messages.begin(), recv_tile_messages.end());
+    std::cout << "recv_tiles: wait all info 4\n";
     mpi::wait_all(sent_tile_messages.begin(), sent_tile_messages.end());
 
 
@@ -1773,11 +1801,6 @@ class Node
     //std::vector<mpi::request>().swap( recv_data_messages[tag] );
     
   }
-
-
-
-
-
 
 
 
