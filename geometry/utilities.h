@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 
 
 // ref: https://stackoverflow.com/questions/40700181/sum-the-components-of-a-tuple-up-by-using-stdget-stdtuple-size-stdtuple
