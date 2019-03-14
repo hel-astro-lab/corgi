@@ -46,12 +46,12 @@ void Tile::add_data(Mesh m) {
 /// get current patch
 Mesh& Tile::get_data() {
   return data.get();
-};
+}
 
 /// get new data
 Mesh& Tile::get_new_data() {
   return data.get(1);
-};
+}
 
 
 /// Update boundary/halo regions from neighbors

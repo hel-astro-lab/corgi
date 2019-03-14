@@ -16,7 +16,7 @@ ParticleBlock::ParticleBlock(size_t Nx, size_t Ny, size_t Nz) :
 { 
   locArr.resize(3);
   velArr.resize(3);
-};
+}
 
 
 
