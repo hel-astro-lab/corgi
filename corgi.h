@@ -1017,11 +1017,12 @@ class Node
     sent_info_messages.clear();
     sent_tile_messages.clear();
 
+    int i = 0;
+    std::vector<int> to_be_sent;
     for (int dest = 0; dest<comm.size(); dest++) {
       if( dest == comm.rank() ) { continue; } // do not send to myself
 
-      int i = 0;
-      std::vector<int> to_be_sent;
+      to_be_sent.clear();
       for(std::vector<int> address: send_queue_address) {
         if( std::find( address.begin(),
               address.end(),
@@ -1044,6 +1045,14 @@ class Node
       //          << number_of_incoming_tiles
       //          << "\n";
 
+      //if(comm.rank() == 33) std::cout << " send " << dest << " " << number_of_incoming_tiles << "\n";
+      //if(comm.rank() == 33 && dest == 0) {
+      //  for (i=0; i<to_be_sent.size();i++) {
+      //      std::cout << ", " << to_be_sent[i];
+      //   }
+      //  std::cout << "\n";
+      //}
+
       mpi::request req;
       req = comm.isend(dest, commType::NTILES, number_of_incoming_tiles);
       sent_info_messages.push_back( req );
@@ -1054,7 +1063,7 @@ class Node
     // We optimize this by only packing the tile data
     // once, and then sending the same thing to everybody who needs it.
     // FIXME: not really...
-    int i = 0;
+    i = 0;
     for(auto cid: send_queue) {
       auto& tile = get_tile(cid);
       for(int dest: send_queue_address[i]) {
@@ -1130,13 +1139,17 @@ class Node
       // TODO: encapsulate into vector that can be received & 
       // processed more later on
 
-      int number_of_incoming_tiles;
+      int number_of_incoming_tiles=0;
       mpi::request req;
       req = comm.irecv(source, commType::NTILES, number_of_incoming_tiles);
+
+      //if(comm.rank() == 0) std::cout << " recv " << source << "\n";
 
       // TODO: Remove this code block and do in background instead
       req.wait();
       recv_info_messages.push_back( req );
+
+      //if(comm.rank() == 0) std::cout << " recv wait " << number_of_incoming_tiles << "\n";
 
       /*
          fmt::print("{}: I got a message! Waiting {} tiles from {}\n",
@@ -1154,10 +1167,12 @@ class Node
         Communication rcom;
 
         reqc = comm.irecv(source, commType::TILEDATA, rcom);
+        //if(comm.rank() == 0) std::cout << " recv2 " << ic << " " << number_of_incoming_tiles << "\n";
         
         // TODO non blocking
         reqc.wait();
         recv_tile_messages.push_back( reqc );
+
           
         if(this->tiles.count(rcom.cid) == 0) { // Tile does not exist yet; create it
           // TODO: Check validity of the tile better
