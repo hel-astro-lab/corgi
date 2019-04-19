@@ -1775,10 +1775,16 @@ class Node
   }
 
 
+  void probe_data(int tag)
+  {
+    // probe for msg
+    // put it where?
+    // can not get cid
+    // where to tmp store it?
+    // how to communicate back to tile
+    // storage is generally in tile
 
-
-
-
+  }
 
 
 }; // end of Node class

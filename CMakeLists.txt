@@ -18,7 +18,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/mpi4cpp/tools/optional-lite/inc
 # dependencies
 
 # hpc stuff 
-#find_package (MPI)
+find_package (MPI)
 
 #find_package (OpenMP)
 #if (OpenMP_FOUND)
