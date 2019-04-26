@@ -219,6 +219,7 @@ class Tile
     send_data(
         mpi::communicator& /*comm*/,
         int dest, 
+        int /*mode*/,
         int /*tag*/)
     {
       std::vector<mpi::request> reqs;
@@ -234,6 +235,7 @@ class Tile
     recv_data(
         mpi::communicator& /*comm*/,
         int orig, 
+        int /*mode*/,
         int /*tag*/)
     {
       std::vector<mpi::request> reqs;
@@ -248,6 +250,7 @@ class Tile
     recv_extra_data(
         mpi::communicator& /*comm*/,
         int orig, 
+        int /*mode*/,
         int /*tag*/)
     {
       std::vector<mpi::request> reqs;

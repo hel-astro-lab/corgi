@@ -1,5 +1,6 @@
 #include <string>
 #include <array>
+#include <cmath>
 
 #include "prtcls.h"
 #include "container.h"
@@ -66,36 +67,47 @@ void Tile::get_incoming_particles(
 
 
 // create MPI tag given tile id and extra layer of differentiation
-int get_tag(int cid, int extra_param)
+int get_tag(int tag, int extra_param)
 {
-  assert(extra_param < 100);
-  return cid + extra_param*1e6;
+  assert(extra_param <= 8); // max 8 species
+  assert(tag < (pow(2,16) - 1)); // cray-mpich supports maximum of 2^22-1 tag value
+
+  return tag + (9+extra_param)*pow(2,16);
 }
 
 // create MPI tag for extra communication given tile 
 // id and extra layer of differentiation
-int get_extra_tag(int cid, int extra_param)
+int get_extra_tag(int tag, int extra_param)
 {
-  assert(extra_param < 100);
-  return cid + extra_param*1e8;
+  assert(extra_param <= 8); // max 8 species
+  assert(tag < (pow(2,16) - 1)); // cray-mpich supports maximum of 2^22-1 tag value
+
+  return tag + (9+8+extra_param)*pow(2,16);
 }
 
 
-std::vector<mpi4cpp::mpi::request> Tile::send_data( mpi4cpp::mpi::communicator& comm, int dest, int tag)
+std::vector<mpi4cpp::mpi::request> Tile::send_data( 
+    mpi4cpp::mpi::communicator& comm, 
+    int dest, 
+    int mode,
+    int tag)
 {
-  if(tag == 0)      return Tile::send_particle_data(comm, dest);
-  else if(tag == 1) return Tile::send_particle_extra_data(comm,dest);
+  if     (mode == 0) return Tile::send_particle_data(comm, dest, tag);
+  else if(mode == 1) return Tile::send_particle_extra_data(comm,dest, tag);
   else assert(false);
 }
 
-std::vector<mpi4cpp::mpi::request> Tile::send_particle_data( mpi4cpp::mpi::communicator& comm, int dest)
+std::vector<mpi4cpp::mpi::request> Tile::send_particle_data( 
+    mpi4cpp::mpi::communicator& comm, 
+    int dest,
+    int tag)
 {
   std::vector<mpi4cpp::mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
     ParticleBlock& container = get_container(ispc);
 
     reqs.push_back(
-        comm.isend(dest, get_tag(cid, ispc), 
+        comm.isend(dest, get_tag(tag, ispc), 
           container.outgoing_particles.data(), 
           container.outgoing_particles.size())
         );
@@ -105,7 +117,10 @@ std::vector<mpi4cpp::mpi::request> Tile::send_particle_data( mpi4cpp::mpi::commu
 }
 
 
-std::vector<mpi4cpp::mpi::request> Tile::send_particle_extra_data( mpi4cpp::mpi::communicator& comm, int dest)
+std::vector<mpi4cpp::mpi::request> Tile::send_particle_extra_data( 
+    mpi4cpp::mpi::communicator& comm, 
+    int dest,
+    int tag)
 {
   std::vector<mpi4cpp::mpi::request> reqs;
   for(size_t ispc=0; ispc<Nspecies(); ispc++) {
@@ -113,7 +128,7 @@ std::vector<mpi4cpp::mpi::request> Tile::send_particle_extra_data( mpi4cpp::mpi:
 
     if(!container.outgoing_extra_particles.empty()) {
       reqs.push_back(
-          comm.isend(dest, get_extra_tag(cid, ispc), 
+          comm.isend(dest, get_extra_tag(tag, ispc), 
             container.outgoing_extra_particles.data(), 
             container.outgoing_extra_particles.size())
           );
@@ -123,15 +138,22 @@ std::vector<mpi4cpp::mpi::request> Tile::send_particle_extra_data( mpi4cpp::mpi:
 }
 
 
-std::vector<mpi4cpp::mpi::request> Tile::recv_data( mpi4cpp::mpi::communicator& comm, int orig, int tag)
+std::vector<mpi4cpp::mpi::request> Tile::recv_data( 
+    mpi4cpp::mpi::communicator& comm, 
+    int orig, 
+    int mode,
+    int tag)
 {
-  if(tag == 0)      return Tile::recv_particle_data(comm,orig);
-  else if(tag == 1) return Tile::recv_particle_extra_data(comm,orig);
+  if(mode == 0)      return Tile::recv_particle_data(comm,orig,tag);
+  else if(mode == 1) return Tile::recv_particle_extra_data(comm,orig,tag);
   else assert(false);
 }
 
 
-std::vector<mpi4cpp::mpi::request> Tile::recv_particle_data( mpi4cpp::mpi::communicator& comm, int orig)
+std::vector<mpi4cpp::mpi::request> Tile::recv_particle_data( 
+    mpi4cpp::mpi::communicator& comm, 
+    int orig,
+    int tag)
 {
   std::vector<mpi4cpp::mpi::request> reqs;
   for (size_t ispc=0; ispc<Nspecies(); ispc++) {
@@ -139,7 +161,7 @@ std::vector<mpi4cpp::mpi::request> Tile::recv_particle_data( mpi4cpp::mpi::commu
     container.incoming_particles.resize( container.optimal_message_size );
 
     reqs.push_back(
-        comm.irecv(orig, get_tag(cid, ispc),
+        comm.irecv(orig, get_tag(tag, ispc),
           container.incoming_particles.data(),
           container.optimal_message_size)
         );
@@ -149,7 +171,10 @@ std::vector<mpi4cpp::mpi::request> Tile::recv_particle_data( mpi4cpp::mpi::commu
 }
 
 
-std::vector<mpi4cpp::mpi::request> Tile::recv_particle_extra_data( mpi4cpp::mpi::communicator& comm, int orig )
+std::vector<mpi4cpp::mpi::request> Tile::recv_particle_extra_data( 
+    mpi4cpp::mpi::communicator& comm, 
+    int orig,
+    int tag)
 {
   std::vector<mpi4cpp::mpi::request> reqs;
 
@@ -167,7 +192,7 @@ std::vector<mpi4cpp::mpi::request> Tile::recv_particle_extra_data( mpi4cpp::mpi:
       container.incoming_extra_particles.resize(extra_size);
 
       reqs.push_back(
-          comm.irecv(orig, get_extra_tag(cid, ispc),
+          comm.irecv(orig, get_extra_tag(tag, ispc),
             container.incoming_extra_particles.data(),
             extra_size)
           );

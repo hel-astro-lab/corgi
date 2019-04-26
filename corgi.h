@@ -1698,43 +1698,98 @@ class Node
 
   /// Call mpi send routines from tile for the boundary regions
   // NOTE: we bounce sending back to tile members,
-  //       this way they can be extended for different types of send.
-  void send_data(int tag)
+  //       this way methods can be extended for different types of send.
+  void send_data(int mode)
   {
-    //initialize_message_array(sent_data_messages, tag);
-    sent_data_messages[tag] = {};
-    //std::vector<mpi::request>().swap( sent_data_messages[tag] );
+    sent_data_messages[mode] = {};
 
+    
+    // re-order sends and compute mpi tags
+    std::map<int, std::vector<uint64_t> > tags;
     for(auto cid : get_boundary_tiles() ) {
       auto& tile = get_tile(cid);
       for(auto dest: tile.communication.virtual_owners) {
-        auto reqs = tile.send_data(comm, dest, tag);
-        
-        for(auto req : reqs) sent_data_messages.at(tag).push_back(req);
+        tags[dest].push_back(cid);
       }
     }
+    for(auto& elem : tags) sort(elem.second.begin(), elem.second.end());
+
+    // print
+    //for(auto& elem : tags) {
+    //  std::cout << comm.rank() << ": S:" << elem.first << " --- ";
+    //  for(auto& c : elem.second) std::cout << c << ", ";
+    //  std::cout << "\n";
+    //}
+
+    int dest;
+    uint64_t cid;
+    for(auto& elem : tags) {
+      dest = elem.first;
+      for(int i = 0; i<(int)elem.second.size(); i++) {
+        cid = elem.second[i];
+        auto& tile = get_tile(cid);
+        auto reqs = tile.send_data(comm, dest, mode, i);
+
+        for(auto req : reqs) sent_data_messages.at(mode).push_back(req);
+      }
+    }
+
+    //for(auto cid : get_boundary_tiles() ) {
+    //  auto& tile = get_tile(cid);
+    //  for(auto dest: tile.communication.virtual_owners) {
+    //    auto reqs = tile.send_data(comm, dest, mode);
+    //    
+    //    for(auto req : reqs) sent_data_messages.at(mode).push_back(req);
+    //  }
+    //}
   }
 
 
   /// Call mpi recv routines from tile for the virtual regions
   // NOTE: we bounce receiving back to tile members,
   //       this way they can be extended for different types of recv.
-  void recv_data(int tag)
+  void recv_data(int mode)
   {
-    //initialize_message_array(recv_data_messages, tag);
-    //recv_data_messages.at(tag).clear();
-    recv_data_messages[tag] = {};
-    //std::vector<mpi::request>().swap( recv_data_messages[tag] );
+    recv_data_messages[mode] = {};
 
-    //int nc = 0, nv = 0;
+    // re-order sends and compute mpi tags
+    std::map<int, std::vector<uint64_t> > tags;
     for(auto cid : get_virtuals() ) {
       auto& tile = get_tile(cid);
-      auto reqs = tile.recv_data(comm, tile.communication.owner, tag);
-
-      for(auto req : reqs) recv_data_messages.at(tag).push_back(req);
-      //nc += reqs.size();
-      //nv++;
+      tags[tile.communication.owner].push_back(cid);
     }
+    for(auto& elem : tags) sort(elem.second.begin(), elem.second.end());
+
+    // print
+    //for(auto& elem : tags) {
+    //  std::cout << comm.rank() << ": R:" << elem.first << " --- ";
+    //  for(auto& c : elem.second) std::cout << c << ", ";
+    //  std::cout << "\n";
+    //}
+
+
+    int orig;
+    uint64_t cid;
+    for(auto& elem : tags) {
+      orig = elem.first;
+      for(int i = 0; i<(int)elem.second.size(); i++) {
+        cid = elem.second[i];
+        auto& tile = get_tile(cid);
+        auto reqs = tile.recv_data(comm, orig, mode, i);
+
+        for(auto req : reqs) recv_data_messages.at(mode).push_back(req);
+      }
+    }
+
+    //int nc = 0, nv = 0;
+    //for(auto cid : get_virtuals() ) {
+    //  auto& tile = get_tile(cid);
+    //  auto reqs = tile.recv_data(comm, tile.communication.owner, mode);
+
+    //  for(auto req : reqs) recv_data_messages.at(mode).push_back(req);
+    //  //nc += reqs.size();
+    //  //nv++;
+    //}
 
     //std::cout << comm.rank() << ": recv buffer size " << nc << " nv: " << nv << "\n";
   }
@@ -1784,6 +1839,31 @@ class Node
     // how to communicate back to tile
     // storage is generally in tile
 
+    return;
+  }
+
+  uint64_t reduced_tile_id(uint64_t cid) {
+    // alternative is to reduce cid size
+    // calc rcid that is used as a tag instead
+    // optimal memory usage (no extra transfers)
+    // maximum size must be <2^21-1
+    // how to calc rcid unambiguously 
+
+    // pre-calc cid & (orig -> dest) number combination?
+    // can be done without communications since global knowledge
+      
+    // algorithm sketch
+    // calc neighbors
+
+    //left, right, up, down, front, back = 6
+    // +diags =8
+    // 3D diags =27
+    // calc center of mass tile
+    // max distance is then L/2
+
+    // only receiving needs to be unambiguous; in terms of tiles in node
+
+    return 0;
   }
 
 
