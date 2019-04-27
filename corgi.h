@@ -6,6 +6,7 @@
 // #include <fmt/ostream.h>
 
 #include <vector>
+#include <set>
 #include <algorithm>
 #include <cmath>
 #include <memory>
@@ -586,6 +587,7 @@ class Node
   // FIXME
   void create_tile(Communication& cm)
   {
+    //m_author = std::make_shared<Author>(t_author);
     auto tileptr = std::make_shared<Tile_t>();
     tileptr->load_metainfo(cm);
 
@@ -751,6 +753,7 @@ class Node
   }
 
   /// Return all local boundary tiles
+  // TODO: update this to use the internal boundary_tile_map
   std::vector<uint64_t> get_boundary_tiles(
       const bool sorted=false ) {
 
@@ -790,25 +793,41 @@ class Node
     return local;
   }
 
-
   /// return all virtual tiles around the given tile
-  std::vector<int> virtual_nhood(uint64_t cid) 
+  std::vector<uint64_t> virtual_nhood(uint64_t cid) 
   {
     auto& c = get_tile(cid);
     auto neigs = c.nhood();
-    //std::vector< corgi::internals::tuple_of<D, size_t> > neigs = c.nhood();
+
+    std::vector<uint64_t> vnhood;
+    for(auto& indx: neigs) {
+      if(_mpi_grid(indx) != comm.rank()) vnhood.push_back( id(indx) );
+    }
+
+    return vnhood;
+  }
+
+  /// return all owners of virtual tiles around the given tile
+  std::vector<int> virtual_nhood_owners(uint64_t cid) 
+  {
+    auto& c = get_tile(cid);
+    auto neigs = c.nhood();
+
     std::vector<int> virtual_owners;
     for(auto& indx: neigs) {
-
-      // Get tile id from index notation
-      //uint64_t ncid = id(indx);
-      int whoami = _mpi_grid(indx); 
-
+      int whoami = _mpi_grid(indx); // Get tile id from index notation
       if(whoami != comm.rank()) virtual_owners.push_back( whoami );
     }
 
     return virtual_owners;
   }
+
+
+  /// map of owners to exterior (=virtual) tiles
+  std::map<int, std::set<uint64_t> > virtual_tile_list;
+
+  /// map of my (local) tiles to exterior ranks
+  std::map<uint64_t, std::set<int> > boundary_tile_list;
 
 
   // /*! Analyze my local boundary tiles that will be later on
@@ -824,65 +843,128 @@ class Node
   //  * */
   void analyze_boundaries() {
 
+    virtual_tile_list.clear();
+    boundary_tile_list.clear();
+
+    // analyze all of my local tiles
     for(auto cid: get_local_tiles()) {
-      //std::cout << comm.rank() << ": ab: " << cid << "\n";
-      std::vector<int> virtual_owners = virtual_nhood(cid);
-      size_t N = virtual_owners.size();
-      //std::cout << comm.rank() << ": ab: " << cid << "N:" << N << "\n";
+      auto& c = get_tile(cid);
 
-      // If N > 0 then this is a boundary tile.
-      // other criteria could also apply but here we assume
-      // neighborhood according to spatial distance.
-      if (N > 0) {
+      // analyze c's neighborhood
+      auto neigs = c.nhood();
+      for(auto& indx: neigs) {
+        int whoami = _mpi_grid(indx); // Get tile id from index notation
 
-        /* Now we analyze `owner` vector as:
-         * - sort the vector
-         * - compute mode of the list to see who owns most of the
-         * - remove repeating elements creating a unique list. */
+        // if nbor tile is virtual
+        if(whoami != comm.rank()) {
 
-        // sort
-        std::sort( virtual_owners.begin(), virtual_owners.end() );
+          // then the local tile cid is a boundary tile to this rank (=whoami)
+          boundary_tile_list[cid].insert(whoami);
 
-        // compute mode by creating a frequency array
-        // NOTE: in case of same frequency we implicitly pick smaller rank
-        int max=0, top_owner = virtual_owners[0];
-        for(size_t i=0; i<virtual_owners.size(); i++) {
-          int co = (int)count(virtual_owners.begin(), 
-              virtual_owners.end(), 
-              virtual_owners[i]);
-          if(co > max) {      
-            max = co;
-            top_owner = virtual_owners[i];
-          }
-        } 
-
-        // remove duplicates
-        virtual_owners.erase( unique( virtual_owners.begin(), 
-              virtual_owners.end() 
-              ), virtual_owners.end() );
-
-
-        // update tile values
-        auto& c = get_tile(cid);
-        c.communication.top_virtual_owner = top_owner;
-        c.communication.communications    = virtual_owners.size();
-        c.communication.number_of_virtual_neighbors = N;
-        c.communication.virtual_owners    = virtual_owners;
-
-        if (std::find( send_queue.begin(), send_queue.end(), cid) 
-            == send_queue.end()) 
-        {
-          send_queue.push_back( cid );
-          send_queue_address.push_back( virtual_owners );
+          // and then ncid is my virtual exterior tile
+          uint64_t ncid = id(indx);
+          virtual_tile_list[whoami].insert(ncid);
         }
-      } else { // else N == 0
-        auto& c = get_tile(cid);
-        c.communication.number_of_virtual_neighbors = 0;
-        c.communication.communications              = 0;
       }
 
+      // mark completely local if no virtuals around this tile
+      // overwritten in next loop based on real values
+      // could also carry a flag through the loop above to check this...
+      c.communication.number_of_virtual_neighbors = 0;
+      c.communication.communications              = 0;
     }
+
+    // update this info into my local boundary tiles
+    for(auto&& elem : boundary_tile_list) {
+      auto& c = get_tile(elem.first);
+
+      // set into vector
+      std::vector<int> virtual_owners(elem.second.begin(), elem.second.end()); 
+
+      //c.communication.top_owner = top_owner; // can not be computed from set
+      c.communication.communications = virtual_owners.size();
+      c.communication.number_of_virtual_neighbors = virtual_owners.size(); // not same as original
+      c.communication.virtual_owners = virtual_owners;
+
+      // add to send queue
+      uint64_t cid = elem.first;
+      if (std::find( send_queue.begin(), send_queue.end(), cid) 
+            == send_queue.end()) {
+          send_queue.push_back( cid );
+          send_queue_address.push_back( virtual_owners );
+      }
+    }
+
+    //TODO: can also pre-create virtual tiles (if not existing in node yet)  
+
   }
+
+
+  //void analyze_boundaries_old() {
+
+  //  // old tile information update  
+  //  for(auto cid: get_local_tiles()) {
+  //    //std::cout << comm.rank() << ": ab: " << cid << "\n";
+  //    std::vector<int> virtual_owners = virtual_nhood_owners(cid);
+  //    size_t N = virtual_owners.size();
+  //    //std::cout << comm.rank() << ": ab: " << cid << "N:" << N << "\n";
+
+  //    // If N > 0 then this is a local boundary tile.
+  //    // other criteria could also apply but here we assume
+  //    // neighborhood according to spatial distance.
+  //    if (N > 0) {
+
+  //      /* Now we analyze `owner` vector as:
+  //       * - sort the vector
+  //       * - compute mode of the list to see who owns most of them
+  //       * - remove repeating elements creating a unique list. */
+
+  //      // sort
+  //      std::sort( virtual_owners.begin(), virtual_owners.end() );
+
+  //      // compute mode by creating a frequency array
+  //      // NOTE: in case of same frequency we implicitly pick smaller rank
+  //      int max=0, top_owner = virtual_owners[0];
+  //      for(size_t i=0; i<virtual_owners.size(); i++) {
+  //        int co = (int)count(virtual_owners.begin(), 
+  //            virtual_owners.end(), 
+  //            virtual_owners[i]);
+  //        if(co > max) {      
+  //          max = co;
+  //          top_owner = virtual_owners[i];
+  //        }
+  //      } 
+
+  //      // remove duplicates
+  //      virtual_owners.erase( unique( virtual_owners.begin(), 
+  //            virtual_owners.end() 
+  //            ), virtual_owners.end() );
+
+
+  //      // update tile values
+  //      auto& c = get_tile(cid);
+  //      c.communication.top_virtual_owner = top_owner;
+  //      c.communication.communications    = virtual_owners.size();
+  //      c.communication.number_of_virtual_neighbors = N;
+  //      c.communication.virtual_owners    = virtual_owners;
+
+  //      if (std::find( send_queue.begin(), send_queue.end(), cid) 
+  //          == send_queue.end()) 
+  //      {
+  //        send_queue.push_back( cid );
+  //        send_queue_address.push_back( virtual_owners );
+  //      }
+
+
+
+  //    } else { // else N == 0
+  //      auto& c = get_tile(cid);
+  //      c.communication.number_of_virtual_neighbors = 0;
+  //      c.communication.communications              = 0;
+  //    }
+
+  //  }
+  //}
 
 
   // /// Clear send queue, issue this only after the send has been successfully done
@@ -1017,54 +1099,72 @@ class Node
     sent_info_messages.clear();
     sent_tile_messages.clear();
 
-    for (int dest = 0; dest<comm.size(); dest++) {
-      if( dest == comm.rank() ) { continue; } // do not send to myself
+    //for (int dest = 0; dest<comm.size(); dest++) {
+    //  if( dest == comm.rank() ) { continue; } // do not send to myself
 
-      int i = 0;
-      std::vector<int> to_be_sent;
-      for(std::vector<int> address: send_queue_address) {
-        if( std::find( address.begin(),
-              address.end(),
-              dest) != address.end()) 
-        {
-          to_be_sent.push_back( i );
-        }
-        i++;
-      }
+    //  int i = 0;
+    //  std::vector<int> to_be_sent;
+    //  for(std::vector<int> address: send_queue_address) {
+    //    if( std::find( address.begin(),
+    //          address.end(),
+    //          dest) != address.end()) 
+    //    {
+    //      to_be_sent.push_back( i );
+    //    }
+    //    i++;
+    //  }
 
-      // initial message informing how many tiles are coming
-      // TODO: this whole thing could be avoided by using 
-      // MPI_Iprobe in the receiving end. Maybe...
-      auto number_of_incoming_tiles = static_cast<int>(to_be_sent.size());
+    //  // initial message informing how many tiles are coming
+    //  // TODO: this whole thing could be avoided by using 
+    //  // MPI_Iprobe in the receiving end. Maybe...
+    //  auto number_of_incoming_tiles = static_cast<int>(to_be_sent.size());
 
-      //std::cout << comm.rank() 
-      //          << " sending message to " 
-      //          << dest
-      //          << " incoming number of tiles " 
-      //          << number_of_incoming_tiles
-      //          << "\n";
+    //  //std::cout << comm.rank() 
+    //  //          << " sending message to " 
+    //  //          << dest
+    //  //          << " incoming number of tiles " 
+    //  //          << number_of_incoming_tiles
+    //  //          << "\n";
 
-      mpi::request req;
-      req = comm.isend(dest, commType::NTILES, number_of_incoming_tiles);
-      sent_info_messages.push_back( req );
+    //  mpi::request req;
+    //  req = comm.isend(dest, commType::NTILES, number_of_incoming_tiles);
+    //  sent_info_messages.push_back( req );
 
-    }
+    //}
 
     // send the real tile meta info data now
     // We optimize this by only packing the tile data
     // once, and then sending the same thing to everybody who needs it.
     // FIXME: not really...
-    int i = 0;
-    for(auto cid: send_queue) {
-      auto& tile = get_tile(cid);
-      for(int dest: send_queue_address[i]) {
+    //int i = 0;
+    //for(auto cid: send_queue) {
+    //  auto& tile = get_tile(cid);
+    //  for(int dest: send_queue_address[i]) {
+
+    //    mpi::request req;
+    //    req = comm.isend(dest, commType::TILEDATA, tile.communication);
+
+    //    sent_tile_messages.push_back( req );
+    //  }
+    //  i++;
+    //}
+
+    // send all tiles
+    for(auto&& elem : boundary_tile_list) {
+      auto& tile = get_tile(elem.first);
+
+      std::cout << comm.rank() << " sending cid message " << elem.first << " ---> ";
+
+      for(int dest : elem.second) {
+        std::cout << "," << comm.rank() << ":" << dest;
 
         mpi::request req;
         req = comm.isend(dest, commType::TILEDATA, tile.communication);
 
         sent_tile_messages.push_back( req );
       }
-      i++;
+
+      std::cout << "\n";
     }
 
   }
@@ -1113,77 +1213,126 @@ class Node
   }
 
   /// Receive incoming stuff
-  void recv_tiles() {
+  //void recv_tiles() {
 
-    recv_info_messages.clear();
+  //  recv_info_messages.clear();
+  //  recv_tile_messages.clear();
+
+  //  //size_t i = 0;
+  //  for (int source=0; source<comm.size(); source++) {
+  //    if (source == comm.rank() ) continue; // do not receive from myself
+
+  //    // communicate with how many tiles there are incoming
+
+  //    // TODO: use MPI_IProbe to check if there are 
+  //    // any messages for me instead of assuming that there is
+
+  //    // TODO: encapsulate into vector that can be received & 
+  //    // processed more later on
+
+  //    int number_of_incoming_tiles=0;
+  //    mpi::request req;
+  //    req = comm.irecv(source, commType::NTILES, number_of_incoming_tiles);
+
+  //    // TODO: Remove this code block and do in background instead
+  //    req.wait();
+  //    //recv_info_messages.push_back( req );
+
+  //    /*
+  //       fmt::print("{}: I got a message! Waiting {} tiles from {}\n",
+  //       rank, number_of_incoming_tiles, source);
+  //       */
+  //    std::cout << comm.rank()
+  //              << " I got a message! Waiting " 
+  //              << number_of_incoming_tiles << " tiles from " 
+  //              << source
+  //              << "\n";
+
+  //    // Now receive the tiles themselves
+  //    for (int ic=0; ic<number_of_incoming_tiles; ic++) {
+  //      mpi::request reqc;
+  //      Communication rcom;
+
+  //      reqc = comm.irecv(source, commType::TILEDATA, rcom);
+  //      
+  //      // TODO non blocking
+  //      reqc.wait();
+  //      recv_tile_messages.push_back( reqc );
+  //        
+  //      if(this->tiles.count(rcom.cid) == 0) { // Tile does not exist yet; create it
+  //        // TODO: Check validity of the tile better
+  //        create_tile(rcom);
+  //      } else { // Tile is already on my virtual list; update
+  //        update_tile(rcom);  
+  //      };
+
+  //      // update and make non-local virtual
+  //      //auto& new_tile = get_tile(rcom.cid);
+  //      //new_tile.communication.local = false;
+  //    }
+  //  }
+
+  //  // process all mpi requests; otherwise we leak memory
+  //  mpi::wait_all(recv_info_messages.begin(), recv_info_messages.end());
+  //  mpi::wait_all(sent_info_messages.begin(), sent_info_messages.end());
+
+  //  mpi::wait_all(recv_tile_messages.begin(), recv_tile_messages.end());
+  //  mpi::wait_all(sent_tile_messages.begin(), sent_tile_messages.end());
+
+
+
+  //  clear_send_queue();
+  //}
+
+
+  std::vector<Communication> rcoms;
+  void recv_tiles() {
     recv_tile_messages.clear();
 
-    //size_t i = 0;
-    for (int source=0; source<comm.size(); source++) {
-      if (source == comm.rank() ) continue; // do not receive from myself
+    int i = 0;
+    for(auto&& elem : virtual_tile_list) {
+      int orig = elem.first;
 
-      // communicate with how many tiles there are incoming
-
-      // TODO: use MPI_IProbe to check if there are 
-      // any messages for me instead of assuming that there is
-
-      // TODO: encapsulate into vector that can be received & 
-      // processed more later on
-
-      int number_of_incoming_tiles;
-      mpi::request req;
-      req = comm.irecv(source, commType::NTILES, number_of_incoming_tiles);
-
-      // TODO: Remove this code block and do in background instead
-      req.wait();
-      recv_info_messages.push_back( req );
-
-      /*
-         fmt::print("{}: I got a message! Waiting {} tiles from {}\n",
-         rank, number_of_incoming_tiles, source);
-         */
-      //std::cout << comm.rank()
-      //          << " I got a message! Waiting " 
-      //          << number_of_incoming_tiles << " tiles from " 
-      //          << source
-      //          << "\n";
-
-      // Now receive the tiles themselves
-      for (int ic=0; ic<number_of_incoming_tiles; ic++) {
+      std::cout << comm.rank() << " receiving from "<<  elem.first << " <--- ";
+      for(uint64_t cid : elem.second) {
         mpi::request reqc;
+
+        //rcoms.emplace_back();
         Communication rcom;
-
-        reqc = comm.irecv(source, commType::TILEDATA, rcom);
+        rcoms.push_back(rcom);
+        std::cout << "," << comm.rank() << ":" << cid << "(" << rcoms.size()<<")" ;
+        reqc = comm.irecv(orig, commType::TILEDATA, rcoms.at(i) );
         
-        // TODO non blocking
-        reqc.wait();
         recv_tile_messages.push_back( reqc );
-          
-        if(this->tiles.count(rcom.cid) == 0) { // Tile does not exist yet; create it
-          // TODO: Check validity of the tile better
-          create_tile(rcom);
-        } else { // Tile is already on my virtual list; update
-          update_tile(rcom);  
-        };
+        i++;
+      }
 
-        // update and make non-local virtual
-        //auto& new_tile = get_tile(rcom.cid);
-        //new_tile.communication.local = false;
+      std::cout << "\n";
+    }
+
+    std::cout << comm.rank() << " waiting...\n";
+
+    // process all mpi requests; otherwise we leak memory
+    mpi::wait_all(recv_tile_messages.begin(), recv_tile_messages.end());
+    std::cout << comm.rank() << " unpacking...\n";
+
+    // unpack here
+    for(auto rcom : rcoms) {
+      if(this->tiles.count(rcom.cid) == 0) { // Tile does not exist yet; create it
+        // TODO: Check validity of the tile better
+        create_tile(rcom);
+      } else { // Tile is already on my virtual list; update
+        update_tile(rcom);  
       }
     }
 
-    // process all mpi requests; otherwise we leak memory
-    mpi::wait_all(recv_info_messages.begin(), recv_info_messages.end());
-    mpi::wait_all(sent_info_messages.begin(), sent_info_messages.end());
+    std::cout << comm.rank() << " waiting sents...\n";
 
-    mpi::wait_all(recv_tile_messages.begin(), recv_tile_messages.end());
+    // wait rest of messages too
     mpi::wait_all(sent_tile_messages.begin(), sent_tile_messages.end());
 
-
-
-    clear_send_queue();
+    std::cout << comm.rank() << " done with sents...\n";
   }
-
 
 
   // Decide who to adopt
@@ -1553,6 +1702,10 @@ class Node
 
     // global progress
     _mpi_grid = std::move(new_mpi_grid);
+
+    // TODO: run analyze_boundaries automatically here to keep 
+    //       virtual_tile_list and boundary_tile_list up-to-date.
+    //       They are needed e.g. in get_boundary_tiles.
 
     return;
   }
