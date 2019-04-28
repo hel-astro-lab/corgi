@@ -1153,10 +1153,10 @@ class Node
     for(auto&& elem : boundary_tile_list) {
       auto& tile = get_tile(elem.first);
 
-      std::cout << comm.rank() << " sending cid message " << elem.first << " ---> ";
+      //std::cout << comm.rank() << " sending cid message " << elem.first << " ---> ";
 
       for(int dest : elem.second) {
-        std::cout << "," << comm.rank() << ":" << dest;
+        //std::cout << "," << comm.rank() << ":" << dest;
 
         mpi::request req;
         req = comm.isend(dest, commType::TILEDATA, tile.communication);
@@ -1164,7 +1164,7 @@ class Node
         sent_tile_messages.push_back( req );
       }
 
-      std::cout << "\n";
+      //std::cout << "\n";
     }
 
   }
@@ -1293,28 +1293,27 @@ class Node
     for(auto&& elem : virtual_tile_list) {
       int orig = elem.first;
 
-      std::cout << comm.rank() << " receiving from "<<  elem.first << " <--- ";
+      //std::cout << comm.rank() << " receiving from "<<  elem.first << " <--- ";
       for(uint64_t cid : elem.second) {
         mpi::request reqc;
 
-        //rcoms.emplace_back();
-        Communication rcom;
-        rcoms.push_back(rcom);
-        std::cout << "," << comm.rank() << ":" << cid << "(" << rcoms.size()<<")" ;
+        rcoms.emplace_back();
+        //std::cout << "," << comm.rank() << ":" << cid << "(" << rcoms.size()<<")" ;
         reqc = comm.irecv(orig, commType::TILEDATA, rcoms.at(i) );
+        reqc.wait();
         
         recv_tile_messages.push_back( reqc );
         i++;
       }
 
-      std::cout << "\n";
+      //std::cout << "\n";
     }
 
-    std::cout << comm.rank() << " waiting...\n";
+    //std::cout << comm.rank() << " waiting...\n";
 
     // process all mpi requests; otherwise we leak memory
     mpi::wait_all(recv_tile_messages.begin(), recv_tile_messages.end());
-    std::cout << comm.rank() << " unpacking...\n";
+    //std::cout << comm.rank() << " unpacking...\n";
 
     // unpack here
     for(auto rcom : rcoms) {
@@ -1326,12 +1325,12 @@ class Node
       }
     }
 
-    std::cout << comm.rank() << " waiting sents...\n";
+    //std::cout << comm.rank() << " waiting sents...\n";
 
     // wait rest of messages too
     mpi::wait_all(sent_tile_messages.begin(), sent_tile_messages.end());
 
-    std::cout << comm.rank() << " done with sents...\n";
+    //std::cout << comm.rank() << " done with sents...\n";
   }
 
 
