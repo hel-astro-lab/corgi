@@ -1136,6 +1136,7 @@ class Node
     // We optimize this by only packing the tile data
     // once, and then sending the same thing to everybody who needs it.
     // FIXME: not really...
+    //
     //int i = 0;
     //for(auto cid: send_queue) {
     //  auto& tile = get_tile(cid);
@@ -1300,7 +1301,10 @@ class Node
         rcoms.emplace_back();
         //std::cout << "," << comm.rank() << ":" << cid << "(" << rcoms.size()<<")" ;
         reqc = comm.irecv(orig, commType::TILEDATA, rcoms.at(i) );
-        reqc.wait();
+        reqc.wait(); // FIXME: have to wait because emplace_back might trigger a re-allocation;
+                     // this leads to different memory location and incorrect pointer 
+                     // for the incoming message. Can be maybe solved by reserving the
+                     // vector beforehand
         
         recv_tile_messages.push_back( reqc );
         i++;
