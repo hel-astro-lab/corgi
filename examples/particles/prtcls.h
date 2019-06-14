@@ -76,7 +76,7 @@ class Tile : public corgi::Tile<2> {
   void delete_transferred_particles();
 
   /// get particles flowing into this tile
-  void get_incoming_particles(corgi::Node<2>& grid);
+  void get_incoming_particles(corgi::Grid<2>& grid);
 
   /// pack particles for MPI message
   void pack_outgoing_particles();

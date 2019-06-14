@@ -39,7 +39,7 @@
 #endif
 
 
-// TODO remove double definition in Node (done for python bindings)
+// TODO remove double definition in Grid (done for python bindings)
 // struct globalflags {
 //     static bool master;
 // };

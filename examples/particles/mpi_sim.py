@@ -79,7 +79,7 @@ def loadMpiXStrides(n):
                 n.set_mpi_grid(i, j, val)
     n.bcast_mpi_grid()
 
-# Visualize current cell ownership on node
+# Visualize current cell ownership on grid
 def plotNode(ax, n, conf):
     tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
 
@@ -159,16 +159,16 @@ class Particles:
 
         self.wgt = []
 
-def get_particles(node, conf, ip):
+def get_particles(grid, conf, ip):
     prtcl = Particles()
     prtcl.clear()
 
     for i in range(conf.Nx):
         for j in range(conf.Ny):
             for k in range(conf.Nz):
-                if node.get_mpi_grid(i,j) == node.rank():
-                    cid = node.id(i,j)
-                    c = node.get_tile(cid)
+                if grid.get_mpi_grid(i,j) == grid.rank():
+                    cid = grid.id(i,j)
+                    c = grid.get_tile(cid)
 
                     x, y, z, ux, uy, uz, wgt = get_particles_from_tile(c, ip)
 
@@ -231,9 +231,9 @@ def plotMesh(ax, n, conf, downsample=0):
 
 
 
-def spatialLoc(node, Ncoords, Mcoords, conf):
+def spatialLoc(grid, Ncoords, Mcoords, conf):
 
-    #node coordinates
+    #grid coordinates
     i, j    = Ncoords 
     Nx      = conf.Nx
     Ny      = conf.Ny
@@ -245,8 +245,8 @@ def spatialLoc(node, Ncoords, Mcoords, conf):
     NzMesh = conf.NzMesh
 
     #grid spacing
-    xmin = node.get_xmin()
-    ymin = node.get_ymin()
+    xmin = grid.get_xmin()
+    ymin = grid.get_ymin()
 
     dx = 1.0 #conf.dx
     dy = 1.0 #conf.dy
@@ -282,7 +282,7 @@ def initialize_tile(c, i, j, n, conf):
     c.set_tile_maxs(maxs[0:2])
 
 
-#load tiles into each node
+#load tiles into each grid
 def load_tiles(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
@@ -293,22 +293,22 @@ def load_tiles(n, conf):
 
                 initialize_tile(c, i, j, n, conf)
 
-                #add it to the node
+                #add it to the grid
                 n.add_tile(c, (i,j)) 
 
 
 #inject plasma into (individual) cells
-def inject(node, ffunc, conf):
+def inject(grid, ffunc, conf):
 
     #loop over all *local* cells
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
-            if node.get_mpi_grid(i,j) == node.rank():
+    for i in range(grid.get_Nx()):
+        for j in range(grid.get_Ny()):
+            if grid.get_mpi_grid(i,j) == grid.rank():
                 #print("creating ({},{})".format(i,j))
 
                 #get cell & its content
-                cid    = node.id(i,j)
-                c      = node.get_tile(cid) #get cell ptr
+                cid    = grid.id(i,j)
+                c      = grid.get_tile(cid) #get cell ptr
 
                 # inject particles
                 for ispcs in range(conf.Nspecies):
@@ -318,7 +318,7 @@ def inject(node, ffunc, conf):
                         for m in range(conf.NyMesh):
                             for l in range(conf.NxMesh):
                                 #print(" sub mesh: ({},{},{})".format(l,m,n))
-                                xloc = spatialLoc(node, (i,j), (l,m,n), conf)
+                                xloc = spatialLoc(grid, (i,j), (l,m,n), conf)
 
                                 for ip in range(conf.ppc):
                                     x0, u0 = ffunc(xloc, ispcs, conf)
@@ -415,47 +415,47 @@ if __name__ == "__main__":
     #axs.append( plt.subplot(gs[1]) )
     
     
-    #setup node
+    #setup grid
     conf = Conf()
     conf.update_bbox()
     
-    node = pycorgi.twoD.Node( conf.Nx, conf.Ny ) 
-    node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+    grid = pycorgi.twoD.Grid( conf.Nx, conf.Ny ) 
+    grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
     
-    loadMpiRandomly(node)
-    #loadMpiXStrides(node)
+    loadMpiRandomly(grid)
+    #loadMpiXStrides(grid)
 
-    load_tiles(node, conf)
-    inject(node, filler, conf)
+    load_tiles(grid, conf)
+    inject(grid, filler, conf)
     
     # Path to be created 
-    if node.master:
+    if grid.master:
         if not os.path.exists( conf.outdir):
             os.makedirs(conf.outdir)
     
     pusher = pyprtcls.Pusher()
     
     #static setup; communicate neighbor info once
-    node.analyze_boundaries()
-    node.send_tiles()
-    node.recv_tiles()
-    initialize_virtuals(node, conf)
+    grid.analyze_boundaries()
+    grid.send_tiles()
+    grid.recv_tiles()
+    initialize_virtuals(grid, conf)
 
-    #plotNode(axs[0], node, conf)
-    plotMesh(axs[0], node, conf)
-    saveVisz(0, node, conf)
+    #plotNode(axs[0], grid, conf)
+    plotMesh(axs[0], grid, conf)
+    saveVisz(0, grid, conf)
 
     for lap in range(1, 101):
         print("---lap: {}".format(lap))
 
         if (lap % 1 == 0):
-            #plotNode(axs[0], node, conf)
-            plotMesh(axs[0], node, conf)
-            saveVisz(lap, node, conf)
+            #plotNode(axs[0], grid, conf)
+            plotMesh(axs[0], grid, conf)
+            saveVisz(lap, grid, conf)
     
         #move particles
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             pusher.solve(tile)
 
 
@@ -463,45 +463,45 @@ if __name__ == "__main__":
         # communication
 
         #local particle exchange (independent)
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             tile.check_outgoing_particles()
 
         # global mpi exchange (independent)
-        for cid in node.get_boundary_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_boundary_tiles():
+            tile = grid.get_tile(cid)
             tile.pack_outgoing_particles()
 
         # MPI global exchange
         # transfer primary and extra data
-        node.send_data(0) #(indepdendent)
-        node.send_data(1) #(indepdendent)
+        grid.send_data(0) #(indepdendent)
+        grid.send_data(1) #(indepdendent)
 
-        node.recv_data(0) #(indepdendent)
-        node.recv_data(1) #(indepdendent)
+        grid.recv_data(0) #(indepdendent)
+        grid.recv_data(1) #(indepdendent)
 
-        node.wait_data(0) #(indepdendent)
-        node.wait_data(1) #(indepdendent)
+        grid.wait_data(0) #(indepdendent)
+        grid.wait_data(1) #(indepdendent)
 
 
         # global unpacking (independent)
-        for cid in node.get_virtual_tiles(): 
-            tile = node.get_tile(cid)
+        for cid in grid.get_virtual_tiles(): 
+            tile = grid.get_tile(cid)
             tile.unpack_incoming_particles()
             tile.check_outgoing_particles()
 
         # transfer local + global
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
-            tile.get_incoming_particles(node)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
+            tile.get_incoming_particles(grid)
 
         # delete local transferred particles
-        for cid in node.get_local_tiles():
-            tile = node.get_tile(cid)
+        for cid in grid.get_local_tiles():
+            tile = grid.get_tile(cid)
             tile.delete_transferred_particles()
 
-        for cid in node.get_virtual_tiles(): 
-            tile = node.get_tile(cid)
+        for cid in grid.get_virtual_tiles(): 
+            tile = grid.get_tile(cid)
             tile.delete_all_particles()
 
 

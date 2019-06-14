@@ -81,7 +81,7 @@ def loadMpiXStrides(n):
                 n.set_mpi_grid(i, j, val)
     n.bcast_mpi_grid()
 
-# Visualize current cell ownership on node
+# Visualize current cell ownership on grid
 def plotNode(ax, n, conf, mpigrid=False):
 
     tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
@@ -108,8 +108,8 @@ def plotNode(ax, n, conf, mpigrid=False):
         tmp_grid2 = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
         for i in range(n.get_Nx()):
             for j in range(n.get_Ny()):
-                tmp_grid2[i,j] = node.get_mpi_grid(i,j)
-                #print("{}: val={}".format(node.rank(), node.get_mpi_grid(i,j)))
+                tmp_grid2[i,j] = grid.get_mpi_grid(i,j)
+                #print("{}: val={}".format(grid.rank(), grid.get_mpi_grid(i,j)))
 
         #for i in range(n.get_Nx()):
         #    for j in range(n.get_Ny()):
@@ -172,7 +172,7 @@ def get_mpi_grid(n, conf):
     tmp = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
-            tmp[i,j] = node.get_mpi_grid(i,j)
+            tmp[i,j] = grid.get_mpi_grid(i,j)
     return tmp
 
 def get_work_grid(n, conf):
@@ -180,7 +180,7 @@ def get_work_grid(n, conf):
     tmp = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
-            tmp[i,j] = node.get_work_grid(i,j)
+            tmp[i,j] = grid.get_work_grid(i,j)
     return tmp
 
 def analyze(n, f5, lap, conf):
@@ -204,7 +204,7 @@ def plotWork(ax, n, conf):
     tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
-            tmp_grid[i,j] = node.get_work_grid(i,j)
+            tmp_grid[i,j] = grid.get_work_grid(i,j)
 
     #print("{}: min/max work {}/{}".format(n.rank(), np.min(tmp_grid), np.max(tmp_grid)))
 
@@ -218,7 +218,7 @@ def plotWork(ax, n, conf):
            )
 
 
-#load tiles into each node
+#load tiles into each grid
 def load_tiles(n, conf):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
@@ -232,17 +232,17 @@ def load_tiles(n, conf):
 
 
 #inject plasma into (individual) cells
-def inject(node, ffunc, conf):
+def inject(grid, ffunc, conf):
 
     #loop over all *local* cells
-    for i in range(node.get_Nx()):
-        for j in range(node.get_Ny()):
-            if node.get_mpi_grid(i,j) == node.rank():
+    for i in range(grid.get_Nx()):
+        for j in range(grid.get_Ny()):
+            if grid.get_mpi_grid(i,j) == grid.rank():
                 #print("creating ({},{})".format(i,j))
 
                 #get cell & its content
-                cid    = node.id(i,j)
-                c      = node.get_tile(cid) #get cell ptr
+                cid    = grid.id(i,j)
+                c      = grid.get_tile(cid) #get cell ptr
 
                 # inject particles
                 for ispcs in range(conf.Nspecies):
@@ -252,7 +252,7 @@ def inject(node, ffunc, conf):
                         for m in range(conf.NyMesh):
                             for l in range(conf.NxMesh):
                                 #print(" sub mesh: ({},{},{})".format(l,m,n))
-                                xloc = spatialLoc(node, (i,j), (l,m,n), conf)
+                                xloc = spatialLoc(grid, (i,j), (l,m,n), conf)
 
                                 for ip in range(conf.ppc):
                                     x0, u0 = ffunc(xloc, ispcs, conf)
@@ -311,16 +311,16 @@ def add_virtual_work(n, lap, conf):
 
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
-            oldw = node.get_work_grid(i,j)
+            oldw = grid.get_work_grid(i,j)
 
             #rvec2 = (i-ic)**2.0 + (j-jc)**2.0
             rvec2 = (i-ic)**2.0 #+ (j-jc)**2.0
             sig = 100.0
             nw = 4.0*np.exp(-rvec2/sig)
 
-            node.set_work_grid(i,j, nw)
+            grid.set_work_grid(i,j, nw)
 
-            #node.set_work_grid(i,j, 1.0)
+            #grid.set_work_grid(i,j, 1.0)
 
 
 
@@ -394,27 +394,27 @@ if __name__ == "__main__":
         axs.append( plt.subplot(gs[2]) )
     
 
-    #setup node
+    #setup grid
     conf = Conf(args.Nx, args.Ny, args.Nz, args.Nr)
     conf.update_bbox()
     
-    node = pycorgi.Node( conf.Nx, conf.Ny ) 
-    node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+    grid = pycorgi.Grid( conf.Nx, conf.Ny ) 
+    grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
     
-    loadMpiRandomly(node)
-    #loadMpiXStrides(node)
+    loadMpiRandomly(grid)
+    #loadMpiXStrides(grid)
 
-    load_tiles(node, conf)
+    load_tiles(grid, conf)
 
     # Path to be created 
-    if node.master:
+    if grid.master:
         if not os.path.exists( conf.outdir):
             os.makedirs(conf.outdir)
     MPI.COMM_WORLD.barrier()
     
 
     ################################################## 
-    rank = str(node.rank())
+    rank = str(grid.rank())
     f5 = h5py.File(conf.outdir+"/run-"+rank+".h5", "w")
 
     Nsamples = args.Nt + 1
@@ -427,80 +427,80 @@ if __name__ == "__main__":
     ################################################## 
 
     if do_plots:
-        plotNode(axs[0], node, conf)
-        plotNode(axs[1], node, conf, mpigrid=True)
-        plotWork(axs[2], node, conf)
-        saveVisz(-1, node, conf)
+        plotNode(axs[0], grid, conf)
+        plotNode(axs[1], grid, conf, mpigrid=True)
+        plotWork(axs[2], grid, conf)
+        saveVisz(-1, grid, conf)
     
-    node.analyze_boundaries()
-    node.send_tiles()
-    node.recv_tiles()
-    initialize_virtuals(node, conf)
-    node.allgather_work_grid()
+    grid.analyze_boundaries()
+    grid.send_tiles()
+    grid.recv_tiles()
+    initialize_virtuals(grid, conf)
+    grid.allgather_work_grid()
 
-    add_virtual_work(node, 0, conf)
+    add_virtual_work(grid, 0, conf)
 
-    analyze(node, f5, 0, conf)
+    analyze(grid, f5, 0, conf)
     if do_plots:
-        plotNode(axs[0], node, conf)
-        plotNode(axs[1], node, conf, mpigrid=True)
-        plotWork(axs[2], node, conf)
-        saveVisz(0, node, conf)
+        plotNode(axs[0], grid, conf)
+        plotNode(axs[1], grid, conf, mpigrid=True)
+        plotWork(axs[2], grid, conf)
+        saveVisz(0, grid, conf)
 
 
     ##################################################
     for lap in range(1, Nsamples):
         print("---lap: {}".format(lap))
 
-        add_virtual_work(node, lap, conf)
-        #node.update_work()
-        #node.allgather_work_grid()
+        add_virtual_work(grid, lap, conf)
+        #grid.update_work()
+        #grid.allgather_work_grid()
         MPI.COMM_WORLD.barrier()
 
         if False:
             # corgi loadbalance 
             #print("adoption_council")
-            node.adoption_council()
+            grid.adoption_council()
             #print("adopt")
-            node.adopt()
+            grid.adopt()
             #print("communicate_adoptions")
-            node.communicate_adoptions()
+            grid.communicate_adoptions()
             #print("erase_virtuals")
-            node.erase_virtuals()
+            grid.erase_virtuals()
         else:
             print("adoption_council2")
-            node.adoption_council2()
+            grid.adoption_council2()
             print("erase_virtuals")
-            node.erase_virtuals()
+            grid.erase_virtuals()
 
 
         print("analyze_boundaries")
-        node.analyze_boundaries()
+        grid.analyze_boundaries()
         print("send_tiles")
-        node.send_tiles()
+        grid.send_tiles()
         print("recv_tiles")
-        node.recv_tiles()
+        grid.recv_tiles()
         print("initialize")
-        initialize_virtuals(node, conf)
+        initialize_virtuals(grid, conf)
 
-        analyze(node, f5, lap, conf)
+        analyze(grid, f5, lap, conf)
 
         if (lap % 20 == 0):
             if do_plots:
-                plotNode(axs[0], node, conf)
-                plotNode(axs[1], node, conf, mpigrid=True)
-                plotWork(axs[2], node, conf)
-                saveVisz(lap, node, conf)
+                plotNode(axs[0], grid, conf)
+                plotNode(axs[1], grid, conf, mpigrid=True)
+                plotWork(axs[2], grid, conf)
+                saveVisz(lap, grid, conf)
             f5.flush()
 
     
 
     f5.close()
 
-    #plotNode(axs[0], node, conf)
-    #plotNode(axs[1], node, conf, mpigrid=True)
-    #plotWork(axs[2], node, conf)
+    #plotNode(axs[0], grid, conf)
+    #plotNode(axs[1], grid, conf, mpigrid=True)
+    #plotWork(axs[2], grid, conf)
 
-    #saveVisz(, node, conf)
+    #saveVisz(, grid, conf)
 
 

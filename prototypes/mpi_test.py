@@ -4,7 +4,7 @@ from mpi4py import MPI
 
 import conf
 from corgi import cappend, cdel 
-from corgi import cell, node
+from corgi import cell, grid
 from corgi import Grid
 
 
@@ -202,7 +202,7 @@ conf.NxCell = 2
 conf.NyCell = 2
 
 
-n = node(rank, conf.Nx, conf.Ny)
+n = grid(rank, conf.Nx, conf.Ny)
 np.random.seed(4)
 
 # Compute (initial) total work in order to balance and my personal effort needed
@@ -224,7 +224,7 @@ if master:
 n.mpiGrid = comm.bcast( n.mpiGrid, root=master_rank)
     
 
-#load cells into local node
+#load cells into local grid
 for i in range(conf.Nx):
     for j in range(conf.Ny):
         if n.mpiGrid[i,j] == rank:
@@ -385,7 +385,7 @@ def communicate_cells():
 
 
 # Decide who to adopt
-# Every node has their own council, although they should come
+# Every grid has their own council, although they should come
 # to same conclusion (hopefully)
 def adoption_council():
 

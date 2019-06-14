@@ -19,12 +19,12 @@ class Neighboords(unittest.TestCase):
 
 
     def test_nhood_1d(self):
-        node = pycorgi.oneD.Node(self.Nx)
+        grid = pycorgi.oneD.Grid(self.Nx)
 
-        if node.master():
-            for i in range(node.get_Nx()):
+        if grid.master():
+            for i in range(grid.get_Nx()):
                 c = pycorgi.oneD.Tile()
-                node.add_tile(c, (i, ) ) 
+                grid.add_tile(c, (i, ) ) 
 
         ref_nhood = [
         [(2,), (1,)],
@@ -32,22 +32,22 @@ class Neighboords(unittest.TestCase):
         [(1,), (0,)],
         ]
 
-        for i in range(node.get_Nx()):
-            cid = node.id(i)
-            c = node.get_tile(cid)
+        for i in range(grid.get_Nx()):
+            cid = grid.id(i)
+            c = grid.get_tile(cid)
             self.assertCountEqual( c.nhood(), ref_nhood[i] )
             
 
 
 
     def test_nhood_2d(self):
-        node = pycorgi.twoD.Node(self.Nx, self.Ny)
+        grid = pycorgi.twoD.Grid(self.Nx, self.Ny)
 
-        if node.master():
-            for i in range(node.get_Nx()):
-                for j in range(node.get_Ny()):
+        if grid.master():
+            for i in range(grid.get_Nx()):
+                for j in range(grid.get_Ny()):
                     c = pycorgi.twoD.Tile()
-                    node.add_tile(c, (i,j) ) 
+                    grid.add_tile(c, (i,j) ) 
 
         ref_nhood = [
             [(2, 2), (2, 0), (2, 1), (0, 2), (0, 1), (1, 2), (1, 0), (1, 1)],
@@ -63,11 +63,11 @@ class Neighboords(unittest.TestCase):
 
 
         q = 0
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
                 #print("ij", i,j)
-                cid = node.id(i,j)
-                c = node.get_tile(cid)
+                cid = grid.id(i,j)
+                c = grid.get_tile(cid)
                 #print(c.nhood())
                 self.assertCountEqual( c.nhood(), ref_nhood[q] )
 
@@ -75,26 +75,26 @@ class Neighboords(unittest.TestCase):
 
 
     def skip_test_nhood_3d(self):
-        node = pycorgi.threeD.Node(self.Nx, self.Ny, self.Nz)
+        grid = pycorgi.threeD.Grid(self.Nx, self.Ny, self.Nz)
 
-        if node.master():
-            for i in range(node.get_Nx()):
-                for j in range(node.get_Ny()):
-                    for k in range(node.get_Nz()):
+        if grid.master():
+            for i in range(grid.get_Nx()):
+                for j in range(grid.get_Ny()):
+                    for k in range(grid.get_Nz()):
                         c = pycorgi.threeD.Tile()
-                        node.add_tile(c, (i,j,k) ) 
+                        grid.add_tile(c, (i,j,k) ) 
 
         # TODO: add reference
         #ref_nhood = [
         #]
 
         q = 0
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
-                for k in range(node.get_Nz()):
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                for k in range(grid.get_Nz()):
                     print("ijk", i,j,k)
-                    cid = node.id(i,j,k)
-                    c = node.get_tile(cid)
+                    cid = grid.id(i,j,k)
+                    c = grid.get_tile(cid)
                     print(c.nhood())
                     #self.assertCountEqual( c.nhood(), ref_nhood[q] )
 

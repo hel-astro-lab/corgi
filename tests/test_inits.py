@@ -25,51 +25,51 @@ class Initialization(unittest.TestCase):
     zmax = 5.0
 
     def test_oneD(self):
-        node = pycorgi.oneD.Node(self.Nx)
-        self.assertEqual(node.get_Nx(), self.Nx)
+        grid = pycorgi.oneD.Grid(self.Nx)
+        self.assertEqual(grid.get_Nx(), self.Nx)
 
-        node.set_grid_lims(self.xmin, self.xmax)
-        self.assertEqual( node.get_xmin(), self.xmin )
-        self.assertEqual( node.get_xmax(), self.xmax )
+        grid.set_grid_lims(self.xmin, self.xmax)
+        self.assertEqual( grid.get_xmin(), self.xmin )
+        self.assertEqual( grid.get_xmax(), self.xmax )
 
 
     def test_oneD2(self):
-        node = pycorgi.oneD.Node(self.Nx, self.Ny)
-        self.assertEqual(node.get_Nx(), self.Nx)
-        self.assertEqual(node.get_Ny(), 1)
+        grid = pycorgi.oneD.Grid(self.Nx, self.Ny)
+        self.assertEqual(grid.get_Nx(), self.Nx)
+        self.assertEqual(grid.get_Ny(), 1)
 
-        node.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
-        self.assertEqual( node.get_xmin(), self.xmin )
-        self.assertEqual( node.get_xmax(), self.xmax )
+        grid.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
+        self.assertEqual( grid.get_xmin(), self.xmin )
+        self.assertEqual( grid.get_xmax(), self.xmax )
 
-        self.assertEqual( node.get_ymin(), 0.0 )
-        self.assertEqual( node.get_ymax(), 1.0 )
+        self.assertEqual( grid.get_ymin(), 0.0 )
+        self.assertEqual( grid.get_ymax(), 1.0 )
 
     def test_oneD3(self):
-        node = pycorgi.oneD.Node(self.Nx, self.Ny, self.Nz)
-        self.assertEqual(node.get_Nx(), self.Nx)
-        self.assertEqual(node.get_Ny(), 1)
-        self.assertEqual(node.get_Nz(), 1)
+        grid = pycorgi.oneD.Grid(self.Nx, self.Ny, self.Nz)
+        self.assertEqual(grid.get_Nx(), self.Nx)
+        self.assertEqual(grid.get_Ny(), 1)
+        self.assertEqual(grid.get_Nz(), 1)
 
         #TODO set_grid_lims
     
     def test_twoD2(self):
-        node = pycorgi.twoD.Node(self.Nx, self.Ny)
-        self.assertEqual(node.get_Nx(), self.Nx)
-        self.assertEqual(node.get_Ny(), self.Ny)
+        grid = pycorgi.twoD.Grid(self.Nx, self.Ny)
+        self.assertEqual(grid.get_Nx(), self.Nx)
+        self.assertEqual(grid.get_Ny(), self.Ny)
 
-        node.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
-        self.assertEqual( node.get_xmin(), self.xmin )
-        self.assertEqual( node.get_xmax(), self.xmax )
+        grid.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
+        self.assertEqual( grid.get_xmin(), self.xmin )
+        self.assertEqual( grid.get_xmax(), self.xmax )
 
-        self.assertEqual( node.get_ymin(), self.ymin )
-        self.assertEqual( node.get_ymax(), self.ymax )
+        self.assertEqual( grid.get_ymin(), self.ymin )
+        self.assertEqual( grid.get_ymax(), self.ymax )
 
     def test_twoD3(self):
-        node = pycorgi.twoD.Node(self.Nx, self.Ny, self.Nz)
-        self.assertEqual(node.get_Nx(), self.Nx)
-        self.assertEqual(node.get_Ny(), self.Ny)
-        self.assertEqual(node.get_Nz(), 1)
+        grid = pycorgi.twoD.Grid(self.Nx, self.Ny, self.Nz)
+        self.assertEqual(grid.get_Nx(), self.Nx)
+        self.assertEqual(grid.get_Ny(), self.Ny)
+        self.assertEqual(grid.get_Nz(), 1)
 
         #TODO set_grid_lims
 

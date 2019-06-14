@@ -64,10 +64,10 @@ class Mesh {
 
 
 /// Simulation grid
-//class Grid : public corgi::Node {
+//class Grid : public corgi::Grid {
 //
 //  public:
-//    Grid(size_t nx, size_t ny) : corgi::Node(nx, ny) { }
+//    Grid(size_t nx, size_t ny) : corgi::Grid(nx, ny) { }
 //
 //    ~Grid() { };
 //
@@ -108,7 +108,7 @@ class Tile : public corgi::Tile<2> {
 
     Mesh& get_new_data();
 
-    void update_boundaries(corgi::Node<2>& grid);
+    void update_boundaries(corgi::Grid<2>& grid);
 
     /// step forward
     void cycle() { data.cycle(); }

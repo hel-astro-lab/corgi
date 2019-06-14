@@ -39,7 +39,7 @@ def loadMpiStrides(n):
     n.bcast_mpi_grid()
 
 
-#load cells into each node
+#load cells into each grid
 def loadCells(n):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
@@ -79,7 +79,7 @@ def imshow(ax, grid, xmin, xmax, ymin, ymax):
               )
 
 
-# Visualize current cell ownership on node
+# Visualize current cell ownership on grid
 def plot_node(ax, n, lap):
     tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
 
@@ -181,40 +181,40 @@ if __name__ == "__main__":
 
 
     ################################################## 
-    #init node
-    node = pycorgi.Node()
-    node.initMpi()
+    #init grid
+    grid = pycorgi.Grid()
+    grid.initMpi()
 
-    loadMpiStrides(node)
-    loadCells(node)
+    loadMpiStrides(grid)
+    loadCells(grid)
 
     # Path to be created 
     fpath = "out/"
-    if node.master:
+    if grid.master:
         if not os.path.exists(fpath):
             os.makedirs(fpath)
 
 
     ################################################## 
     #visualize as a test
-    plot_node(axs[0], node, 0)
+    plot_node(axs[0], grid, 0)
 
 
     ################################################## 
     # test step
-    node.analyzeBoundaryCells()
-    print("{}: send queue        : {}".format(node.rank, node.send_queue))
-    print("{}: send queue address: {}".format(node.rank, node.send_queue_address))
+    grid.analyzeBoundaryCells()
+    print("{}: send queue        : {}".format(grid.rank, grid.send_queue))
+    print("{}: send queue address: {}".format(grid.rank, grid.send_queue_address))
 
-    node.communicateSendCells()
-    node.communicateRecvCells()
-    plot_node(axs[0], node, 1)
-
-
+    grid.communicateSendCells()
+    grid.communicateRecvCells()
+    plot_node(axs[0], grid, 1)
 
 
 
 
-    node.finalizeMpi()
+
+
+    grid.finalizeMpi()
 
 

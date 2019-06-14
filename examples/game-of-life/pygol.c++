@@ -61,7 +61,7 @@ PYBIND11_MODULE(pyca, m) {
 
   // --------------------------------------------------
   // Grid bindings
-  //py::object corgi_node = (py::object) py::module::import("corgi").attr("Node");
+  //py::object corgi_node = (py::object) py::module::import("corgi").attr("Grid");
   //py::class_<gol::Grid>(m, "Grid", corgi_node)
   //  .def(py::init<size_t, size_t>());
   //  // .def("pet_shop",   &gol::Grid::pet_shop);

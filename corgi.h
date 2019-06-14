@@ -28,7 +28,7 @@
 namespace corgi {
 
 
-/*! Individual node object that stores patches of grid in it.
+/*! Individual grid object that stores patches of grid in it.
  *
  * See:
  * - https://github.com/maddouri/hyper_array/
@@ -36,7 +36,7 @@ namespace corgi {
 */
 
 template<std::size_t D>
-class Node
+class Grid
 {
 
 
@@ -140,16 +140,16 @@ class Node
   mpi::communicator comm;
     
   /// Uninitialized dimension lengths
-  Node() :
+  Grid() :
     env(),
     comm()
   {};
 
   /// copy-constructor
-  //Node(const Node& /*other*/) {};
+  //Grid(const Grid& /*other*/) {};
   
   /// move constructor
-  //Node(Node&& /*other*/) {}; // use std::move()
+  //Grid(Node&& /*other*/) {}; // use std::move()
    
   /// set dimensions during construction time
   template<
@@ -158,7 +158,7 @@ class Node
                corgi::internals::are_integral<DimensionLength...>::value, void
     >
   > 
-  Node(DimensionLength... dimension_lengths) :
+  Grid(DimensionLength... dimension_lengths) :
     _lengths {{static_cast<size_type>(dimension_lengths)...}},
     _mpi_grid(dimension_lengths...),
     _work_grid(dimension_lengths...),
@@ -170,13 +170,13 @@ class Node
   /*
    * try specializing handy shortcuts to symmetrize construction always assuming 3D input
   template< typename = corgi::internals::enable_if_t< (D == 1), void > > 
-  Node(size_t i, size_t j, size_t k) :
+  Grid(size_t i, size_t j, size_t k) :
     _lengths {{i}},
     _mpi_grid({{i}})
   { }
 
   template< typename = corgi::internals::enable_if_t< (D == 2), void > > 
-  Node(size_t i, size_t j, size_t k) :
+  Grid(size_t i, size_t j, size_t k) :
     _lengths {{i, j}},
     _mpi_grid({{i, j}})
   { }
@@ -184,7 +184,7 @@ class Node
   
 
   /// Deallocate and free everything
-  virtual ~Node() = default;
+  virtual ~Grid() = default;
 
   public:
   
@@ -192,7 +192,7 @@ class Node
   // assignments
     
   /// copy assignment
-  //Node& operator=(const Node& other)
+  //Grid& operator=(const Grid& other)
   //{
   //  _lengths = other._lengths;
 
@@ -201,7 +201,7 @@ class Node
 
 
   /// move assignment
-  //Node& operator=(const Node&& other)
+  //Grid& operator=(const Grid&& other)
   //{
   //  _lengths   = std::move(other._lengths);
 
@@ -513,7 +513,7 @@ class Node
   // --------------------------------------------------
   // Tile addition etc. manipulation
     
-  /// Add local tile to the node
+  /// Add local tile to the grid
   // void add_tile(Tile& tile) {
   //
   // FIXME
@@ -591,7 +591,7 @@ class Node
     auto tileptr = std::make_shared<Tile_t>();
     tileptr->load_metainfo(cm);
 
-    // additional node info
+    // additional grid info
     tileptr->lengths = _lengths;
     // owner
     // local
@@ -895,7 +895,7 @@ class Node
       }
     }
 
-    //TODO: can also pre-create virtual tiles (if not existing in node yet)  
+    //TODO: can also pre-create virtual tiles (if not existing in grid yet)  
 
   }
 
@@ -1340,7 +1340,7 @@ class Node
 
   // Decide who to adopt
   //
-  // Every node has their own council, but they should all come to same 
+  // Every grid has their own council, but they should all come to same 
   // conclusion.
   
   private:
@@ -2017,13 +2017,13 @@ class Node
     // calc center of mass tile
     // max distance is then L/2
 
-    // only receiving needs to be unambiguous; in terms of tiles in node
+    // only receiving needs to be unambiguous; in terms of tiles in grid
 
     return 0;
   }
 
 
-}; // end of Node class
+}; // end of Grid class
 
 } // end of corgi namespace
 

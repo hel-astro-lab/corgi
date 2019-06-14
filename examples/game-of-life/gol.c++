@@ -55,7 +55,7 @@ Mesh& Tile::get_new_data() {
 
 
 /// Update boundary/halo regions from neighbors
-void Tile::update_boundaries(corgi::Node<2>& grid) 
+void Tile::update_boundaries(corgi::Grid<2>& grid) 
 {
   int ito, jto, ifro, jfro;
   Tileptr tpr;

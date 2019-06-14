@@ -37,7 +37,7 @@ print corgi.grid
 # load nodes
 nodes = []
 for rank in range(corgi.Nrank):
-    n = corgi.node(rank)
+    n = corgi.grid(rank)
 
     for i in range(corgi.Nx):
         for j in range(corgi.Ny):

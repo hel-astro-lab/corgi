@@ -52,7 +52,7 @@ def imshow(ax,
 
 
 
-# Visualize current cell ownership on node
+# Visualize current cell ownership on grid
 def plotNode(ax, n, conf):
     tmp_grid = np.ones( (n.get_Nx(), n.get_Ny()) ) * -1.0
     
@@ -242,7 +242,7 @@ def loadMpiXStrides(n):
     n.bcast_mpi_grid()
 
 
-#load tiles into each node
+#load tiles into each grid
 def load_tiles(n):
     for i in range(n.get_Nx()):
         for j in range(n.get_Ny()):
@@ -308,7 +308,7 @@ if __name__ == "__main__":
     
     
     
-    #setup node
+    #setup grid
     conf = {
             "Nx"     : 5,
             "Ny"     : 5,
@@ -317,23 +317,23 @@ if __name__ == "__main__":
             "dir"    : "out",
             }
     
-    node = pycorgi.twoD.Node( conf["Nx"], conf["Ny"] ) 
-    node.set_grid_lims(0.0, 1.0, 0.0, 1.0)
+    grid = pycorgi.twoD.Grid( conf["Nx"], conf["Ny"] ) 
+    grid.set_grid_lims(0.0, 1.0, 0.0, 1.0)
     
-    load_tiles(node)
-    randomInitialize(node, conf)
+    load_tiles(grid)
+    randomInitialize(grid, conf)
     
     # Path to be created 
-    if node.master:
+    if grid.master:
         if not os.path.exists( conf["dir"]):
             os.makedirs(conf["dir"])
     
     sol = pyca.Solver()
     
     
-    plotNode(axs[0], node, conf)
-    plotMesh(axs[1], node, conf)
-    saveVisz(0, node, conf)
+    plotNode(axs[0], grid, conf)
+    plotMesh(axs[1], grid, conf)
+    saveVisz(0, grid, conf)
     
 
 
@@ -341,33 +341,33 @@ if __name__ == "__main__":
         print("---lap: {}".format(lap))
     
         #update halo regions
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
-                c = node.get_tile(i,j) #get cell ptr
-                c.update_boundaries(node)
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                c = grid.get_tile(i,j) #get cell ptr
+                c.update_boundaries(grid)
 
         #progress one time step
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
-                c = node.get_tile(i,j) #get cell ptr
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                c = grid.get_tile(i,j) #get cell ptr
                 sol.solve(c)
 
         #cycle everybody in time
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
-                c = node.get_tile(i,j) #get cell ptr
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
+                c = grid.get_tile(i,j) #get cell ptr
                 c.cycle()
 
 
         if (lap % 10 == 0):
-            plotNode(axs[0], node, conf)
-            plotMesh(axs[1], node, conf)
-            saveVisz(lap, node, conf)
+            plotNode(axs[0], grid, conf)
+            plotMesh(axs[1], grid, conf)
+            saveVisz(lap, grid, conf)
         
 
-    #plotNode(axs[0], node, conf)
-    #plotMesh2(axs[1], node, conf)
-    #saveVisz(1, node, conf)
+    #plotNode(axs[0], grid, conf)
+    #plotMesh2(axs[1], grid, conf)
+    #saveVisz(1, grid, conf)
     
     
     

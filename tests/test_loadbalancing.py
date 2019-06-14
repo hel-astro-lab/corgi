@@ -75,56 +75,56 @@ class Neighboords(unittest.TestCase):
         except:
             pass
 
-        node = pycorgi.twoD.Node(conf.Nx, conf.Ny)
-        node.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
+        grid = pycorgi.twoD.Grid(conf.Nx, conf.Ny)
+        grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         # one tile surrounded by other rank
         refGrid = np.ones((conf.Nx, conf.Ny), np.int)
         refGrid[1,1] = 0
 
         #setup grid configuration
-        if node.master():
-            for j in range(node.get_Ny()):
-                for i in range(node.get_Nx()):
+        if grid.master():
+            for j in range(grid.get_Ny()):
+                for i in range(grid.get_Nx()):
                     val = refGrid[i,j]
-                    node.set_mpi_grid(i, j, val )
-        node.bcast_mpi_grid()
+                    grid.set_mpi_grid(i, j, val )
+        grid.bcast_mpi_grid()
 
         # add tiles
-        rank = node.rank()
-        for i in range(node.get_Nx()):
-            for j in range(node.get_Ny()):
+        rank = grid.rank()
+        for i in range(grid.get_Nx()):
+            for j in range(grid.get_Ny()):
                 if rank == refGrid[i,j]:
                     c = pycorgi.twoD.Tile()
-                    node.add_tile(c, (i,j) ) 
+                    grid.add_tile(c, (i,j) ) 
 
         try:
-            plotNode(axs[0], node, conf)
-            saveVisz(0, node, conf)
+            plotNode(axs[0], grid, conf)
+            saveVisz(0, grid, conf)
         except:
             pass
 
-        if node.size() > 1:
-            node.analyze_boundaries()
-            #print(node.rank(), ":sq ", node.send_queue)
-            #print(node.rank(), ":sqa", node.send_queue_address)
+        if grid.size() > 1:
+            grid.analyze_boundaries()
+            #print(grid.rank(), ":sq ", grid.send_queue)
+            #print(grid.rank(), ":sqa", grid.send_queue_address)
 
-        if node.size() > 1:
-            node.send_tiles()
-            node.recv_tiles()
+        if grid.size() > 1:
+            grid.send_tiles()
+            grid.recv_tiles()
 
         try:
-            plotNode(axs[0], node, conf)
-            saveVisz(1, node, conf)
+            plotNode(axs[0], grid, conf)
+            saveVisz(1, grid, conf)
         except:
             pass
 
-        cur = readGrid(node, conf)
+        cur = readGrid(grid, conf)
         #print(cur)
 
-        if node.size() > 1:
-            for i in range(node.get_Nx()):
-                for j in range(node.get_Ny()):
+        if grid.size() > 1:
+            for i in range(grid.get_Nx()):
+                for j in range(grid.get_Ny()):
                     self.assertEqual(refGrid[i,j], cur[i,j])
 
 

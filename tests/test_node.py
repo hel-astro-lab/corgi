@@ -25,25 +25,25 @@ class Initialization(unittest.TestCase):
     ymax = 3.0
 
     def setUp(self):
-        self.node = pycorgi.Node(self.Nx, self.Ny)
+        self.grid = pycorgi.Grid(self.Nx, self.Ny)
 
-        self.node.set_grid_lims(self.xmin, self.xmax,
+        self.grid.set_grid_lims(self.xmin, self.xmax,
                               self.ymin, self.ymax
                               )
 
     def test_size(self):
-        nx = self.node.get_Nx()
-        ny = self.node.get_Ny()
+        nx = self.grid.get_Nx()
+        ny = self.grid.get_Ny()
 
-        self.assertEqual(self.node.get_Nx(), self.Nx)
-        self.assertEqual(self.node.get_Ny(), self.Ny)
+        self.assertEqual(self.grid.get_Nx(), self.Nx)
+        self.assertEqual(self.grid.get_Ny(), self.Ny)
 
     def test_physicalSize(self):
-        self.assertEqual( self.node.get_xmin(), self.xmin )
-        self.assertEqual( self.node.get_xmax(), self.xmax )
+        self.assertEqual( self.grid.get_xmin(), self.xmin )
+        self.assertEqual( self.grid.get_xmax(), self.xmax )
 
-        self.assertEqual( self.node.get_ymin(), self.ymin )
-        self.assertEqual( self.node.get_ymax(), self.ymax )
+        self.assertEqual( self.grid.get_ymin(), self.ymin )
+        self.assertEqual( self.grid.get_ymax(), self.ymax )
 
 
 def tile_id(i,j,Nx,Ny):
@@ -62,8 +62,8 @@ class Parallel(unittest.TestCase):
 
 
     def setUp(self):
-        self.node = pycorgi.Node(self.Nx, self.Ny)
-        self.node.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
+        self.grid = pycorgi.Grid(self.Nx, self.Ny)
+        self.grid.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
 
     def test_mpiInitialization(self):
 
@@ -73,45 +73,45 @@ class Parallel(unittest.TestCase):
         self.refGrid[5:10,  0:10] = 2
         self.refGrid[5:10, 10:15] = 3
 
-        if self.node.master():
-            for j in range(self.node.get_Ny()):
-                for i in range(self.node.get_Nx()):
+        if self.grid.master():
+            for j in range(self.grid.get_Ny()):
+                for i in range(self.grid.get_Nx()):
                     val = self.refGrid[i,j]
-                    self.node.set_mpi_grid(i, j, val )
-        self.node.bcast_mpi_grid()
+                    self.grid.set_mpi_grid(i, j, val )
+        self.grid.bcast_mpi_grid()
 
-        for j in range(self.node.get_Ny()):
-            for i in range(self.node.get_Nx()):
-                val = self.node.get_mpi_grid(i,j)
+        for j in range(self.grid.get_Ny()):
+            for i in range(self.grid.get_Nx()):
+                val = self.grid.get_mpi_grid(i,j)
                 self.assertEqual(val, self.refGrid[i,j])
 
     def test_cid(self):
-        for j in range(self.node.get_Ny()):
-            for i in range(self.node.get_Nx()):
-                cid = self.node.id(i, j)
-                cidr = tile_id( i, j, self.node.get_Nx(), self.node.get_Ny() )
+        for j in range(self.grid.get_Ny()):
+            for i in range(self.grid.get_Nx()):
+                cid = self.grid.id(i, j)
+                cidr = tile_id( i, j, self.grid.get_Nx(), self.grid.get_Ny() )
                 self.assertEqual(cid, cidr)
 
     def test_loading(self):
 
         #load tiles
         k = 0
-        for j in range(self.node.get_Ny()):
-            for i in range(self.node.get_Nx()):
+        for j in range(self.grid.get_Ny()):
+            for i in range(self.grid.get_Nx()):
                 c = pycorgi.Tile()
-                self.node.add_tile(c, (i,j) ) 
+                self.grid.add_tile(c, (i,j) ) 
                 k += 1
         self.assertEqual( k, self.Nx*self.Ny )
 
-        cids = self.node.get_tile_ids() 
+        cids = self.grid.get_tile_ids() 
         self.assertEqual( len(cids), self.Nx*self.Ny )
 
         #now try and get then back
         for cid in cids:
-            c = self.node.get_tile(cid)
+            c = self.grid.get_tile(cid)
 
             self.assertEqual(c.cid,   cid)
-            self.assertEqual(c.communication.owner, self.node.rank())
+            self.assertEqual(c.communication.owner, self.grid.rank())
             #self.assertEqual(c.communication.local, True)
 
             #ci = c.i
@@ -135,35 +135,35 @@ class Parallel2(unittest.TestCase):
     def test_send_recv(self):
 
         #set up
-        node = pycorgi.Node(self.Nx, self.Ny)
-        node.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
+        grid = pycorgi.Grid(self.Nx, self.Ny)
+        grid.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
 
         # divide into upper and lower halfs
         #refGrid = np.zeros((self.Nx, self.Ny), np.int)
         #refGrid[:, 0] = 0
         #refGrid[:, 1] = 1
 
-        #if node.master():
-        #    for j in range(node.get_Ny()):
-        #        for i in range(node.get_Nx()):
+        #if grid.master():
+        #    for j in range(grid.get_Ny()):
+        #        for i in range(grid.get_Nx()):
         #            val = refGrid[i,j]
-        #            node.set_mpi_grid(i, j, val )
-        #node.bcast_mpi_grid()
+        #            grid.set_mpi_grid(i, j, val )
+        #grid.bcast_mpi_grid()
 
         #load tiles
-        if node.rank() == 0:
-            for j in range(node.get_Ny()):
-                for i in range(node.get_Nx()):
-                    #if node.get_mpi_grid(i,j) == 0:
+        if grid.rank() == 0:
+            for j in range(grid.get_Ny()):
+                for i in range(grid.get_Nx()):
+                    #if grid.get_mpi_grid(i,j) == 0:
                     c = pycorgi.Tile()
-                    node.add_tile(c, (i,j) ) 
+                    grid.add_tile(c, (i,j) ) 
 
         #0 sends
-        if node.rank() == 0 and node.size() > 1:
+        if grid.rank() == 0 and grid.size() > 1:
             #load cell with info
-            cid = node.id(2, 1)
+            cid = grid.id(2, 1)
             #print("0:  send............cid:", cid)
-            c = node.get_tile(cid)
+            c = grid.get_tile(cid)
 
             #communication object
             c.communication.top_virtual_owner           = 10
@@ -176,20 +176,20 @@ class Parallel2(unittest.TestCase):
 
 
             #get the same cell and send
-            node.send_tile(cid, 1)
+            grid.send_tile(cid, 1)
 
 
         #1 does nothing but receives
-        if node.rank() == 1 and node.size() > 1:
-            node.recv_tile(0)
+        if grid.rank() == 1 and grid.size() > 1:
+            grid.recv_tile(0)
             #print("1 recv............")
         
-        #node.wait()
+        #grid.wait()
 
         #assert that we received the tile properly
-        if node.rank() == 1 and node.size() > 1:
-            cid = node.id(2, 1)
-            c = node.get_tile(cid)
+        if grid.rank() == 1 and grid.size() > 1:
+            cid = grid.id(2, 1)
+            c = grid.get_tile(cid)
             #print("1:  cid=", cid)
 
             #cid

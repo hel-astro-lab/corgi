@@ -68,7 +68,7 @@ if __name__ == "__main__":
     
     
     
-    #setup node
+    #setup grid
     conf = {
             "Nx"     : 10,
             "Ny"     : 10,
@@ -77,61 +77,61 @@ if __name__ == "__main__":
             "dir"    : "out2",
             }
     
-    node = pycorgi.twoD.Node( conf["Nx"], conf["Ny"] ) 
-    node.set_grid_lims(0.0, 1.0, 0.0, 1.0)
+    grid = pycorgi.twoD.Grid( conf["Nx"], conf["Ny"] ) 
+    grid.set_grid_lims(0.0, 1.0, 0.0, 1.0)
     
-    loadMpiRandomly(node)
-    #loadMpiXStrides(node)
+    loadMpiRandomly(grid)
+    #loadMpiXStrides(grid)
 
-    load_tiles(node)
-    randomInitialize(node, conf)
+    load_tiles(grid)
+    randomInitialize(grid, conf)
     
     # Path to be created 
-    if node.master:
+    if grid.master:
         if not os.path.exists( conf["dir"]):
             os.makedirs(conf["dir"])
     
     sol = pyca.Solver()
     
     #static setup; communicate neighbor info once
-    node.analyze_boundaries()
-    node.send_tiles()
-    node.recv_tiles()
-    initialize_virtuals(node, conf)
+    grid.analyze_boundaries()
+    grid.send_tiles()
+    grid.recv_tiles()
+    initialize_virtuals(grid, conf)
 
-    plotNode(axs[0], node, conf)
-    saveVisz(0, node, conf)
+    plotNode(axs[0], grid, conf)
+    saveVisz(0, grid, conf)
 
-    #node.send_data(0)
-    #node.recv_data(0)
+    #grid.send_data(0)
+    #grid.recv_data(0)
 
 
     for lap in range(1, 301):
         print("---lap: {}".format(lap))
 
         #send/recv boundaries
-        node.send_data(0)
-        node.recv_data(0)
-        node.wait_data(0)
+        grid.send_data(0)
+        grid.recv_data(0)
+        grid.wait_data(0)
 
         if (lap % 10 == 0):
-            plotNode(axs[0], node, conf)
-            plotMesh(axs[1], node, conf)
-            saveVisz(lap, node, conf)
+            plotNode(axs[0], grid, conf)
+            plotMesh(axs[1], grid, conf)
+            saveVisz(lap, grid, conf)
 
         #update halo regions
-        for cid in node.get_local_tiles():
-            c = node.get_tile(cid)
-            c.update_boundaries(node)
+        for cid in grid.get_local_tiles():
+            c = grid.get_tile(cid)
+            c.update_boundaries(grid)
 
         #progress one time step
-        for cid in node.get_local_tiles():
-            c = node.get_tile(cid)
+        for cid in grid.get_local_tiles():
+            c = grid.get_tile(cid)
             sol.solve(c)
 
         #cycle everybody in time
-        for cid in node.get_local_tiles():
-            c = node.get_tile(cid)
+        for cid in grid.get_local_tiles():
+            c = grid.get_tile(cid)
             c.cycle()
 
     

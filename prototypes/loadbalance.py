@@ -144,9 +144,9 @@ class cell:
 
 
 
-#Main computational node holding cells and 
+#Main computational grid holding cells and 
 # dealing with inter-cell communications 
-class node:
+class grid:
 
     #cells    = np.array([], dtype=np.object) #, copy=True)
     #virtuals = np.array([], dtype=np.object) #, copy=True)
@@ -200,7 +200,7 @@ class node:
         return local
 
     
-    # Get ALL virtual neighbors relevant for the current node
+    # Get ALL virtual neighbors relevant for the current grid
     def get_all_virtuals(self):
         neighbors = []
         locals    = []
@@ -352,7 +352,7 @@ class node:
 
     def adopt(self, rindx):
 
-        print "node {} got adopt command for ({},{})".format(self.rank, rindx[0],rindx[1])
+        print "grid {} got adopt command for ({},{})".format(self.rank, rindx[0],rindx[1])
 
         #print "to be loopped:", self.adopted_index
         for c in self.virtuals:
@@ -433,29 +433,29 @@ def cdel(arr, i):
 def communicate(nodes):
 
     #pack for sending
-    for node in nodes:
-        node.pack_virtuals()
+    for grid in nodes:
+        grid.pack_virtuals()
 
-    for node in nodes:
-        node.clear_virtuals()
+    for grid in nodes:
+        grid.clear_virtuals()
     
     #receive
-    for node in nodes:
-        for k, c in enumerate(node.send_queue_cells):
-            for o in node.send_queue_address[k]:
+    for grid in nodes:
+        for k, c in enumerate(grid.send_queue_cells):
+            for o in grid.send_queue_address[k]:
                 #print "sending {} to {}".format(k, o)
                 nodes[o].virtuals = cappend( nodes[o].virtuals, c )
 
     #clear queue lists
-    for node in nodes:
-        node.clear_queue()
+    for grid in nodes:
+        grid.clear_queue()
 
 
 def adopt(nodes):
 
     #rank virtuals for adoption
-    #for node in nodes:
-    #    node.rank_virtuals()
+    #for grid in nodes:
+    #    grid.rank_virtuals()
 
     #randomly pick who gets to adopt
     nodes[ np.random.randint(Nrank) ].rank_virtuals()
@@ -464,13 +464,13 @@ def adopt(nodes):
 
     #communicate adoptions and judge if they are good
     adopted = []
-    for node in nodes:
-        print node.rank, " has purgelist of ", node.purged
-        for (indx, parent) in zip( node.adopted_index, node.adopted_parent):
+    for grid in nodes:
+        print grid.rank, " has purgelist of ", grid.purged
+        for (indx, parent) in zip( grid.adopted_index, grid.adopted_parent):
             if not(indx in adopted):
-                print "{} adopting ({},{}) from {}".format(node.rank, indx[1], indx[0], parent)
+                print "{} adopting ({},{}) from {}".format(grid.rank, indx[1], indx[0], parent)
 
-                node.adopt(indx)
+                grid.adopt(indx)
 
                 #print "     0", nodes[0].purged
                 #print "     1", nodes[1].purged
@@ -484,16 +484,16 @@ def adopt(nodes):
                 #print "    +1", nodes[1].purged
                 #print "    +2", nodes[2].purged
 
-                grid[indx] = node.rank
+                grid[indx] = grid.rank
                 adopted.append( indx )
-        #print node.rank, " after has purgelist of ", node.purged
+        #print grid.rank, " after has purgelist of ", grid.purged
 
     #print " "
 
     #purge adopted children
-    for node in nodes:
-        print "purging...", node.rank, " cells:", node.purged
-        node.purge()
+    for grid in nodes:
+        print "purging...", grid.rank, " cells:", grid.purged
+        grid.purge()
 
 
 
@@ -550,7 +550,7 @@ def main():
 
     # load nodes
     for rank in range(Nrank):
-        n = node(rank)
+        n = grid(rank)
     
         for i in range(Nx):
             for j in range(Ny):

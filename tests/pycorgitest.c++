@@ -59,7 +59,7 @@ PYBIND11_MODULE(pycorgitest, m) {
 
   // --------------------------------------------------
   // Grid bindings
-  //py::object corgi_node = (py::object) py::module::import("pycorgi.twoD").attr("Node");
+  //py::object corgi_node = (py::object) py::module::import("pycorgi.twoD").attr("Grid");
   //py::class_<corgitest::Grid>(m, "Grid", corgi_node)
   //  .def(py::init<size_t, size_t>())
   //  .def("pet_shop",   &corgitest::Grid::pet_shop);

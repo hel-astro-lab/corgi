@@ -44,49 +44,49 @@ auto declare_node(
     const std::string& pyclass_name) 
 {
 
-    py::class_<corgi::Node<D> > corgi_node(m, pyclass_name.c_str());
+    py::class_<corgi::Grid<D> > corgi_node(m, pyclass_name.c_str());
 
     corgi_node
-        .def("rank",      [](corgi::Node<D>& n) { return n.comm.rank(); })
-        .def("size",      [](corgi::Node<D>& n) { return n.comm.size(); })
-        .def("master",    [](corgi::Node<D>& n) { return n.comm.rank() == 0; })
-        .def("add_tile",              &corgi::Node<D>::add_tile, py::keep_alive<1,2>())
-        .def("replace_tile",          &corgi::Node<D>::replace_tile, py::keep_alive<1,2>())
-        .def("get_tile_ids",           &corgi::Node<D>::get_tile_ids,
+        .def("rank",      [](corgi::Grid<D>& n) { return n.comm.rank(); })
+        .def("size",      [](corgi::Grid<D>& n) { return n.comm.size(); })
+        .def("master",    [](corgi::Grid<D>& n) { return n.comm.rank() == 0; })
+        .def("add_tile",              &corgi::Grid<D>::add_tile, py::keep_alive<1,2>())
+        .def("replace_tile",          &corgi::Grid<D>::replace_tile, py::keep_alive<1,2>())
+        .def("get_tile_ids",           &corgi::Grid<D>::get_tile_ids,
                 py::arg("sorted") = true)
-        .def("get_tile", (std::shared_ptr<corgi::Tile<D>> (corgi::Node<D>::*)(const uint64_t)) &corgi::Node<D>::get_tileptr)
+        .def("get_tile", (std::shared_ptr<corgi::Tile<D>> (corgi::Grid<D>::*)(const uint64_t)) &corgi::Grid<D>::get_tileptr)
 
-        .def("get_local_tiles",             &corgi::Node<D>::get_local_tiles,
+        .def("get_local_tiles",             &corgi::Grid<D>::get_local_tiles,
                  py::arg("sorted") = true)
-        .def("get_virtual_tiles",          &corgi::Node<D>::get_virtuals,
+        .def("get_virtual_tiles",          &corgi::Grid<D>::get_virtuals,
                  py::arg("sorted") = true)
-        .def("get_boundary_tiles",          &corgi::Node<D>::get_boundary_tiles,
+        .def("get_boundary_tiles",          &corgi::Grid<D>::get_boundary_tiles,
                  py::arg("sorted") = true)
 
-        .def("is_local",              &corgi::Node<D>::is_local)
-        .def("analyze_boundaries", &corgi::Node<D>::analyze_boundaries)
+        .def("is_local",              &corgi::Grid<D>::is_local)
+        .def("analyze_boundaries", &corgi::Grid<D>::analyze_boundaries)
 
         // // communication wrappers
-        .def("send_tile",               &corgi::Node<D>::send_tile)
-        .def("recv_tile",               &corgi::Node<D>::recv_tile)
-        .def_readwrite("send_queue",         &corgi::Node<D>::send_queue)
-        .def_readwrite("send_queue_address", &corgi::Node<D>::send_queue_address)
-        .def("bcast_mpi_grid",          &corgi::Node<D>::bcast_mpi_grid)
-        .def("allgather_work_grid",     &corgi::Node<D>::allgather_work_grid)
-        .def("update_work",             &corgi::Node<D>::update_work)
+        .def("send_tile",               &corgi::Grid<D>::send_tile)
+        .def("recv_tile",               &corgi::Grid<D>::recv_tile)
+        .def_readwrite("send_queue",         &corgi::Grid<D>::send_queue)
+        .def_readwrite("send_queue_address", &corgi::Grid<D>::send_queue_address)
+        .def("bcast_mpi_grid",          &corgi::Grid<D>::bcast_mpi_grid)
+        .def("allgather_work_grid",     &corgi::Grid<D>::allgather_work_grid)
+        .def("update_work",             &corgi::Grid<D>::update_work)
 
-        .def("send_tiles",              &corgi::Node<D>::send_tiles)
-        .def("recv_tiles",              &corgi::Node<D>::recv_tiles)
-        .def("send_data",               &corgi::Node<D>::send_data)
-        .def("recv_data",               &corgi::Node<D>::recv_data)
-        .def("wait_data",               &corgi::Node<D>::wait_data)
+        .def("send_tiles",              &corgi::Grid<D>::send_tiles)
+        .def("recv_tiles",              &corgi::Grid<D>::recv_tiles)
+        .def("send_data",               &corgi::Grid<D>::send_data)
+        .def("recv_data",               &corgi::Grid<D>::recv_data)
+        .def("wait_data",               &corgi::Grid<D>::wait_data)
 
         // adoption routines
-        .def("adopt",                   &corgi::Node<D>::adopt)
-        .def("adoption_council",        &corgi::Node<D>::adoption_council)
-        .def("adoption_council2",       &corgi::Node<D>::adoption_council2)
-        .def("communicate_adoptions",   &corgi::Node<D>::communicate_adoptions)
-        .def("erase_virtuals",          &corgi::Node<D>::erase_virtuals);
+        .def("adopt",                   &corgi::Grid<D>::adopt)
+        .def("adoption_council",        &corgi::Grid<D>::adoption_council)
+        .def("adoption_council2",       &corgi::Grid<D>::adoption_council2)
+        .def("communicate_adoptions",   &corgi::Grid<D>::communicate_adoptions)
+        .def("erase_virtuals",          &corgi::Grid<D>::erase_virtuals);
 
 
   return corgi_node;
@@ -120,7 +120,7 @@ PYBIND11_MODULE(pycorgi, m_base) {
       
     py::module m_1d = m_base.def_submodule("oneD", "1D specializations");
 
-    auto n1 = declare_node<1>(m_1d, "Node");
+    auto n1 = declare_node<1>(m_1d, "Grid");
 
     n1.def(py::init<size_t>());
 
@@ -128,68 +128,68 @@ PYBIND11_MODULE(pycorgi, m_base) {
     n1.def(py::init( [](size_t nx, size_t /*ny*/) {
       //assert(ny == 1);
 
-      return new corgi::Node<1>(nx);}));
+      return new corgi::Grid<1>(nx);}));
     n1.def(py::init( [](size_t nx, size_t /*ny*/, size_t /*nz*/) {
       // assert(ny == 1);
       // assert(nz == 1);
-      return new corgi::Node<1>(nx);}));
+      return new corgi::Grid<1>(nx);}));
 
     //n1.def(py::init([](size_t i, size_t j) {
     //    return std::unique_ptr<Example>(new Example(arg));
-    n1.def("get_tile", [](corgi::Node<1> &n, size_t i, size_t /*j*/){
+    n1.def("get_tile", [](corgi::Grid<1> &n, size_t i, size_t /*j*/){
         return n.get_tileptr_ind(i); });
-    n1.def("get_tile", [](corgi::Node<1> &n, size_t i, size_t /*j*/, size_t /*k*/){
+    n1.def("get_tile", [](corgi::Grid<1> &n, size_t i, size_t /*j*/, size_t /*k*/){
         return n.get_tileptr_ind(i); });
 
-    n1.def("get_Nx",   [](corgi::Node<1> &n){ return n.get_Nx(); })
-      .def("get_xmin", [](corgi::Node<1> &n){ return n.get_xmin(); })
-      .def("get_xmax", [](corgi::Node<1> &n){ return n.get_xmax(); });
-      //.def("get_tile", [](corgi::Node<1> &n, size_t i){ 
+    n1.def("get_Nx",   [](corgi::Grid<1> &n){ return n.get_Nx(); })
+      .def("get_xmin", [](corgi::Grid<1> &n){ return n.get_xmin(); })
+      .def("get_xmax", [](corgi::Grid<1> &n){ return n.get_xmax(); });
+      //.def("get_tile", [](corgi::Grid<1> &n, size_t i){ 
       //    return n.get_tileptr( std::make_tuple<size_t>(i) ); })
 
-    n1.def("get_Ny",   [](corgi::Node<1> &){ return 1; })
-      .def("get_Nz",   [](corgi::Node<1> &){ return 1; });
+    n1.def("get_Ny",   [](corgi::Grid<1> &){ return 1; })
+      .def("get_Nz",   [](corgi::Grid<1> &){ return 1; });
 
-    n1.def("get_ymin", [](corgi::Node<1> & ){ return 0.0; })
-      .def("get_ymax", [](corgi::Node<1> & ){ return 1.0; });
+    n1.def("get_ymin", [](corgi::Grid<1> & ){ return 0.0; })
+      .def("get_ymax", [](corgi::Grid<1> & ){ return 1.0; });
 
     n1
-      .def("set_grid_lims", [](corgi::Node<1> &n, double xmin, double xmax)
+      .def("set_grid_lims", [](corgi::Grid<1> &n, double xmin, double xmax)
           { n.set_grid_lims({{xmin}}, {{xmax}}); });
 
     n1
-      .def("set_grid_lims", [](corgi::Node<1> &n, double xmin, double xmax,
+      .def("set_grid_lims", [](corgi::Grid<1> &n, double xmin, double xmax,
                                                 double /*ymin*/, double /*ymax*/
             )
           { n.set_grid_lims({{xmin}}, {{xmax}}); });
 
     // mpi grid py bindings
     n1
-      .def("get_mpi_grid", [](corgi::Node<1> &n, const size_t i){ 
+      .def("get_mpi_grid", [](corgi::Grid<1> &n, const size_t i){ 
           const auto val = n.py_get_mpi_grid(i); 
           return val;
           })
-      .def("get_mpi_grid", [](corgi::Node<1> &n, const size_t i, const size_t ){ 
+      .def("get_mpi_grid", [](corgi::Grid<1> &n, const size_t i, const size_t ){ 
           const auto val = n.py_get_mpi_grid(i); 
           return val;
           })
-      .def("set_mpi_grid", [](corgi::Node<1> &n, size_t i, int val){ n.py_set_mpi_grid(val, i); })
-      .def("set_mpi_grid", [](corgi::Node<1> &n, size_t i, size_t /*j*/, int val){ n.py_set_mpi_grid(val, i); });
+      .def("set_mpi_grid", [](corgi::Grid<1> &n, size_t i, int val){ n.py_set_mpi_grid(val, i); })
+      .def("set_mpi_grid", [](corgi::Grid<1> &n, size_t i, size_t /*j*/, int val){ n.py_set_mpi_grid(val, i); });
 
     // work grid py bindings
     n1
-      .def("get_work_grid", [](corgi::Node<1> &n, const size_t i){ 
+      .def("get_work_grid", [](corgi::Grid<1> &n, const size_t i){ 
           const auto val = n.py_get_work_grid(i); 
           return val;
           })
-      .def("get_work_grid", [](corgi::Node<1> &n, const size_t i, const size_t ){ 
+      .def("get_work_grid", [](corgi::Grid<1> &n, const size_t i, const size_t ){ 
           const auto val = n.py_get_work_grid(i); 
           return val;
           })
-      .def("set_work_grid", [](corgi::Node<1> &n, size_t i, double val){ n.py_set_work_grid(val, i); })
-      .def("set_work_grid", [](corgi::Node<1> &n, size_t i, size_t /*j*/, double val){ n.py_set_work_grid(val, i); })
+      .def("set_work_grid", [](corgi::Grid<1> &n, size_t i, double val){ n.py_set_work_grid(val, i); })
+      .def("set_work_grid", [](corgi::Grid<1> &n, size_t i, size_t /*j*/, double val){ n.py_set_work_grid(val, i); })
 
-      .def("id", [](const corgi::Node<1> &n, const size_t i){ return n.id(i);});
+      .def("id", [](const corgi::Grid<1> &n, const size_t i){ return n.id(i);});
       
 
     //--------------------------------------------------
@@ -204,46 +204,46 @@ PYBIND11_MODULE(pycorgi, m_base) {
     py::module m_2d = m_base.def_submodule("twoD", "2D specializations");
 
 
-    auto n2 = declare_node<2>(m_2d, "Node");
+    auto n2 = declare_node<2>(m_2d, "Grid");
     n2.def(py::init<size_t, size_t>());
 
     n2.def(py::init( [](size_t nx, size_t ny, size_t /*nz*/) {
       //assert(nz == 1);
-      return new corgi::Node<2>(nx, ny);}));
+      return new corgi::Grid<2>(nx, ny);}));
 
-    n2.def("get_Nx",   [](corgi::Node<2> &n){ return n.get_Nx(); })
-      .def("get_Ny",   [](corgi::Node<2> &n){ return n.get_Ny(); });
+    n2.def("get_Nx",   [](corgi::Grid<2> &n){ return n.get_Nx(); })
+      .def("get_Ny",   [](corgi::Grid<2> &n){ return n.get_Ny(); });
 
-    n2.def("get_Nz",   [](corgi::Node<2> &){  return 1; });
+    n2.def("get_Nz",   [](corgi::Grid<2> &){  return 1; });
 
-    n2.def("get_xmin", [](corgi::Node<2> &n){ return n.get_xmin(); })
-      .def("get_xmax", [](corgi::Node<2> &n){ return n.get_xmax(); })
-      .def("get_ymin", [](corgi::Node<2> &n){ return n.get_ymin(); })
-      .def("get_ymax", [](corgi::Node<2> &n){ return n.get_ymax(); });
+    n2.def("get_xmin", [](corgi::Grid<2> &n){ return n.get_xmin(); })
+      .def("get_xmax", [](corgi::Grid<2> &n){ return n.get_xmax(); })
+      .def("get_ymin", [](corgi::Grid<2> &n){ return n.get_ymin(); })
+      .def("get_ymax", [](corgi::Grid<2> &n){ return n.get_ymax(); });
 
 
-    n2.def("get_tile", [](corgi::Node<2> &n, size_t i, size_t j){ 
+    n2.def("get_tile", [](corgi::Grid<2> &n, size_t i, size_t j){ 
           return n.get_tileptr( std::make_tuple(i,j) ); })
-      .def("get_tile", [](corgi::Node<2> &n, size_t i, size_t j, size_t /*k*/){
+      .def("get_tile", [](corgi::Grid<2> &n, size_t i, size_t j, size_t /*k*/){
         return n.get_tileptr_ind(i,j); })
-      .def("set_grid_lims", [](corgi::Node<2> &n, 
+      .def("set_grid_lims", [](corgi::Grid<2> &n, 
             double xmin, double xmax, 
             double ymin, double ymax)
           { n.set_grid_lims({{xmin,ymin}}, {{xmax, ymax}}); })
 
-      .def("get_mpi_grid", [](corgi::Node<2> &n, const size_t i, const size_t j){ 
+      .def("get_mpi_grid", [](corgi::Grid<2> &n, const size_t i, const size_t j){ 
           const auto val = n.py_get_mpi_grid(i,j); 
           return val;
           })
-      .def("set_mpi_grid", [](corgi::Node<2> &n, size_t i, size_t j, int val){ n.py_set_mpi_grid(val, i, j); })
+      .def("set_mpi_grid", [](corgi::Grid<2> &n, size_t i, size_t j, int val){ n.py_set_mpi_grid(val, i, j); })
 
-      .def("get_work_grid", [](corgi::Node<2> &n, const size_t i, const size_t j){ 
+      .def("get_work_grid", [](corgi::Grid<2> &n, const size_t i, const size_t j){ 
           const auto val = n.py_get_work_grid(i,j); 
           return val;
           })
-      .def("set_work_grid", [](corgi::Node<2> &n, size_t i, size_t j, double val){ n.py_set_work_grid(val, i, j); })
+      .def("set_work_grid", [](corgi::Grid<2> &n, size_t i, size_t j, double val){ n.py_set_work_grid(val, i, j); })
 
-      .def("id", [](const corgi::Node<2> &n, const size_t i, const size_t j){ return n.id(i,j);});
+      .def("id", [](const corgi::Grid<2> &n, const size_t i, const size_t j){ return n.id(i,j);});
 
 
     auto t2 = declare_tile<2>(m_2d, "Tile");

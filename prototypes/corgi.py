@@ -120,9 +120,9 @@ class cell:
 
 
 ##################################################
-#Main computational node holding cells and 
+#Main computational grid holding cells and 
 # dealing with inter-cell communications 
-class node:
+class grid:
 
     cells    = []
     virtuals = []
@@ -179,7 +179,7 @@ class node:
         return local
 
     
-    # Get ALL virtual neighbors relevant for the current node
+    # Get ALL virtual neighbors relevant for the current grid
     def get_all_virtuals(self):
         neighbors = []
         locals    = []
@@ -361,7 +361,7 @@ class node:
 
     def adopt(self):
         for indx in self.adopted_index:
-            print "node {} got adopt command for ({},{})".format(self.rank, indx[0],indx[1])
+            print "grid {} got adopt command for ({},{})".format(self.rank, indx[0],indx[1])
 
             for c in self.virtuals:
                 if c.index() == indx:
