@@ -1296,6 +1296,8 @@ class Grid
 
       //std::cout << comm.rank() << " receiving from "<<  elem.first << " <--- ";
       for(uint64_t cid : elem.second) {
+        (void)cid; // hack to suppress unused variable warning
+
         mpi::request reqc;
 
         rcoms.emplace_back();
