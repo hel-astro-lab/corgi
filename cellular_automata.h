@@ -98,6 +98,21 @@ std::vector< corgi::internals::tuple_of<2,int> > chessboard_neighborhood(int rad
   return ret;
 }
 
+template<std::size_t D, typename T = std::enable_if_t<(D==3),int> >
+std::vector< corgi::internals::tuple_of<3,int> > chessboard_neighborhood(int radius)
+{
+  std::vector<  corgi::internals::tuple_of<3,int> > ret;
+  for (int kr=-radius; kr<=radius; kr++) {
+    for (int jr=-radius; jr<=radius; jr++) {
+      for (int ir=-radius; ir<=radius; ir++)  {
+        if (!( ir == 0 && jr == 0 && kr == 0)) {
+          ret.push_back( std::make_tuple(ir, jr, kr) );
+        }
+      }
+    }
+  }
+  return ret;
+}
 
 // Spherical distances
 //--------------------------------------------------
@@ -126,6 +141,25 @@ std::vector< corgi::internals::tuple_of<2,int> > euler_neighborhood(int radius)
   return ret;
 }
 
+template<std::size_t D, typename T = std::enable_if_t<(D==3),int> >
+std::vector< corgi::internals::tuple_of<3,int> > euler_neighborhood(int radius)
+{
+  std::vector<  corgi::internals::tuple_of<3,int> > ret;
+  for (int kr=-radius; kr<=radius; kr++) {
+    for (int jr=-radius; jr<=radius; jr++) {
+      for (int ir=-radius; ir<=radius; ir++) {
+
+        auto rel = std::make_tuple(ir,jr,kr);
+        if( ::corgi::geom::eulerian_distance<D>(rel) >= (double)radius ) continue;
+
+        if (!( ir == 0 && jr == 0 && kr == 0)) {
+          ret.push_back( rel );
+        }
+      }
+    }
+  }
+  return ret;
+}
 
 
 

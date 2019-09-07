@@ -42,6 +42,14 @@ namespace corgi {
       return std::abs(std::get<0>(tup)) + std::abs(std::get<1>(tup));
     }
 
+    template<std::size_t D, typename T = std::enable_if_t<(D==3),int> >
+    decltype(auto) manhattan_distance(
+        const corgi::internals::tuple_of<3, T>& tup)
+    {
+      return std::abs(std::get<0>(tup)) 
+           + std::abs(std::get<1>(tup)) 
+           + std::abs(std::get<2>(tup));
+    }
 
 
     // L_2 norm
@@ -73,6 +81,15 @@ namespace corgi {
       return std::sqrt(std::pow(std::get<0>(tup),2) + std::pow(std::get<1>(tup),2));
     }
 
+    template<std::size_t D, typename T = std::enable_if_t<(D==3),int> >
+    decltype(auto) eulerian_distance(
+        const corgi::internals::tuple_of<3, T>& tup)
+    {
+      return std::sqrt(
+          std::pow(std::get<0>(tup),2) 
+        + std::pow(std::get<1>(tup),2)
+        + std::pow(std::get<2>(tup),2));
+    }
 
 
     //template<typename... T>

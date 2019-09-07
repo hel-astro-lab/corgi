@@ -1466,9 +1466,10 @@ class Grid
   std::vector< corgi::internals::tuple_of<D, size_t> > nhood(
       corgi::internals::tuple_of<D, size_t> indices)
   {
-    // FIXME; generalize the size (now assumes D=2)
     std::vector< corgi::internals::tuple_of<D, size_t> > nh;
-    nh.reserve(8);
+    if(D == 1) nh.reserve(2);
+    if(D == 2) nh.reserve(8);
+    if(D == 3) nh.reserve(26);
 
     for(auto& reli : corgi::ca::moore_neighborhood<D>() ){
       nh.push_back( neighs(indices, reli) );

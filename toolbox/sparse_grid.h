@@ -54,7 +54,7 @@ namespace internal {
   // 3D
   template<typename T>
   void serialize( 
-    std::map< corgi::internals::tuple_of<2, size_t>, T>& data,
+    std::map< corgi::internals::tuple_of<3, size_t>, T>& data,
     std::vector<T>& ret,
     std::array<size_t, 3>& lengths) 
   {

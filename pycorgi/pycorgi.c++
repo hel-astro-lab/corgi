@@ -251,8 +251,53 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
 
     //--------------------------------------------------
-    // TODO: 3D
+    // 3D
+    py::module m_3d = m_base.def_submodule("threeD", "3D specializations");
 
+    auto n3 = declare_node<3>(m_3d, "Grid");
+    n3.def(py::init<size_t, size_t, size_t>());
+
+    n3.def("get_Nx",   [](corgi::Grid<3> &n){ return n.get_Nx(); })
+      .def("get_Ny",   [](corgi::Grid<3> &n){ return n.get_Ny(); })
+      .def("get_Nz",   [](corgi::Grid<3> &n){ return n.get_Nz(); });
+
+    n3.def("get_xmin", [](corgi::Grid<3> &n){ return n.get_xmin(); })
+      .def("get_xmax", [](corgi::Grid<3> &n){ return n.get_xmax(); })
+      .def("get_ymin", [](corgi::Grid<3> &n){ return n.get_ymin(); })
+      .def("get_ymax", [](corgi::Grid<3> &n){ return n.get_ymax(); })
+      .def("get_zmin", [](corgi::Grid<3> &n){ return n.get_zmin(); })
+      .def("get_zmax", [](corgi::Grid<3> &n){ return n.get_zmax(); });
+
+
+    n3.def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k){ 
+          return n.get_tileptr( std::make_tuple(i,j,k) ); })
+      .def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k){
+        return n.get_tileptr_ind(i,j,k); })
+      .def("set_grid_lims", [](corgi::Grid<3> &n, 
+            double xmin, double xmax, 
+            double ymin, double ymax,
+            double zmin, double zmax)
+          { n.set_grid_lims({{xmin,ymin,zmin}}, {{xmax, ymax,zmax}}); })
+
+      .def("get_mpi_grid", [](corgi::Grid<3> &n, const size_t i, const size_t j, const size_t k){ 
+          const auto val = n.py_get_mpi_grid(i,j,k); 
+          return val;
+          })
+      .def("set_mpi_grid", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k, int val){ 
+          n.py_set_mpi_grid(val, i, j, k); })
+
+      .def("get_work_grid", [](corgi::Grid<3> &n, const size_t i, const size_t j, const size_t k){ 
+          const auto val = n.py_get_work_grid(i,j,k); 
+          return val;
+          })
+      .def("set_work_grid", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k, double val){ 
+          n.py_set_work_grid(val, i, j, k); })
+
+      .def("id", [](const corgi::Grid<3> &n, const size_t i, const size_t j, const size_t k){ 
+          return n.id(i,j,k);});
+
+    auto t3 = declare_tile<3>(m_3d, "Tile");
+    t3.def("neighs", [](corgi::Tile<3> &t, size_t i, size_t j, size_t k){ return t.neighs(i,j,k); });
 
 
 }
