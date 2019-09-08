@@ -336,7 +336,7 @@ class Conf:
     NzMesh = 1
 
     def __init__(self):
-        self.outdir = 'out2'+str(self.Nx)+'x'+str(self.Ny)+'n'+str(1)
+        self.outdir = 'out2d_'+str(self.Nx)+'x'+str(self.Ny)+'n'+str(1)
 
     def __init__(self, Nx, Ny, Nz, Nr):
         self.Nx = Nx
@@ -345,7 +345,7 @@ class Conf:
 
         self.Nr = Nr
 
-        self.outdir = 'out2'+str(Nx)+'x'+str(Ny)+'n'+str(Nr)
+        self.outdir = 'out2d_'+str(Nx)+'x'+str(Ny)+'n'+str(Nr)
 
 
     def update_bbox(self):
@@ -368,11 +368,11 @@ if __name__ == "__main__":
 
     # parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--Nx', dest='Nx', type=int, default=500)
-    parser.add_argument('--Ny', dest='Ny', type=int, default=500)
+    parser.add_argument('--Nx', dest='Nx', type=int, default=20)
+    parser.add_argument('--Ny', dest='Ny', type=int, default=20)
     parser.add_argument('--Nz', dest='Nz', type=int, default=1)
-    parser.add_argument('--Nt', dest='Nt', type=int, default=500)
-    parser.add_argument('--Nr', dest='Nr', type=int, default=100)
+    parser.add_argument('--Nt', dest='Nt', type=int, default=50)
+    parser.add_argument('--Nr', dest='Nr', type=int, default=4)
     args = parser.parse_args()
 
 
@@ -438,7 +438,7 @@ if __name__ == "__main__":
     initialize_virtuals(grid, conf)
     grid.allgather_work_grid()
 
-    add_virtual_work(grid, 0, conf)
+    #add_virtual_work(grid, 0, conf)
 
     analyze(grid, f5, 0, conf)
     if do_plots:
@@ -452,7 +452,7 @@ if __name__ == "__main__":
     for lap in range(1, Nsamples):
         print("---lap: {}".format(lap))
 
-        add_virtual_work(grid, lap, conf)
+        #add_virtual_work(grid, lap, conf)
         #grid.update_work()
         #grid.allgather_work_grid()
         MPI.COMM_WORLD.barrier()
@@ -485,7 +485,8 @@ if __name__ == "__main__":
 
         analyze(grid, f5, lap, conf)
 
-        if (lap % 20 == 0):
+        #if (lap % 20 == 0):
+        if True:
             if do_plots:
                 plotNode(axs[0], grid, conf)
                 plotNode(axs[1], grid, conf, mpigrid=True)

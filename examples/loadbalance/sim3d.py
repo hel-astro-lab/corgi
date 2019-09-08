@@ -342,13 +342,14 @@ class Conf:
     Nx  = 50
     Ny  = 50
     Nz  = 2
+    Nr  = 1
 
     NxMesh = 1
     NyMesh = 1
     NzMesh = 1
 
     def __init__(self):
-        self.outdir = 'out3d_'+str(self.Nx)+'x'+str(self.Ny)+'n'+str(1)
+        self.outdir = 'out3d_'+str(self.Nx)+'x'+str(self.Ny)+'x'+str(self.Nz)+'n'+str(self.Nr)
 
     def __init__(self, Nx, Ny, Nz, Nr):
         self.Nx = Nx
@@ -357,7 +358,7 @@ class Conf:
 
         self.Nr = Nr
 
-        self.outdir = 'out3d_'+str(Nx)+'x'+str(Ny)+'n'+str(Nr)
+        self.outdir = 'out3d_'+str(Nx)+'x'+str(Ny)+'x'+str(Nz)+'n'+str(Nr)
 
 
     def update_bbox(self):
@@ -382,8 +383,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--Nx', dest='Nx', type=int, default=20)
     parser.add_argument('--Ny', dest='Ny', type=int, default=20)
-    parser.add_argument('--Nz', dest='Nz', type=int, default=2)
-    parser.add_argument('--Nt', dest='Nt', type=int, default=50)
+    parser.add_argument('--Nz', dest='Nz', type=int, default=20)
+    parser.add_argument('--Nt', dest='Nt', type=int, default=3)
     parser.add_argument('--Nr', dest='Nr', type=int, default=2)
     args = parser.parse_args()
 
@@ -450,7 +451,7 @@ if __name__ == "__main__":
     initialize_virtuals(grid, conf)
     grid.allgather_work_grid()
 
-    add_virtual_work(grid, 0, conf)
+    #add_virtual_work(grid, 0, conf)
 
     analyze(grid, f5, 0, conf)
     if do_plots:
@@ -464,7 +465,7 @@ if __name__ == "__main__":
     for lap in range(1, Nsamples):
         print("---lap: {}".format(lap))
 
-        add_virtual_work(grid, lap, conf)
+        #add_virtual_work(grid, lap, conf)
         #grid.update_work()
         #grid.allgather_work_grid()
         MPI.COMM_WORLD.barrier()
