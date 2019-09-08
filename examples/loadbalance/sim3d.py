@@ -384,8 +384,8 @@ if __name__ == "__main__":
     parser.add_argument('--Nx', dest='Nx', type=int, default=20)
     parser.add_argument('--Ny', dest='Ny', type=int, default=20)
     parser.add_argument('--Nz', dest='Nz', type=int, default=20)
-    parser.add_argument('--Nt', dest='Nt', type=int, default=3)
-    parser.add_argument('--Nr', dest='Nr', type=int, default=2)
+    parser.add_argument('--Nt', dest='Nt', type=int, default=50)
+    parser.add_argument('--Nr', dest='Nr', type=int, default=4)
     args = parser.parse_args()
 
 
