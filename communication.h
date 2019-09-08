@@ -14,7 +14,18 @@ template <>
 inline MPI_Datatype get_mpi_datatype<corgi::Communication>(
     const corgi::Communication& obj) 
 {
+  MPI_Datatype obj_type;
     
+  //--------------------------------------------------
+  // check if we have already created the object once
+  std::type_info const* t = &typeid(::corgi::Communication);
+  obj_type = mpi4cpp::mpi::detail::mpi_datatype_cache().get(t);
+
+  if(obj_type != MPI_DATATYPE_NULL) return obj_type;
+
+  //--------------------------------------------------
+  // if not; we'll create it now
+
   // get start of the class
   MPI_Aint base;
   MPI_Get_address( &obj, &base ); 
@@ -75,7 +86,6 @@ inline MPI_Datatype get_mpi_datatype<corgi::Communication>(
 
   //--------------------------------------------------
   // create datatype; this is standard format and should not be changed
-  MPI_Datatype obj_type;
   MPI_Type_create_struct(
       block_lengths.size(),
       block_lengths.data(),
@@ -84,6 +94,30 @@ inline MPI_Datatype get_mpi_datatype<corgi::Communication>(
       &obj_type);
 
   MPI_Type_commit(&obj_type);
+
+  // check and correct for extent in arrays
+  MPI_Aint lb, extent, dist[2];
+  MPI_Type_get_extent(obj_type, &lb, &extent);
+  std::array<corgi::Communication,10> arr;
+
+  MPI_Get_address(&arr[0], &dist[0]);
+  MPI_Get_address(&arr[1], &dist[1]);
+
+  MPI_Datatype temptype;
+  if (extent != (dist[1] - dist[0])) {
+    std::cout << "WARNING! Extra padding between arrays in MPI datatype\n";
+    temptype = obj_type;
+    lb = 0;
+    extent = dist[1] - dist[0];
+
+    MPI_Type_create_resized(temptype, lb, extent, &obj_type);
+    MPI_Type_commit(&obj_type);
+    MPI_Type_free(&temptype);
+  }
+  
+  // save datatype to internal cache
+  mpi4cpp::mpi::detail::mpi_datatype_cache().set(t, obj_type);
+
   return obj_type;
 }
 
