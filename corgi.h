@@ -1167,7 +1167,6 @@ class Grid
 
       //std::cout << "\n";
     }
-
   }
 
   /// Send individual tile to dest
@@ -1490,12 +1489,12 @@ class Grid
     corgi::tools::sparse_grid<int, D> new_mpi_grid(_mpi_grid);
 
     // radius of Gaussian kernel
-    int dt = sqrt(*std::max_element(_lengths.begin(), _lengths.end() )); 
-    //int dt = *std::max_element(_lengths.begin(), _lengths.end() )/2; 
-    //dt += 0.1*dt;
+    int Ng = sqrt(*std::max_element(_lengths.begin(), _lengths.end() )); 
+    //int Ng = *std::max_element(_lengths.begin(), _lengths.end() )/2; 
+    double Rg = static_cast<double>(Ng);
 
     // gaussian kernel; i.e., relative indices how we convolve
-    auto kernel = corgi::ca::chessboard_neighborhood<D>(dt);
+    auto kernel = corgi::ca::chessboard_neighborhood<D>(Ng);
 
 
     // keep track of tile changes
@@ -1522,6 +1521,10 @@ class Grid
     //  << "\n";
 
     //--------------------------------------------------
+    // normalization of multidimensional univariate normal distribution
+    //double norm = 0.25/M_PI;
+    double norm = 1.0/sqrt(std::pow(2.0*M_PI, D)*Rg*Rg);
+
 
     // process the complete grid (including remote neighbors)
     int new_color;
@@ -1533,7 +1536,7 @@ class Grid
 
       // resolve neighborhood; diffusion step
       //alives[old_color] = 1.0;
-      alives[old_color] = (1.0/4.0/M_PI/static_cast<double>(dt));
+      alives[old_color] = norm/Rg;
       //alives[old_color] = sqrt(0.5/M_PI);
 
       // Limited Moore nearest neighborhood
@@ -1554,25 +1557,31 @@ class Grid
         color = _mpi_grid(nindx);
 
         //r = geom::eulerian_distance(reli);  
-        r = geom::manhattan_distance<D>(reli);  
+        r = static_cast<double>( geom::manhattan_distance<D>(reli) );  
         //r = geom::chessboard_distance<D>(reli);  
 
-        //alives[color] += exp(-r*r/static_cast<double>(dt));
-        //alives[color] += r/(2.0*M_PI*static_cast<double>(dt));
+        //alives[color] += exp(-r*r/Rg);
+        //alives[color] += r/(2.0*M_PI*Rg);
+        //alives[color] += (norm/static_cast<double>(dt))*exp(-r*r/(4.0*static_cast<double>(dt)));
+
+        alives[color] += norm*exp(-0.5*r*r/Rg/Rg);
           
-        alives[color] += (1.0/4.0/M_PI/static_cast<double>(dt))
-                         *exp(-r*r/(4.0*static_cast<double>(dt)));
+        //
+        //alives[color] += (norm/Rg)*exp(-r*r/(4.0*Rg));
           
         //alives[color] += sqrt(0.5/M_PI)*exp(-r*r/(2.0));
 
         //alives[color] += exp(-r*r/4.0);
+          
+        //unnormalized version
+        //alives[color] += exp(-r*r/(4.0*Rg));
       }
 
 
       // normalize
-      double norm = 0.0;
-      for(auto& val : alives) norm += val;
-      for(auto& val : alives) val /= norm;
+      double loop_norm = 0.0;
+      for(auto& val : alives) loop_norm += val;
+      for(auto& val : alives) val /= loop_norm;
 
       // add relative quota for balance 
       for(size_t i=0; i<alives.size(); i++) alives[i] += 0.5*rel_quota[i];
