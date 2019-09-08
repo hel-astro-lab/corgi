@@ -110,9 +110,9 @@ PYBIND11_MODULE(pycorgi, m_base) {
         .def_readwrite("communications",              &corgi::Communication::communications             ) 
         .def_readwrite("number_of_virtual_neighbors", &corgi::Communication::number_of_virtual_neighbors)
         .def_readwrite("mins",                        &corgi::Communication::mins                       )
-        .def_readwrite("maxs",                        &corgi::Communication::maxs                       )
-        .def_readwrite("local",                       &corgi::Communication::local                      )
-        .def_readwrite("virtual_owners",              &corgi::Communication::virtual_owners                      );
+        .def_readwrite("maxs",                        &corgi::Communication::maxs                       );
+        //.def_readwrite("local",                       &corgi::Communication::local                      )
+        //.def_readwrite("virtual_owners",              &corgi::Communication::virtual_owners                      )
       
 
     //--------------------------------------------------

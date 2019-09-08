@@ -49,10 +49,10 @@ struct Communication {
   std::array<double, 3> maxs;
     
   /// tile type listing
-  bool local = false;
+  //bool local = false;
 
   /// my virtual owners; not communicated along the metainfo
-  std::vector<int> virtual_owners;
+  //std::vector<int> virtual_owners;
 
 
 };
@@ -76,6 +76,9 @@ class Tile
     // Order here is fixed for mpi_tile_t
     Communication communication;
 
+    // my virtual owners
+    std::vector<int> virtual_owners;
+    
     /// coarse mpi_grid grid indices
     corgi::internals::tuple_of<D, size_t> index;
 

@@ -368,8 +368,8 @@ if __name__ == "__main__":
 
     # parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--Nx', dest='Nx', type=int, default=20)
-    parser.add_argument('--Ny', dest='Ny', type=int, default=20)
+    parser.add_argument('--Nx', dest='Nx', type=int, default=40)
+    parser.add_argument('--Ny', dest='Ny', type=int, default=40)
     parser.add_argument('--Nz', dest='Nz', type=int, default=1)
     parser.add_argument('--Nt', dest='Nt', type=int, default=50)
     parser.add_argument('--Nr', dest='Nr', type=int, default=4)
@@ -476,10 +476,12 @@ if __name__ == "__main__":
 
         print("analyze_boundaries")
         grid.analyze_boundaries()
+
         print("send_tiles")
         grid.send_tiles()
         print("recv_tiles")
         grid.recv_tiles()
+
         print("initialize")
         initialize_virtuals(grid, conf)
 
@@ -488,6 +490,7 @@ if __name__ == "__main__":
         #if (lap % 20 == 0):
         if True:
             if do_plots:
+                print("visualizing...")
                 plotNode(axs[0], grid, conf)
                 plotNode(axs[1], grid, conf, mpigrid=True)
                 plotWork(axs[2], grid, conf)

@@ -845,6 +845,8 @@ class Grid
 
     virtual_tile_list.clear();
     boundary_tile_list.clear();
+    send_queue.clear();
+    send_queue_address.clear();
 
     // analyze all of my local tiles
     for(auto cid: get_local_tiles()) {
@@ -884,12 +886,12 @@ class Grid
       //c.communication.top_owner = top_owner; // can not be computed from set
       c.communication.communications = virtual_owners.size();
       c.communication.number_of_virtual_neighbors = virtual_owners.size(); // not same as original
-      c.communication.virtual_owners = virtual_owners;
+      //c.communication.virtual_owners = virtual_owners;
+      c.virtual_owners = virtual_owners;
 
       // add to send queue
       uint64_t cid = elem.first;
-      if (std::find( send_queue.begin(), send_queue.end(), cid) 
-            == send_queue.end()) {
+      if (std::find( send_queue.begin(), send_queue.end(), cid) == send_queue.end()) {
           send_queue.push_back( cid );
           send_queue_address.push_back( virtual_owners );
       }
@@ -1154,10 +1156,10 @@ class Grid
     for(auto&& elem : boundary_tile_list) {
       auto& tile = get_tile(elem.first);
 
-      //std::cout << comm.rank() << " sending cid message " << elem.first << " ---> ";
+      std::cout << comm.rank() << " sending cid message " << elem.first << " ---> ";
 
       for(int dest : elem.second) {
-        //std::cout << "," << comm.rank() << ":" << dest;
+        std::cout << "," << comm.rank() << ":" << dest;
 
         mpi::request req;
         req = comm.isend(dest, commType::TILEDATA, tile.communication);
@@ -1165,7 +1167,7 @@ class Grid
         sent_tile_messages.push_back( req );
       }
 
-      //std::cout << "\n";
+      std::cout << "\n";
     }
   }
 
@@ -1279,8 +1281,6 @@ class Grid
   //  mpi::wait_all(recv_tile_messages.begin(), recv_tile_messages.end());
   //  mpi::wait_all(sent_tile_messages.begin(), sent_tile_messages.end());
 
-
-
   //  clear_send_queue();
   //}
 
@@ -1288,19 +1288,24 @@ class Grid
   std::vector<Communication> rcoms;
   void recv_tiles() {
     recv_tile_messages.clear();
+    rcoms.clear();
+
+    size_t nelems = 0;
+    for(auto&& elem : virtual_tile_list) nelems += elem.second.size();
+    rcoms.resize( nelems );
 
     int i = 0;
     for(auto&& elem : virtual_tile_list) {
       int orig = elem.first;
 
-      //std::cout << comm.rank() << " receiving from "<<  elem.first << " <--- ";
+      std::cout << comm.rank() << " receiving from "<<  elem.first << " <--- ";
       for(uint64_t cid : elem.second) {
         (void)cid; // hack to suppress unused variable warning
 
         mpi::request reqc;
 
-        rcoms.emplace_back();
-        //std::cout << "," << comm.rank() << ":" << cid << "(" << rcoms.size()<<")" ;
+        //rcoms.emplace_back();
+        std::cout << "," << comm.rank() << ":" << cid << "(" << rcoms.size()<<")" ;
         reqc = comm.irecv(orig, commType::TILEDATA, rcoms.at(i) );
         reqc.wait(); // FIXME: have to wait because emplace_back might trigger a re-allocation;
                      // this leads to different memory location and incorrect pointer 
@@ -1311,7 +1316,7 @@ class Grid
         i++;
       }
 
-      //std::cout << "\n";
+      std::cout << "\n";
     }
 
     //std::cout << comm.rank() << " waiting...\n";
@@ -1483,7 +1488,7 @@ class Grid
     kidnaps.clear();
     std::vector<double> alives(comm.size());
 
-    //int myrank = comm.rank();
+    int myrank = comm.rank();
 
     // for updated values
     corgi::tools::sparse_grid<int, D> new_mpi_grid(_mpi_grid);
@@ -1516,9 +1521,9 @@ class Grid
     for(auto& elem : _work_grid) total_work += elem.second;
     for(size_t i=0; i<rel_quota.size(); i++) rel_quota[i] = comm.size()*quota[i]/total_work;
 
-    //std::cout << comm.rank() << ": my quota : " << quota[myrank] 
-    //  << " (" << rel_quota[myrank] << ")"
-    //  << "\n";
+    std::cout << comm.rank() << ": my quota : " << quota[myrank] 
+      << " (" << rel_quota[myrank] << ")"
+      << "\n";
 
     //--------------------------------------------------
     // normalization of multidimensional univariate normal distribution
@@ -1536,7 +1541,7 @@ class Grid
 
       // resolve neighborhood; diffusion step
       //alives[old_color] = 1.0;
-      alives[old_color] = norm/Rg;
+      alives[old_color] = norm;
       //alives[old_color] = sqrt(0.5/M_PI);
 
       // Limited Moore nearest neighborhood
@@ -1566,15 +1571,10 @@ class Grid
 
         alives[color] += norm*exp(-0.5*r*r/Rg/Rg);
           
-        //
         //alives[color] += (norm/Rg)*exp(-r*r/(4.0*Rg));
-          
         //alives[color] += sqrt(0.5/M_PI)*exp(-r*r/(2.0));
-
         //alives[color] += exp(-r*r/4.0);
-          
-        //unnormalized version
-        //alives[color] += exp(-r*r/(4.0*Rg));
+        //alives[color] += exp(-r*r/(4.0*Rg)); unnormalized version
       }
 
 
@@ -1632,9 +1632,9 @@ class Grid
       new_mpi_grid(ind) = new_color;
     }
 
-    //std::cout << comm.rank() << ": rank gained/lost= " 
-    //  << obtained[myrank] << "/" << lost[myrank] 
-    //  << " in += " << obtained[myrank] - lost[myrank] << "\n";
+    std::cout << comm.rank() << ": rank gained/lost= " 
+      << obtained[myrank] << "/" << lost[myrank] 
+      << " in += " << obtained[myrank] - lost[myrank] << "\n";
 
 
     //--------------------------------------------------
@@ -1876,7 +1876,7 @@ class Grid
     std::map<int, std::vector<uint64_t> > tags;
     for(auto cid : get_boundary_tiles() ) {
       auto& tile = get_tile(cid);
-      for(auto dest: tile.communication.virtual_owners) {
+      for(auto dest: tile.virtual_owners) {
         tags[dest].push_back(cid);
       }
     }
