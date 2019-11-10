@@ -64,7 +64,8 @@ auto declare_node(
         .def("rank",      [](corgi::Grid<D>& n) { return n.comm.rank(); })
         .def("size",      [](corgi::Grid<D>& n) { return n.comm.size(); })
         .def("master",    [](corgi::Grid<D>& n) { return n.comm.rank() == 0; })
-        .def("add_tile",              &corgi::Grid<D>::add_tile, py::keep_alive<1,2>())
+        // specialized for dimensions
+        //.def("add_tile",              &corgi::Grid<D>::add_tile, py::keep_alive<1,2>())
         .def("replace_tile",          &corgi::Grid<D>::replace_tile, py::keep_alive<1,2>())
         .def("get_tile_ids",           &corgi::Grid<D>::get_tile_ids,
                 py::arg("sorted") = true)
@@ -148,6 +149,9 @@ PYBIND11_MODULE(pycorgi, m_base) {
       // assert(nz == 1);
       return new corgi::Grid<1>(nx);}));
 
+    // tile adding; this only works for D=1,2; otherwise py GC kills tiles
+    n1.def("add_tile", &corgi::Grid<1>::add_tile, py::keep_alive<1,2>());
+
     //n1.def(py::init([](size_t i, size_t j) {
     //    return std::unique_ptr<Example>(new Example(arg));
     n1.def("get_tile", [](corgi::Grid<1> &n, size_t i, size_t /*j*/){
@@ -225,6 +229,9 @@ PYBIND11_MODULE(pycorgi, m_base) {
       //assert(nz == 1);
       return new corgi::Grid<2>(nx, ny);}));
 
+    // tile adding; this only works for D=1,2; otherwise py GC kills tiles
+    n2.def("add_tile", &corgi::Grid<2>::add_tile, py::keep_alive<1,2>());
+
     n2.def("get_Nx",   [](corgi::Grid<2> &n){ return n.get_Nx(); })
       .def("get_Ny",   [](corgi::Grid<2> &n){ return n.get_Ny(); });
 
@@ -281,6 +288,15 @@ PYBIND11_MODULE(pycorgi, m_base) {
       .def("get_ymax", [](corgi::Grid<3> &n){ return n.get_ymax(); })
       .def("get_zmin", [](corgi::Grid<3> &n){ return n.get_zmin(); })
       .def("get_zmax", [](corgi::Grid<3> &n){ return n.get_zmax(); });
+
+    // tile adding; this only works for D=1,2; otherwise py GC kills tiles
+    // forbidden for 3D 
+    n3.def("add_tile", [](corgi::Grid<3>& /*n*/){ 
+
+          //throw py::index_error();
+          assert(false);
+          return;
+        });
 
 
     n3.def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k)
