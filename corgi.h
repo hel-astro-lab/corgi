@@ -1876,6 +1876,8 @@ class Grid
     std::map<int, std::vector<uint64_t> > tags;
     for(auto cid : get_boundary_tiles() ) {
       auto& tile = get_tile(cid);
+
+      // TODO proceed only if tile is active 
       for(auto dest: tile.virtual_owners) {
         tags[dest].push_back(cid);
       }
@@ -1924,6 +1926,8 @@ class Grid
     std::map<int, std::vector<uint64_t> > tags;
     for(auto cid : get_virtuals() ) {
       auto& tile = get_tile(cid);
+
+      //TODO: proceed only if tile is active
       tags[tile.communication.owner].push_back(cid);
     }
     for(auto& elem : tags) sort(elem.second.begin(), elem.second.end());

@@ -44,7 +44,21 @@ auto declare_node(
     const std::string& pyclass_name) 
 {
 
-    py::class_<corgi::Grid<D> > corgi_node(m, pyclass_name.c_str());
+  
+  // standard version with pybind default holder type 
+  //py::class_<corgi::Grid<D> > corgi_node(m, pyclass_name.c_str());
+      
+  // Special version that makes grid indestructible from python 
+  // (avoids py garbage collection)
+  //
+  // NOTE: this is dangerous because it can very easily lead to mem leaks;
+  // we however assume that user only uses one grid per one run (because mpi 
+  // also prevents multiple simultaneous versions). This *should* make it ok.
+  // Without this both c++ grid and python call garbage collection on dangling 
+  // tiles. This leads to double freeing of tiles and subsequent seg faulting.
+  py::class_<corgi::Grid<D>,
+      std::unique_ptr<corgi::Grid<D>, py::nodelete>
+      > corgi_node(m, pyclass_name.c_str());
 
     corgi_node
         .def("rank",      [](corgi::Grid<D>& n) { return n.comm.rank(); })
@@ -269,10 +283,25 @@ PYBIND11_MODULE(pycorgi, m_base) {
       .def("get_zmax", [](corgi::Grid<3> &n){ return n.get_zmax(); });
 
 
-    n3.def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k){ 
-          return n.get_tileptr( std::make_tuple(i,j,k) ); })
-      .def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k){
-        return n.get_tileptr_ind(i,j,k); })
+    n3.def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k)
+        { 
+          return n.get_tileptr( std::make_tuple(i,j,k) ); 
+        },
+        py::return_value_policy::reference,
+        // keep alive for the lifetime of the grid
+        //
+        // pybind11:
+        // argument indices start at one, while zero refers to the return 
+        // value. For methods, index one refers to the implicit this pointer, 
+        // while regular arguments begin at index two. 
+        // py::keep_alive<nurse,patient>()
+        py::keep_alive<1,0>()
+        )
+      //.def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k)
+      //  {
+      //    return n.get_tileptr_ind(i,j,k); 
+      //  }
+
       .def("set_grid_lims", [](corgi::Grid<3> &n, 
             double xmin, double xmax, 
             double ymin, double ymax,

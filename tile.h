@@ -100,6 +100,10 @@ class Tile
      */
     virtual ~Tile() = default;
 
+    // indestructible base
+    //~Tile();
+
+
     /// load tile metainfo from Communication object
     void load_metainfo(Communication cm)
     {
