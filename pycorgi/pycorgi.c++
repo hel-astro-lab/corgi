@@ -29,6 +29,14 @@ auto declare_tile(
         .def_readwrite("mins",          &corgi::Tile<D>::mins)
         .def_readwrite("maxs",          &corgi::Tile<D>::maxs)
         .def_readwrite("index",         &corgi::Tile<D>::index)
+        .def("get_index",               [](
+              corgi::Tile<D>& t, corgi::Grid<D>& g)
+            {
+              corgi::internals::tuple_of<D, size_t> ind = 
+                g.id2index( t.cid, g.lens() );
+
+              return ind;
+            })
         .def("set_tile_mins",           &corgi::Tile<D>::set_tile_mins)
         .def("set_tile_maxs",           &corgi::Tile<D>::set_tile_maxs)
         .def("load_metainfo",           &corgi::Tile<D>::load_metainfo)
@@ -69,7 +77,9 @@ auto declare_node(
         .def("replace_tile",          &corgi::Grid<D>::replace_tile, py::keep_alive<1,2>())
         .def("get_tile_ids",           &corgi::Grid<D>::get_tile_ids,
                 py::arg("sorted") = true)
-        .def("get_tile", (std::shared_ptr<corgi::Tile<D>> (corgi::Grid<D>::*)(const uint64_t)) &corgi::Grid<D>::get_tileptr)
+        .def("get_tile", 
+            (std::shared_ptr<corgi::Tile<D>> (corgi::Grid<D>::*)(const uint64_t)) 
+              &corgi::Grid<D>::get_tileptr)
 
         .def("get_local_tiles",             &corgi::Grid<D>::get_local_tiles,
                  py::arg("sorted") = true)
@@ -291,19 +301,19 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
     // tile adding; this only works for D=1,2; otherwise py GC kills tiles
     // forbidden for 3D 
-    n3.def("add_tile", [](corgi::Grid<3>& /*n*/){ 
-
-          //throw py::index_error();
-          assert(false);
-          return;
-        });
+    n3.def("add_tile", &corgi::Grid<3>::add_tile, py::keep_alive<1,2>());
+    //n3.def("add_tile", [](corgi::Grid<3>& /*n*/){ 
+    //      //throw py::index_error();
+    //      assert(false);
+    //      return;
+    //    });
 
 
     n3.def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k)
         { 
           return n.get_tileptr( std::make_tuple(i,j,k) ); 
         },
-        py::return_value_policy::reference,
+        //py::return_value_policy::reference,
         // keep alive for the lifetime of the grid
         //
         // pybind11:
