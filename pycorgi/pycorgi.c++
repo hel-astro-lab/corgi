@@ -29,6 +29,7 @@ auto declare_tile(
         .def_readwrite("mins",          &corgi::Tile<D>::mins)
         .def_readwrite("maxs",          &corgi::Tile<D>::maxs)
         .def_readwrite("index",         &corgi::Tile<D>::index)
+        .def_readwrite("lengths",       &corgi::Tile<D>::lengths)
         .def("get_index",               [](
               corgi::Tile<D>& t, corgi::Grid<D>& g)
             {
@@ -79,7 +80,9 @@ auto declare_node(
                 py::arg("sorted") = true)
         .def("get_tile", 
             (std::shared_ptr<corgi::Tile<D>> (corgi::Grid<D>::*)(const uint64_t)) 
-              &corgi::Grid<D>::get_tileptr)
+              &corgi::Grid<D>::get_tileptr,
+              py::return_value_policy::reference_internal
+              )
 
         .def("get_local_tiles",             &corgi::Grid<D>::get_local_tiles,
                  py::arg("sorted") = true)
@@ -222,7 +225,7 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
     //--------------------------------------------------
     auto t1 = declare_tile<1>(m_1d, "Tile");
-    t1.def("neighs", [](corgi::Tile<1> &t, size_t i ){ return t.neighs(i); });
+    t1.def("neighs", [](corgi::Tile<1> &t, int i ){ return t.neighs(i); });
 
 
 
@@ -278,7 +281,7 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
 
     auto t2 = declare_tile<2>(m_2d, "Tile");
-    t2.def("neighs", [](corgi::Tile<2> &t, size_t i, size_t j){ return t.neighs(i,j); });
+    t2.def("neighs", [](corgi::Tile<2> &t, int i, int j){ return t.neighs(i,j); });
 
 
     //--------------------------------------------------
@@ -313,7 +316,7 @@ PYBIND11_MODULE(pycorgi, m_base) {
         { 
           return n.get_tileptr( std::make_tuple(i,j,k) ); 
         },
-        //py::return_value_policy::reference,
+        py::return_value_policy::reference_internal
         // keep alive for the lifetime of the grid
         //
         // pybind11:
@@ -321,7 +324,7 @@ PYBIND11_MODULE(pycorgi, m_base) {
         // value. For methods, index one refers to the implicit this pointer, 
         // while regular arguments begin at index two. 
         // py::keep_alive<nurse,patient>()
-        py::keep_alive<1,0>()
+        //py::keep_alive<1,0>()
         )
       //.def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k)
       //  {
@@ -352,7 +355,7 @@ PYBIND11_MODULE(pycorgi, m_base) {
           return n.id(i,j,k);});
 
     auto t3 = declare_tile<3>(m_3d, "Tile");
-    t3.def("neighs", [](corgi::Tile<3> &t, size_t i, size_t j, size_t k){ return t.neighs(i,j,k); });
+    t3.def("neighs", [](corgi::Tile<3> &t, int i, int j, int k){ return t.neighs(i,j,k); });
 
 
 }

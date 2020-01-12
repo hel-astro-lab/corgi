@@ -66,6 +66,7 @@ struct Communication {
  */
 template<std::size_t D>
 class Tile
+//  public std::enable_shared_from_this<Tile<D>>
 {
 
   public:
@@ -127,6 +128,9 @@ class Tile
     size_t wrap(int ind, size_t d)
     {
       auto N = static_cast<int>(lengths[d]);
+      assert(N < 1e6); // FIXME: debug catch preventing ridiculously large while loops
+      assert(N > 0);   // FIXME: debug catch preventing ridiculously large while loops
+
       while (ind < 0) { ind += N; }
       while (ind >= N) { ind -= N; }
       return static_cast<size_t>(ind);
@@ -141,9 +145,13 @@ class Tile
     const corgi::internals::tuple_of<D, size_t> > 
     neighs(Indices... indices_rel)
     {
-        std::array<int, D>    rel = {{static_cast<int>(indices_rel)...}};
+        std::array<int, D> rel = {{static_cast<int>(indices_rel)...}};
         //std::array<size_t, D> cur = {{index}};
         auto cur = corgi::internals::into_array(index);
+
+        std::cout << "cur:";
+        for(size_t i=0; i<D; i++) std::cout << cur[i] << "/" << rel[i] << " Ni:" << lengths[i] << ";";
+        std::cout << "\n";
 
         for(size_t i=0; i<D; i++) {
           cur[i] = static_cast<size_t>(

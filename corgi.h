@@ -299,8 +299,12 @@ class Grid
       {
         oss << "Index #" << i << " [== " << index_array[i] << "]"
           << " is out of the [0, " << (_lengths[i]-1) << "] range. ";
+
+        std::cout << "Index #" << i << " [== " << index_array[i] << "]"
+          << " is out of the [0, " << (_lengths[i]-1) << "] range. ";
       }
     }
+    //if(!(oss.str().empty())) std::cout << oss;
 
     // if nothing has been written to oss then all indices are valid
     assert(oss.str().empty());
@@ -354,6 +358,20 @@ class Grid
   _compute_index(
       const ::std::array<index_type, D>& index_array) const noexcept
   {
+
+    // FIXME
+    //auto ind_coeffs = compute_index_coeffs(_lengths);
+    //auto inds = corgi::internals::ct_inner_product(
+    //    compute_index_coeffs(_lengths), 0,
+    //    index_array, 0, D,
+    //    static_cast<index_type>(0),
+    //    corgi::internals::ct_plus<index_type>,
+    //    corgi::internals::ct_prod<index_type>);
+
+    //std::cout << "_compute_index: " << inds << " coffs";
+    //for(size_type i = 0; i < D; ++i) std::cout << i << "=" << ind_coeffs[i] << " ";
+    //std::cout << "\n";
+
     return corgi::internals::ct_inner_product(
         compute_index_coeffs(_lengths), 0,
         index_array, 0, D,
@@ -522,6 +540,8 @@ class Grid
     corgi::internals::tuple_of<D, size_t> indices
     )
   {
+    // check that we are not appending nullptr
+    assert(tileptr);
 
     // claim unique ownership of the tile (for unique_ptr)
     // std::unique_ptr<corgi::Tile> tileptr = std::make_unique<corgi:Tile>(tile);
@@ -561,6 +581,9 @@ class Grid
     corgi::internals::tuple_of<D, size_t> indices
     )
   {
+    // check that we are not appending nullptr
+    assert(tileptr);
+
     // calculate unique global tile ID
     uint64_t cid = id(indices);
 
