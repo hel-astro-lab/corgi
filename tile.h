@@ -149,9 +149,9 @@ class Tile
         //std::array<size_t, D> cur = {{index}};
         auto cur = corgi::internals::into_array(index);
 
-        std::cout << "cur:";
-        for(size_t i=0; i<D; i++) std::cout << cur[i] << "/" << rel[i] << " Ni:" << lengths[i] << ";";
-        std::cout << "\n";
+        //std::cout << "cur:";
+        //for(size_t i=0; i<D; i++) std::cout << cur[i] << "/" << rel[i] << " Ni:" << lengths[i] << ";";
+        //std::cout << "\n";
 
         for(size_t i=0; i<D; i++) {
           cur[i] = static_cast<size_t>(

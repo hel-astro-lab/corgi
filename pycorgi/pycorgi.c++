@@ -19,7 +19,8 @@ auto declare_tile(
 {
 
     py::class_<corgi::Tile<D>, 
-              std::shared_ptr<corgi::Tile<D> >> corgi_tile(m, pyclass_name.c_str());
+              std::shared_ptr<corgi::Tile<D> >
+              > corgi_tile(m, pyclass_name.c_str());
 
     corgi_tile
         .def(py::init<>())
@@ -81,7 +82,8 @@ auto declare_node(
         .def("get_tile", 
             (std::shared_ptr<corgi::Tile<D>> (corgi::Grid<D>::*)(const uint64_t)) 
               &corgi::Grid<D>::get_tileptr,
-              py::return_value_policy::reference_internal
+              py::return_value_policy::reference,
+              py::keep_alive<1,0>()
               )
 
         .def("get_local_tiles",             &corgi::Grid<D>::get_local_tiles,
@@ -165,18 +167,20 @@ PYBIND11_MODULE(pycorgi, m_base) {
     // tile adding; this only works for D=1,2; otherwise py GC kills tiles
     n1.def("add_tile", &corgi::Grid<1>::add_tile, py::keep_alive<1,2>());
 
-    //n1.def(py::init([](size_t i, size_t j) {
-    //    return std::unique_ptr<Example>(new Example(arg));
     n1.def("get_tile", [](corgi::Grid<1> &n, size_t i, size_t /*j*/){
-        return n.get_tileptr_ind(i); });
+        return n.get_tileptr_ind(i); },
+        py::return_value_policy::reference,
+        py::keep_alive<1,0>()
+        );
     n1.def("get_tile", [](corgi::Grid<1> &n, size_t i, size_t /*j*/, size_t /*k*/){
-        return n.get_tileptr_ind(i); });
+        return n.get_tileptr_ind(i); },
+        py::return_value_policy::reference,
+        py::keep_alive<1,0>()
+        );
 
     n1.def("get_Nx",   [](corgi::Grid<1> &n){ return n.get_Nx(); })
       .def("get_xmin", [](corgi::Grid<1> &n){ return n.get_xmin(); })
       .def("get_xmax", [](corgi::Grid<1> &n){ return n.get_xmax(); });
-      //.def("get_tile", [](corgi::Grid<1> &n, size_t i){ 
-      //    return n.get_tileptr( std::make_tuple<size_t>(i) ); })
 
     n1.def("get_Ny",   [](corgi::Grid<1> &){ return 1; })
       .def("get_Nz",   [](corgi::Grid<1> &){ return 1; });
@@ -193,6 +197,13 @@ PYBIND11_MODULE(pycorgi, m_base) {
                                                 double /*ymin*/, double /*ymax*/
             )
           { n.set_grid_lims({{xmin}}, {{xmax}}); });
+    n1
+      .def("set_grid_lims", [](corgi::Grid<1> &n, double xmin, double xmax,
+                                                double /*ymin*/, double /*ymax*/,
+                                                double /*zmin*/, double /*zmax*/
+            )
+          { n.set_grid_lims({{xmin}}, {{xmax}}); });
+
 
     // mpi grid py bindings
     n1
@@ -229,7 +240,6 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
 
 
-
     //--------------------------------------------------
     // 2D
     py::module m_2d = m_base.def_submodule("twoD", "2D specializations");
@@ -257,12 +267,24 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
 
     n2.def("get_tile", [](corgi::Grid<2> &n, size_t i, size_t j){ 
-          return n.get_tileptr( std::make_tuple(i,j) ); })
+          return n.get_tileptr( std::make_tuple(i,j) ); },
+            py::return_value_policy::reference,
+            py::keep_alive<1,0>()
+          )
       .def("get_tile", [](corgi::Grid<2> &n, size_t i, size_t j, size_t /*k*/){
-        return n.get_tileptr_ind(i,j); })
+        return n.get_tileptr_ind(i,j); },
+            py::return_value_policy::reference,
+            py::keep_alive<1,0>()
+        )
+
       .def("set_grid_lims", [](corgi::Grid<2> &n, 
             double xmin, double xmax, 
             double ymin, double ymax)
+          { n.set_grid_lims({{xmin,ymin}}, {{xmax, ymax}}); })
+      .def("set_grid_lims", [](corgi::Grid<2> &n, 
+            double xmin, double xmax, 
+            double ymin, double ymax,
+            double /*zmin*/, double /*zmax*/)
           { n.set_grid_lims({{xmin,ymin}}, {{xmax, ymax}}); })
 
       .def("get_mpi_grid", [](corgi::Grid<2> &n, const size_t i, const size_t j){ 
@@ -302,21 +324,13 @@ PYBIND11_MODULE(pycorgi, m_base) {
       .def("get_zmin", [](corgi::Grid<3> &n){ return n.get_zmin(); })
       .def("get_zmax", [](corgi::Grid<3> &n){ return n.get_zmax(); });
 
-    // tile adding; this only works for D=1,2; otherwise py GC kills tiles
-    // forbidden for 3D 
     n3.def("add_tile", &corgi::Grid<3>::add_tile, py::keep_alive<1,2>());
-    //n3.def("add_tile", [](corgi::Grid<3>& /*n*/){ 
-    //      //throw py::index_error();
-    //      assert(false);
-    //      return;
-    //    });
-
 
     n3.def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k)
         { 
           return n.get_tileptr( std::make_tuple(i,j,k) ); 
         },
-        py::return_value_policy::reference_internal
+        py::return_value_policy::reference,
         // keep alive for the lifetime of the grid
         //
         // pybind11:
@@ -324,12 +338,8 @@ PYBIND11_MODULE(pycorgi, m_base) {
         // value. For methods, index one refers to the implicit this pointer, 
         // while regular arguments begin at index two. 
         // py::keep_alive<nurse,patient>()
-        //py::keep_alive<1,0>()
+        py::keep_alive<1,0>()
         )
-      //.def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k)
-      //  {
-      //    return n.get_tileptr_ind(i,j,k); 
-      //  }
 
       .def("set_grid_lims", [](corgi::Grid<3> &n, 
             double xmin, double xmax, 
