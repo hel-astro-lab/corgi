@@ -95,7 +95,7 @@ class Tile : public corgi::Tile<2> {
 
     Tile() = default;
 
-    ~Tile() = default;
+    ~Tile() override = default;
 
     // extending the base class
     datarotators::Rotator<Mesh,2> data;
@@ -113,10 +113,10 @@ class Tile : public corgi::Tile<2> {
     /// step forward
     void cycle() { data.cycle(); }
 
-    virtual std::vector<mpi4cpp::mpi::request> 
+    std::vector<mpi4cpp::mpi::request> 
     send_data( mpi4cpp::mpi::communicator&, int orig, int mode, int tag) override;
 
-    virtual std::vector<mpi4cpp::mpi::request> 
+    std::vector<mpi4cpp::mpi::request> 
     recv_data( mpi4cpp::mpi::communicator&, int dest, int mode, int tag) override;
 
 };

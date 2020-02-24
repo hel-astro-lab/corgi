@@ -23,7 +23,7 @@ class Tile : public corgi::Tile<2> {
   typedef std::shared_ptr<Tile> Tileptr;
 
   Tile() = default;
-  ~Tile() = default;
+  ~Tile() override = default;
 
   /// particle storage
   std::vector<ParticleBlock> containers;
@@ -40,7 +40,7 @@ class Tile : public corgi::Tile<2> {
 
   //--------------------------------------------------
   // MPI send
-  virtual std::vector<mpi4cpp::mpi::request> 
+  std::vector<mpi4cpp::mpi::request> 
   send_data( mpi4cpp::mpi::communicator&, int orig, int mode, int tag) override;
 
   /// actual tag=0 send
@@ -54,7 +54,7 @@ class Tile : public corgi::Tile<2> {
 
   //--------------------------------------------------
   // MPI recv
-  virtual std::vector<mpi4cpp::mpi::request> 
+  std::vector<mpi4cpp::mpi::request> 
   recv_data(mpi4cpp::mpi::communicator&, int dest, int mode, int tag) override;
 
   /// actual tag=0 recv
