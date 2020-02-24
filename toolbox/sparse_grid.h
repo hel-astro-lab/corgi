@@ -196,7 +196,7 @@ class sparse_grid {
 
 
   // ctor without grid size
-  sparse_grid() {};
+  sparse_grid() = default;
 
   // copy ctor
   sparse_grid(const sparse_grid& p)

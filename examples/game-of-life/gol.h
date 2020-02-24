@@ -93,7 +93,7 @@ class Tile : public corgi::Tile<2> {
     typedef Tile Tile_t;
     typedef std::shared_ptr<Tile> Tileptr;
 
-    Tile() {};
+    Tile() = default;
 
     ~Tile() = default;
 

@@ -14,7 +14,7 @@ public:
 
   std::array<double,7> data;
 
-  Particle() {};
+  Particle() = default;
 
   Particle(double x,  double y,  double z,
            double ux, double uy, double uz,
