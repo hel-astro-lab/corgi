@@ -1519,7 +1519,7 @@ class Grid
     // radius of Gaussian kernel
     int Ng = sqrt(*std::max_element(_lengths.begin(), _lengths.end() )); 
     //int Ng = *std::max_element(_lengths.begin(), _lengths.end() )/2; 
-    double Rg = static_cast<double>(Ng);
+    auto Rg = static_cast<double>(Ng);
 
     // gaussian kernel; i.e., relative indices how we convolve
     auto kernel = corgi::ca::chessboard_neighborhood<D>(Ng);
