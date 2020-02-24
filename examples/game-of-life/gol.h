@@ -90,8 +90,8 @@ class Tile : public corgi::Tile<2> {
 
   public:
 
-    typedef Tile Tile_t;
-    typedef std::shared_ptr<Tile> Tileptr;
+    using Tile_t = Tile;
+    using Tileptr = std::shared_ptr<Tile>;
 
     Tile() = default;
 
