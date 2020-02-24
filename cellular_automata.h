@@ -44,7 +44,7 @@ std::vector< corgi::internals::tuple_of<2,int> > moore_neighborhood()
   for (int jr=-1; jr<=1; jr++) {
     for (int ir=-1; ir<=1; ir++) {
       if (!( ir == 0 && jr == 0  )) {
-        ret.push_back( std::make_tuple(ir, jr) );
+        ret.emplace_back(ir, jr );
       }
     }
   }
@@ -60,7 +60,7 @@ std::vector< corgi::internals::tuple_of<3,int> > moore_neighborhood()
     for (int jr=-1; jr<=1; jr++) {
       for (int ir=-1; ir<=1; ir++) {
         if (!( ir == 0 && jr == 0 && kr == 0 )) {
-          ret.push_back( std::make_tuple(ir, jr, kr) );
+          ret.emplace_back(ir, jr, kr );
         }
       }
     }
@@ -77,7 +77,7 @@ std::vector< corgi::internals::tuple_of<1,int> > chessboard_neighborhood(int rad
   std::vector<  corgi::internals::tuple_of<1,int> > ret;
   for (int ir=-radius; ir<=radius; ir++) {
     if (!( ir == 0 )) {
-      ret.push_back( std::make_tuple(ir) );
+      ret.emplace_back(ir );
     }
   }
   return ret;
@@ -91,7 +91,7 @@ std::vector< corgi::internals::tuple_of<2,int> > chessboard_neighborhood(int rad
   for (int jr=-radius; jr<=radius; jr++) {
     for (int ir=-radius; ir<=radius; ir++)  {
       if (!( ir == 0 && jr == 0 )) {
-        ret.push_back( std::make_tuple(ir, jr) );
+        ret.emplace_back(ir, jr );
       }
     }
   }
@@ -106,7 +106,7 @@ std::vector< corgi::internals::tuple_of<3,int> > chessboard_neighborhood(int rad
     for (int jr=-radius; jr<=radius; jr++) {
       for (int ir=-radius; ir<=radius; ir++)  {
         if (!( ir == 0 && jr == 0 && kr == 0)) {
-          ret.push_back( std::make_tuple(ir, jr, kr) );
+          ret.emplace_back(ir, jr, kr );
         }
       }
     }
