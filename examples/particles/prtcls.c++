@@ -62,8 +62,7 @@ void Tile::get_incoming_particles(
     }
   }
 
-  return;
-}
+  }
 
 
 // create MPI tag given tile id and extra layer of differentiation

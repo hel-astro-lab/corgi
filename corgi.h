@@ -1205,9 +1205,7 @@ class Grid
 
     // FIXME and make non-blocking
     req.wait();
-
-    return;
-  }
+ }
 
   void recv_tile(int orig)
   {
@@ -1233,9 +1231,7 @@ class Grid
     // next need to build tile
     //rcom.local = false; // received tiles are automatically virtuals
     create_tile(rcom);
-
-    return;
-  }
+ }
 
   /// Receive incoming stuff
   //void recv_tiles() {
@@ -1740,13 +1736,7 @@ class Grid
 
     // global progress
     _mpi_grid = std::move(new_mpi_grid);
-
-    // TODO: run analyze_boundaries automatically here to keep 
-    //       virtual_tile_list and boundary_tile_list up-to-date.
-    //       They are needed e.g. in get_boundary_tiles.
-
-    return;
-  }
+ }
 
 
   /// iterate over tiles in adoption vector and claim them to me
@@ -2034,8 +2024,7 @@ class Grid
     // how to communicate back to tile
     // storage is generally in tile
 
-    return;
-  }
+     }
 
   uint64_t reduced_tile_id(uint64_t  /*cid*/) {
     // alternative is to reduce cid size

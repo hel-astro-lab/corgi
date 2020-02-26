@@ -162,8 +162,6 @@ void ParticleBlock::delete_transferred_particles()
   // resize if needed and take care of the size
   last = last < 0 ? 0 : last;
   if ((last != (int)size()) && (size() > 0)) resize(last);
-
-  return;
 }
 
 
@@ -205,8 +203,7 @@ void ParticleBlock::transfer_and_wrap_particles(
     }
   }
 
-  return;
-}
+  }
 
 void ParticleBlock::pack_outgoing_particles()
 {
@@ -254,8 +251,7 @@ void ParticleBlock::pack_outgoing_particles()
   // TODO: set next message size dynamically according to history
   //optimal_message_size = np;
 
-  return;
-}
+  }
 
 
 void ParticleBlock::unpack_incoming_particles()
@@ -305,8 +301,7 @@ void ParticleBlock::unpack_incoming_particles()
     add_particle({locx,locy,locz}, {velx,vely,velz}, wgt);
   }
 
-  return;
-}
+  }
 
 
 inline Particle::Particle(double x, double y, double z,
