@@ -10,7 +10,7 @@
 namespace utility {
 
   template<std::size_t...Is>
-  auto index_over( std::index_sequence<Is...> ) {
+  auto index_over( std::index_sequence<Is...>  /*unused*/) {
     return [](auto&&f)->decltype(auto){
       return decltype(f)(f)( std::integral_constant<std::size_t,Is>{}... );
     };

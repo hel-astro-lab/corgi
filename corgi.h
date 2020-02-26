@@ -396,7 +396,7 @@ class Grid
   template <size_t... Is>
   index_type id_impl(
       corgi::internals::tuple_of<D, size_t>& tuple, 
-      std::index_sequence<Is...>)
+      std::index_sequence<Is...> /*unused*/)
   {
     return id( std::get<Is>(tuple)... );
   }
@@ -404,7 +404,7 @@ class Grid
   template <size_t... Is>
   index_type id_impl(
       const corgi::internals::tuple_of<D, size_t>& tuple, 
-      std::index_sequence<Is...>) const
+      std::index_sequence<Is...> /*unused*/) const
   {
     return id( std::get<Is>(tuple)... );
   }
@@ -1471,7 +1471,7 @@ class Grid
 
 
   /// return index of tiles in relative to my position
-  const corgi::internals::tuple_of<D, size_t> neighs(
+  corgi::internals::tuple_of<D, size_t> neighs(
       corgi::internals::tuple_of<D, int> indices,
       corgi::internals::tuple_of<D, int> indices_rel)
   {

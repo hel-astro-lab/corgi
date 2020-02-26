@@ -206,13 +206,13 @@ auto apply(Function f, Tuple t)
 // ver2
   
 template<std::size_t...Is>
-auto index_over(std::index_sequence<Is...>){
+auto index_over(std::index_sequence<Is...> /*unused*/){
   return [](auto&&f)->decltype(auto){
     return decltype(f)(f)( std::integral_constant<std::size_t, Is>{}... );
   };
 }
 template<std::size_t N>
-auto index_upto(std::integral_constant<std::size_t, N> ={}){
+auto index_upto(std::integral_constant<std::size_t, N>  /*unused*/={}){
   return index_over( std::make_index_sequence<N>{} );
 }
 
@@ -270,7 +270,7 @@ decltype(auto) apply( F&& f, Tuple&& tup ) {
 // See:
 //  - https://stackoverflow.com/questions/41207774/how-do-i-create-a-tuple-of-n-ts-from-an-array-of-t
 template<std::size_t... I, typename U>
-constexpr auto into_tuple(const U &arr, std::index_sequence<I...>) {
+constexpr auto into_tuple(const U &arr, std::index_sequence<I...> /*unused*/) {
     return std::make_tuple(arr[I]...);
 }
 
@@ -298,7 +298,7 @@ constexpr auto into_tuple(const std::array<T, N> &arr) {
 
 // Convert tuple into a array implementation
 template<typename T, std::size_t N, typename Tuple,  std::size_t... I>
-constexpr decltype(auto) into_array_impl(const Tuple& a, std::index_sequence<I...>)
+constexpr decltype(auto) into_array_impl(const Tuple& a, std::index_sequence<I...> /*unused*/)
 {
   return std::array<T,N>{std::get<I>(a)...};
 }

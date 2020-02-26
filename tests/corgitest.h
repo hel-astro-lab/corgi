@@ -12,7 +12,7 @@ class Welsh :
 {
 
   public:
-    Welsh() : corgi::Tile<2>() { }
+    Welsh()  { }
 
     ~Welsh() override = default;
 
@@ -27,7 +27,7 @@ class Pembroke :
 {
 
   public:
-    Pembroke( ) : corgi::Tile<2>() { }
+    Pembroke( )  { }
 
     ~Pembroke() override = default;
 
@@ -92,8 +92,8 @@ class Vallhund : public Swede,
   public:
                    
     Vallhund(int social_number) : 
-      Swede(social_number),
-      corgi::Tile<2>() 
+      Swede(social_number)
+      
     { }
 
     ~Vallhund() override = default;

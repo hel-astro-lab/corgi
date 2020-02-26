@@ -41,29 +41,29 @@ class Tile : public corgi::Tile<2> {
   //--------------------------------------------------
   // MPI send
   std::vector<mpi4cpp::mpi::request> 
-  send_data( mpi4cpp::mpi::communicator&, int orig, int mode, int tag) override;
+  send_data( mpi4cpp::mpi::communicator& /*comm*/, int dest, int mode, int tag) override;
 
   /// actual tag=0 send
   std::vector<mpi4cpp::mpi::request> 
-  send_particle_data( mpi4cpp::mpi::communicator&, int orig, int tag);
+  send_particle_data( mpi4cpp::mpi::communicator& /*comm*/, int dest, int tag);
 
   /// actual tag=1 send
   std::vector<mpi4cpp::mpi::request> 
-  send_particle_extra_data( mpi4cpp::mpi::communicator&, int orig, int tag);
+  send_particle_extra_data( mpi4cpp::mpi::communicator& /*comm*/, int dest, int tag);
 
 
   //--------------------------------------------------
   // MPI recv
   std::vector<mpi4cpp::mpi::request> 
-  recv_data(mpi4cpp::mpi::communicator&, int dest, int mode, int tag) override;
+  recv_data(mpi4cpp::mpi::communicator& /*comm*/, int orig, int mode, int tag) override;
 
   /// actual tag=0 recv
   std::vector<mpi4cpp::mpi::request> 
-  recv_particle_data(mpi4cpp::mpi::communicator&, int dest, int tag);
+  recv_particle_data(mpi4cpp::mpi::communicator& /*comm*/, int orig, int tag);
 
   /// actual tag=1 recv
   std::vector<mpi4cpp::mpi::request> 
-  recv_particle_extra_data(mpi4cpp::mpi::communicator&, int dest, int tag);
+  recv_particle_extra_data(mpi4cpp::mpi::communicator& /*comm*/, int orig, int tag);
   //--------------------------------------------------
 
 
@@ -95,7 +95,7 @@ class Tile : public corgi::Tile<2> {
 class Pusher {
 
   public:
-    void solve(Tile&);
+    void solve(Tile& /*tile*/);
 };
 
 

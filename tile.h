@@ -167,9 +167,9 @@ class Tile
     /// auxiliary function to unpack tuples
   private:
     template <size_t... Is>
-    const corgi::internals::tuple_of<D, size_t> neighs_impl(
+    corgi::internals::tuple_of<D, size_t> neighs_impl(
         corgi::internals::tuple_of<D, int>& tuple, 
-        std::index_sequence<Is...>)
+        std::index_sequence<Is...> /*unused*/)
     {
       return neighs( std::get<Is>(tuple)... );
     }
@@ -177,7 +177,7 @@ class Tile
   public:
     /// unpack tuple into variadic argument list
     template<typename Indices = std::make_index_sequence<D>>
-    const corgi::internals::tuple_of<D, size_t> neighs( 
+    corgi::internals::tuple_of<D, size_t> neighs( 
         corgi::internals::tuple_of<D, int>& indices)
     {
         return neighs_impl(indices, Indices{} );

@@ -185,8 +185,8 @@ class ParticleBlock
 
   /// check and mark particles exceeding given limits
   void check_outgoing_particles(
-      std::array<double,2>&,
-      std::array<double,2>& );
+      std::array<double,2>& /*mins*/,
+      std::array<double,2>&  /*maxs*/);
 
 
   /// delete particles that went beyond boundaries, i.e.,
@@ -196,10 +196,10 @@ class ParticleBlock
 
   /// transfer particles between blocks
   void transfer_and_wrap_particles(
-      ParticleBlock&, 
-      std::array<int,3>,
-      std::array<double,3>&,
-      std::array<double,3>&);
+      ParticleBlock& /*neigh*/, 
+      std::array<int,3> /*dirs*/,
+      std::array<double,3>& /*mins*/,
+      std::array<double,3>& /*maxs*/);
 
 };
 
