@@ -2025,7 +2025,7 @@ class Grid
   }
 
 
-  void probe_data(int tag)
+  void probe_data(int  /*tag*/)
   {
     // probe for msg
     // put it where?
@@ -2037,7 +2037,7 @@ class Grid
     return;
   }
 
-  uint64_t reduced_tile_id(uint64_t cid) {
+  uint64_t reduced_tile_id(uint64_t  /*cid*/) {
     // alternative is to reduce cid size
     // calc rcid that is used as a tag instead
     // optimal memory usage (no extra transfers)
