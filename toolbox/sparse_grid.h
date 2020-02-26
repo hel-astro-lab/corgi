@@ -206,7 +206,7 @@ class sparse_grid {
   }
 
   // move assignment ctor
-  sparse_grid& operator= (sparse_grid&& other) 
+  sparse_grid& operator= (sparse_grid&& other) noexcept
   {
     //std::move(other._data.begin(), other._data.end(), 
     //    _data.begin());
