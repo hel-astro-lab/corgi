@@ -101,10 +101,6 @@ class Tile
      */
     virtual ~Tile() = default;
 
-    // indestructible base
-    //~Tile();
-
-
     /// load tile metainfo from Communication object
     void load_metainfo(Communication cm)
     {
@@ -122,7 +118,6 @@ class Tile
       for(size_t i=0; i<D; i++) maxs[i] = cm.maxs[i];
 
     }
-
 
     /// general N-dim implementation of wrap
     size_t wrap(int ind, size_t d)
@@ -148,10 +143,6 @@ class Tile
         std::array<int, D> rel = {{static_cast<int>(indices_rel)...}};
         //std::array<size_t, D> cur = {{index}};
         auto cur = corgi::internals::into_array(index);
-
-        //std::cout << "cur:";
-        //for(size_t i=0; i<D; i++) std::cout << cur[i] << "/" << rel[i] << " Ni:" << lengths[i] << ";";
-        //std::cout << "\n";
 
         for(size_t i=0; i<D; i++) {
           cur[i] = static_cast<size_t>(
@@ -216,18 +207,6 @@ class Tile
     }
 
     // --------------------------------------------------
-
-    /// send basic information of this (corgi::Tile) to dest
-    //mpi::request send(mpi::communicator& comm, int dest)
-    //{
-    //  return comm.isend(this->communicator, dest);
-    //}
-
-    ///// receive basic information of this (corgi::Tile) from orig
-    //mpi::request recv(mpi::communicator& comm, int orig)
-    //{
-    //  return comm.irecv(this->communicator, orig);
-    //}
 
     /// dummy MPI data send function
     virtual std::vector<mpi::request> 

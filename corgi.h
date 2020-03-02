@@ -144,12 +144,6 @@ class Grid
     env(),
     comm()
   {};
-
-  /// copy-constructor
-  //Grid(const Grid& /*other*/) {};
-  
-  /// move constructor
-  //Grid(Node&& /*other*/) {}; // use std::move()
    
   /// set dimensions during construction time
   template<
@@ -165,50 +159,12 @@ class Grid
     env(),
     comm()
   { }
-
-
-  /*
-   * try specializing handy shortcuts to symmetrize construction always assuming 3D input
-  template< typename = corgi::internals::enable_if_t< (D == 1), void > > 
-  Grid(size_t i, size_t j, size_t k) :
-    _lengths {{i}},
-    _mpi_grid({{i}})
-  { }
-
-  template< typename = corgi::internals::enable_if_t< (D == 2), void > > 
-  Grid(size_t i, size_t j, size_t k) :
-    _lengths {{i, j}},
-    _mpi_grid({{i, j}})
-  { }
-  */
   
 
   /// Deallocate and free everything
   virtual ~Grid() = default;
 
   public:
-  
-  // --------------------------------------------------
-  // assignments
-    
-  /// copy assignment
-  //Grid& operator=(const Grid& other)
-  //{
-  //  _lengths = other._lengths;
-
-  //  return *this;
-  //}
-
-
-  /// move assignment
-  //Grid& operator=(const Grid&& other)
-  //{
-  //  _lengths   = std::move(other._lengths);
-
-  //  return *this;
-  //}
-
-
 
 
   //public:
@@ -228,7 +184,6 @@ class Grid
     const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(end());   }
     const_reverse_iterator crend()   const noexcept { return const_reverse_iterator(begin()); }
   */
-
 
 
   public:
@@ -304,7 +259,6 @@ class Grid
           << " is out of the [0, " << (_lengths[i]-1) << "] range. ";
       }
     }
-    //if(!(oss.str().empty())) std::cout << oss;
 
     // if nothing has been written to oss then all indices are valid
     assert(oss.str().empty());
@@ -358,20 +312,6 @@ class Grid
   _compute_index(
       const ::std::array<index_type, D>& index_array) const noexcept
   {
-
-    // FIXME
-    //auto ind_coeffs = compute_index_coeffs(_lengths);
-    //auto inds = corgi::internals::ct_inner_product(
-    //    compute_index_coeffs(_lengths), 0,
-    //    index_array, 0, D,
-    //    static_cast<index_type>(0),
-    //    corgi::internals::ct_plus<index_type>,
-    //    corgi::internals::ct_prod<index_type>);
-
-    //std::cout << "_compute_index: " << inds << " coffs";
-    //for(size_type i = 0; i < D; ++i) std::cout << i << "=" << ind_coeffs[i] << " ";
-    //std::cout << "\n";
-
     return corgi::internals::ct_inner_product(
         compute_index_coeffs(_lengths), 0,
         index_array, 0, D,
@@ -682,7 +622,6 @@ class Grid
   /// \brief Get individual tile (as a pointer)
   Tileptr get_tileptr(const uint64_t cid) {
     auto it = tiles.find(cid);
-    //if (it == tiles.end()) { throw std::invalid_argument("entry not found"); }
     if (it == tiles.end()) { return nullptr; };
     return it->second;
   }
@@ -730,19 +669,6 @@ class Grid
       }
     }
     return ret;
-
-    //size_t i = 0, len = tile_list.size();
-    //while(i < len) {
-    //  std::cout << comm.rank() << ": " << i << "/" << len << "\n";
-    //  if(!tiles.at( tile_list[i] )->communication.local) {
-    //    std::swap(tile_list[i], tile_list.back());
-    //    tile_list.pop_back();
-    //    len--;
-    //  } else {
-    //    i++;
-    //  }
-    //}
-    //return tile_list;
   }
 
 
@@ -761,18 +687,6 @@ class Grid
       }
     }
     return ret;
-
-    //size_t i = 0, len = tile_list.size();
-    //while(i < len) {
-    //  if (tiles.at( tile_list[i] )->communication.local) {
-    //    std::swap(tile_list[i], tile_list.back());
-    //    tile_list.pop_back();
-    //    len--;
-    //  } else {
-    //    i++;
-    //  }
-    //}
-    //return tile_list;
   }
 
   /// Return all local boundary tiles
@@ -1015,12 +929,10 @@ class Grid
   std::vector<mpi::request> sent_info_messages;
   std::vector<mpi::request> sent_tile_messages;
   std::unordered_map<int, std::vector<mpi::request>> sent_data_messages;
-  //std::unordered_map<int, std::vector<MPI_Request>> sent_data_messages;
 
   std::vector<mpi::request> recv_info_messages;
   std::vector<mpi::request> recv_tile_messages;
   std::unordered_map<int, std::vector<mpi::request>> recv_data_messages;
-  //std::unordered_map<int, std::vector<MPI_Request>> recv_data_messages;
 
   std::vector<mpi::request> sent_adoption_messages;
   std::vector<mpi::request> recv_adoption_messages;
@@ -1124,63 +1036,11 @@ class Grid
     sent_info_messages.clear();
     sent_tile_messages.clear();
 
-    //for (int dest = 0; dest<comm.size(); dest++) {
-    //  if( dest == comm.rank() ) { continue; } // do not send to myself
-
-    //  int i = 0;
-    //  std::vector<int> to_be_sent;
-    //  for(std::vector<int> address: send_queue_address) {
-    //    if( std::find( address.begin(),
-    //          address.end(),
-    //          dest) != address.end()) 
-    //    {
-    //      to_be_sent.push_back( i );
-    //    }
-    //    i++;
-    //  }
-
-    //  // initial message informing how many tiles are coming
-    //  // TODO: this whole thing could be avoided by using 
-    //  // MPI_Iprobe in the receiving end. Maybe...
-    //  auto number_of_incoming_tiles = static_cast<int>(to_be_sent.size());
-
-    //  //std::cout << comm.rank() 
-    //  //          << " sending message to " 
-    //  //          << dest
-    //  //          << " incoming number of tiles " 
-    //  //          << number_of_incoming_tiles
-    //  //          << "\n";
-
-    //  mpi::request req;
-    //  req = comm.isend(dest, commType::NTILES, number_of_incoming_tiles);
-    //  sent_info_messages.push_back( req );
-
-    //}
-
-    // send the real tile meta info data now
-    // We optimize this by only packing the tile data
-    // once, and then sending the same thing to everybody who needs it.
-    // FIXME: not really...
-    //
-    //int i = 0;
-    //for(auto cid: send_queue) {
-    //  auto& tile = get_tile(cid);
-    //  for(int dest: send_queue_address[i]) {
-
-    //    mpi::request req;
-    //    req = comm.isend(dest, commType::TILEDATA, tile.communication);
-
-    //    sent_tile_messages.push_back( req );
-    //  }
-    //  i++;
-    //}
-
     // send all tiles
     for(auto&& elem : boundary_tile_list) {
       auto& tile = get_tile(elem.first);
 
       //std::cout << comm.rank() << " sending cid message " << elem.first << " ---> ";
-
       for(int dest : elem.second) {
         //std::cout << "," << comm.rank() << ":" << dest;
 
@@ -1234,76 +1094,6 @@ class Grid
  }
 
   /// Receive incoming stuff
-  //void recv_tiles() {
-
-  //  recv_info_messages.clear();
-  //  recv_tile_messages.clear();
-
-  //  //size_t i = 0;
-  //  for (int source=0; source<comm.size(); source++) {
-  //    if (source == comm.rank() ) continue; // do not receive from myself
-
-  //    // communicate with how many tiles there are incoming
-
-  //    // TODO: use MPI_IProbe to check if there are 
-  //    // any messages for me instead of assuming that there is
-
-  //    // TODO: encapsulate into vector that can be received & 
-  //    // processed more later on
-
-  //    int number_of_incoming_tiles=0;
-  //    mpi::request req;
-  //    req = comm.irecv(source, commType::NTILES, number_of_incoming_tiles);
-
-  //    // TODO: Remove this code block and do in background instead
-  //    req.wait();
-  //    //recv_info_messages.push_back( req );
-
-  //    /*
-  //       fmt::print("{}: I got a message! Waiting {} tiles from {}\n",
-  //       rank, number_of_incoming_tiles, source);
-  //       */
-  //    std::cout << comm.rank()
-  //              << " I got a message! Waiting " 
-  //              << number_of_incoming_tiles << " tiles from " 
-  //              << source
-  //              << "\n";
-
-  //    // Now receive the tiles themselves
-  //    for (int ic=0; ic<number_of_incoming_tiles; ic++) {
-  //      mpi::request reqc;
-  //      Communication rcom;
-
-  //      reqc = comm.irecv(source, commType::TILEDATA, rcom);
-  //      
-  //      // TODO non blocking
-  //      reqc.wait();
-  //      recv_tile_messages.push_back( reqc );
-  //        
-  //      if(this->tiles.count(rcom.cid) == 0) { // Tile does not exist yet; create it
-  //        // TODO: Check validity of the tile better
-  //        create_tile(rcom);
-  //      } else { // Tile is already on my virtual list; update
-  //        update_tile(rcom);  
-  //      };
-
-  //      // update and make non-local virtual
-  //      //auto& new_tile = get_tile(rcom.cid);
-  //      //new_tile.communication.local = false;
-  //    }
-  //  }
-
-  //  // process all mpi requests; otherwise we leak memory
-  //  mpi::wait_all(recv_info_messages.begin(), recv_info_messages.end());
-  //  mpi::wait_all(sent_info_messages.begin(), sent_info_messages.end());
-
-  //  mpi::wait_all(recv_tile_messages.begin(), recv_tile_messages.end());
-  //  mpi::wait_all(sent_tile_messages.begin(), sent_tile_messages.end());
-
-  //  clear_send_queue();
-  //}
-
-
   std::vector<Communication> rcoms;
   void recv_tiles() {
     recv_tile_messages.clear();
@@ -1559,9 +1349,7 @@ class Grid
       std::fill(alives.begin(), alives.end(), 0.0); // reset vector
 
       // resolve neighborhood; diffusion step
-      //alives[old_color] = 1.0;
       alives[old_color] = norm;
-      //alives[old_color] = sqrt(0.5/M_PI);
 
       // Limited Moore nearest neighborhood
       //auto neigs = nhood(ind);
@@ -1584,16 +1372,7 @@ class Grid
         r = static_cast<double>( geom::manhattan_distance<D>(reli) );  
         //r = geom::chessboard_distance<D>(reli);  
 
-        //alives[color] += exp(-r*r/Rg);
-        //alives[color] += r/(2.0*M_PI*Rg);
-        //alives[color] += (norm/static_cast<double>(dt))*exp(-r*r/(4.0*static_cast<double>(dt)));
-
         alives[color] += norm*exp(-0.5*r*r/Rg/Rg);
-          
-        //alives[color] += (norm/Rg)*exp(-r*r/(4.0*Rg));
-        //alives[color] += sqrt(0.5/M_PI)*exp(-r*r/(2.0));
-        //alives[color] += exp(-r*r/4.0);
-        //alives[color] += exp(-r*r/(4.0*Rg)); unnormalized version
       }
 
 
@@ -1605,44 +1384,9 @@ class Grid
       // add relative quota for balance 
       for(size_t i=0; i<alives.size(); i++) alives[i] += 0.5*rel_quota[i];
 
-
-      //auto maxe = std::max_element(alives.begin(), alives.end());
-      //if(*maxe >= 0.5/( (double)comm.size() ) ) {
-      //  new_color = std::distance(alives.begin(), maxe);
-      //} else {
-      //  new_color = old_color;
-      //}
-
       // get mode, i.e., most frequent color; sharpening step
       new_color = std::distance( alives.begin(), 
           std::max_element(alives.begin(), alives.end()));
-
-      // stay alive if all values are the same; i.e., we are in equilibrium
-      //bool equilibrium = true;
-      //int ref_val = alives[0];
-      //for(auto& val : alives) {
-      //  if(val != ref_val) {
-      //    equilibrium = false;
-      //    break;
-      //  }
-      //}
-      //if(equilibrium) continue;
-
-
-      // FIXME
-      //if (new_color != old_color) {
-      //  uint64_t cid = id(ind);
-      //  auto index = id2index(cid, _lengths);
-      //  std::cout << comm.rank() << ": tile " << cid 
-      //    << " has been kidnapped by evil " << new_color 
-      //    << " at (" << std::get<0>(index) << "," 
-      //    << " from " << old_color << " --- alives:";
-      //  for(auto val : alives) std::cout << " " << val;
-      //  double sum = 0.0;
-      //  for(auto val : alives) sum += val;
-      //  std::cout << " sum: " << sum;
-      //  std::cout << "\n";
-      //}
 
       obtained[new_color]++;
       lost[old_color]++;
@@ -2012,42 +1756,6 @@ class Grid
     //std::vector<mpi::request>().swap( sent_data_messages[tag] );
     //std::vector<mpi::request>().swap( recv_data_messages[tag] );
     
-  }
-
-
-  void probe_data(int  /*tag*/)
-  {
-    // probe for msg
-    // put it where?
-    // can not get cid
-    // where to tmp store it?
-    // how to communicate back to tile
-    // storage is generally in tile
-
-     }
-
-  uint64_t reduced_tile_id(uint64_t  /*cid*/) {
-    // alternative is to reduce cid size
-    // calc rcid that is used as a tag instead
-    // optimal memory usage (no extra transfers)
-    // maximum size must be <2^21-1
-    // how to calc rcid unambiguously 
-
-    // pre-calc cid & (orig -> dest) number combination?
-    // can be done without communications since global knowledge
-      
-    // algorithm sketch
-    // calc neighbors
-
-    //left, right, up, down, front, back = 6
-    // +diags =8
-    // 3D diags =27
-    // calc center of mass tile
-    // max distance is then L/2
-
-    // only receiving needs to be unambiguous; in terms of tiles in grid
-
-    return 0;
   }
 
 
