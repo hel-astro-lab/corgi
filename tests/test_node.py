@@ -67,7 +67,7 @@ class Parallel(unittest.TestCase):
 
     def test_mpiInitialization(self):
 
-        self.refGrid = np.zeros((self.Nx, self.Ny), np.int)
+        self.refGrid = np.zeros((self.Nx, self.Ny), int)
         self.refGrid[0:5,   0:10] = 0
         self.refGrid[0:5,  10:15] = 1
         self.refGrid[5:10,  0:10] = 2
@@ -139,7 +139,7 @@ class Parallel2(unittest.TestCase):
         grid.set_grid_lims(self.xmin, self.xmax, self.ymin, self.ymax)
 
         # divide into upper and lower halfs
-        #refGrid = np.zeros((self.Nx, self.Ny), np.int)
+        #refGrid = np.zeros((self.Nx, self.Ny), int)
         #refGrid[:, 0] = 0
         #refGrid[:, 1] = 1
 

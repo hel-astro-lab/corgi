@@ -79,7 +79,7 @@ class Neighboords(unittest.TestCase):
         grid.set_grid_lims(conf.xmin, conf.xmax, conf.ymin, conf.ymax)
 
         # one tile surrounded by other rank
-        refGrid = np.ones((conf.Nx, conf.Ny), np.int)
+        refGrid = np.ones((conf.Nx, conf.Ny), int)
         refGrid[1,1] = 0
 
         #setup grid configuration
