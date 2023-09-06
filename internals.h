@@ -68,14 +68,21 @@ T ct_accumulate(const ::std::array<T, N>& arr,  ///< accumulate from this array
                )
 {
     // https://stackoverflow.com/a/33158265/865719
-    return (first < (first + length))
-         ? op(arr[first],
-              ct_accumulate(arr,
-                            first + 1,
-                            length - 1,
-                            initial_value,
-                            op))
-         : initial_value;
+    //return (first < (first + length))
+    //     ? op(arr[first],
+    //          ct_accumulate(arr,
+    //                        first + 1,
+    //                        length - 1,
+    //                        initial_value,
+    //                        op))
+    //     : initial_value;
+
+    // TODO this one is allowed in >c++14
+    T ret = initial_value;
+    for(size_t i=0; i<length; i++){
+        ret = op(ret, arr[first + i]);
+    }
+    return ret;
 }
 
 
@@ -101,15 +108,22 @@ T ct_inner_product(const ::std::array<T_1, N_1>& arr_1,  ///< calc the inner pro
                   )
 {
     // same logic as `ct_accumulate()`
-    return (first_1 < (first_1 + length))
-         ? op_sum(op_prod(arr_1[first_1],
-                          arr_2[first_2]),
-                  ct_inner_product(arr_1, first_1 + 1,
-                                   arr_2, first_2 + 1,
-                                   length - 1,
-                                   initial_value,
-                                   op_sum, op_prod))
-         : initial_value;
+    //return (first_1 < (first_1 + length))
+    //     ? op_sum(op_prod(arr_1[first_1],
+    //                      arr_2[first_2]),
+    //              ct_inner_product(arr_1, first_1 + 1,
+    //                               arr_2, first_2 + 1,
+    //                               length - 1,
+    //                               initial_value,
+    //                               op_sum, op_prod))
+    //     : initial_value;
+      
+    // TODO this one is allowed in >c++14
+    T ret = initial_value;
+    for(size_t i=0; i<length; i++){
+        ret = op_sum(ret, op_prod(arr_1[first_1 + i], arr_2[first_2 + i]));
+    }
+    return ret;
 }
 
 
