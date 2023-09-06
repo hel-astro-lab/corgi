@@ -91,9 +91,14 @@ std::vector<mpi4cpp::mpi::request> Tile::send_data(
     int mode,
     int tag)
 {
-  if     (mode == 0) return Tile::send_particle_data(comm, dest, tag);
-  if(mode == 1) return Tile::send_particle_extra_data(comm,dest, tag);
-  else assert(false);
+  if (mode == 0) {
+      return Tile::send_particle_data(comm, dest, tag);
+  } else if(mode == 1) {
+      return Tile::send_particle_extra_data(comm,dest, tag);
+  } else {
+      assert(false);
+      exit(1);
+  }
 }
 
 std::vector<mpi4cpp::mpi::request> Tile::send_particle_data( 
@@ -143,9 +148,14 @@ std::vector<mpi4cpp::mpi::request> Tile::recv_data(
     int mode,
     int tag)
 {
-  if(mode == 0)      return Tile::recv_particle_data(comm,orig,tag);
-  if(mode == 1) return Tile::recv_particle_extra_data(comm,orig,tag);
-  else assert(false);
+  if(mode == 0) {
+      return Tile::recv_particle_data(comm,orig,tag);
+  } else if(mode == 1) {
+      return Tile::recv_particle_extra_data(comm,orig,tag);
+  } else { 
+      assert(false);
+      exit(1);
+  }
 }
 
 
