@@ -6,15 +6,15 @@ import os
 
 import pycorgi
 
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib import cm
-    import palettable as pal
-    palette = pal.wesanderson.Moonrise1_5.mpl_colormap
-    from visualize import plotNode
-    from visualize import saveVisz
-except:
-    pass
+#try:
+#    import matplotlib.pyplot as plt
+#    from matplotlib import cm
+#    import palettable as pal
+#    palette = pal.wesanderson.Moonrise1_5.mpl_colormap
+#    from visualize import plotNode
+#    from visualize import saveVisz
+#except:
+#    pass
 
 
 class Conf:
@@ -98,11 +98,11 @@ class Neighboords(unittest.TestCase):
                     c = pycorgi.twoD.Tile()
                     grid.add_tile(c, (i,j) ) 
 
-        try:
-            plotNode(axs[0], grid, conf)
-            saveVisz(0, grid, conf)
-        except:
-            pass
+        #try:
+        #    plotNode(axs[0], grid, conf)
+        #    saveVisz(0, grid, conf)
+        #except:
+        #    pass
 
         if grid.size() > 1:
             grid.analyze_boundaries()
@@ -113,11 +113,11 @@ class Neighboords(unittest.TestCase):
             grid.send_tiles()
             grid.recv_tiles()
 
-        try:
-            plotNode(axs[0], grid, conf)
-            saveVisz(1, grid, conf)
-        except:
-            pass
+        #try:
+        #    plotNode(axs[0], grid, conf)
+        #    saveVisz(1, grid, conf)
+        #except:
+        #    pass
 
         cur = readGrid(grid, conf)
         #print(cur)
