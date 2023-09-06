@@ -1009,7 +1009,7 @@ class Grid
     }
       
     // test that we did not miss elements
-    for(auto& val : new_work) assert(val != -1.0); 
+    for([[maybe_unused]] auto& val : new_work) assert(val != -1.0); 
 
     // upload back to grid
     _work_grid.deserialize(new_work, _lengths);
