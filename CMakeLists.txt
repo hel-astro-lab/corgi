@@ -56,6 +56,12 @@ add_subdirectory(examples/particles)
 #-------------------------------------------------- 
 # unit tests
 #
+if(DEFINED Python_EXECUTABLE AND NOT DEFINED PYTHON_EXECUTABLE)
+  set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
+endif()
+
+message(STATUS "Corgi tests ran with python: ${PYTHON_EXECUTABLE}")
+
 add_custom_target(check-pycorgi ALL
                   ${PYTHON_EXECUTABLE} -m unittest discover -s ../tests/ -v
                   DEPENDS pycorgi pycorgitest
