@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../tile.h"
+#include "corgi/tile.h"
 
 
 namespace corgitest {

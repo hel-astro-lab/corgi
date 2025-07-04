@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "../../tile.h"
-#include "../../corgi.h"
-#include "../../toolbox/dataContainer.h"
+#include "corgi/tile.h"
+#include "corgi/corgi.h"
+#include "corgi/toolbox/dataContainer.h"
 
 #include <mpi4cpp/mpi.h>
 

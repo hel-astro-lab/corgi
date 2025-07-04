@@ -3,8 +3,8 @@
 #include <vector>
 #include <mpi4cpp/mpi.h>
 
-#include "../../tile.h"
-#include "../../corgi.h"
+#include "corgi/tile.h"
+#include "corgi/corgi.h"
 
 #include "container.h"
 #include "communication.h"

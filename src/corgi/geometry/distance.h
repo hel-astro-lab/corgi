@@ -3,8 +3,8 @@
 #include <tuple>
 #include <cmath>
 
-#include "../internals.h"
-#include "utilities.h"
+#include "corgi/internals.h"
+#include "corgi/geometry/utilities.h"
 
 
 namespace corgi { 

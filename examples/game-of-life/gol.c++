@@ -1,7 +1,7 @@
 #include <string>
 
 #include "gol.h"
-#include "../../toolbox/dataContainer.h"
+#include "corgi/toolbox/dataContainer.h"
 
 
 using namespace gol;

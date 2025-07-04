@@ -4,8 +4,8 @@
 #include <tuple>
 #include <cmath>
 
-#include "internals.h"
-#include "geometry/distance.h"
+#include "corgi/internals.h"
+#include "corgi/geometry/distance.h"
 
 namespace corgi { namespace ca {
 

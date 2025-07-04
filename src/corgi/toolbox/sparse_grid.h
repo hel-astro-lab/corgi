@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "../internals.h"
+#include "corgi/internals.h"
 
 
 
