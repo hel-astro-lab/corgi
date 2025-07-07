@@ -1,8 +1,4 @@
-project (cellular_automata)
+file (GLOB CORGI_PYCA_SOURCES *.c++ *.h *.cpp *.hpp *.c *.cxx)
 
-file (GLOB TEST_SRCS *.c++ *.h *.cpp *.hpp *.c *.cxx)
-
-pybind11_add_module(pyca ${TEST_SRCS})
-target_compile_options(pyca PRIVATE ${WARNING_FLAGS})
-
-
+pybind11_add_module (corgi_pyca ${CORGI_PYCA_SOURCES})
+target_link_libraries (corgi_pyca PRIVATE corgi corgi_warnings)

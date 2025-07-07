@@ -3,7 +3,7 @@
 namespace py = pybind11;
     
 #include "gol.h"
-#include "../../toolbox/dataContainer.h"
+#include "corgi/toolbox/dataContainer.h"
 
 
 PYBIND11_MODULE(pyca, m) {

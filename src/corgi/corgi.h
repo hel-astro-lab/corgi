@@ -16,13 +16,13 @@
 #include <sstream>
 #include <utility>
 
-#include "internals.h"
-#include "toolbox/sparse_grid.h"
-#include "tile.h"
+#include "corgi/internals.h"
+#include "corgi/toolbox/sparse_grid.h"
+#include "corgi/tile.h"
 
 //#include "mpi.h"
 #include <mpi4cpp/mpi.h>
-#include "communication.h"
+#include "corgi/communication.h"
 
 
 namespace corgi {

@@ -1,8 +1,4 @@
-project (pycorgitest)
+file (GLOB CORGI_TEST_SOURCES *.c++ *.h *.cpp *.hpp *.c *.cxx)
 
-#find_package(pybind11 REQUIRED) #loaded externally
-
-file (GLOB TEST_SRCS *.c++ *.h *.cpp *.hpp *.c *.cxx)
-
-pybind11_add_module(pycorgitest ${TEST_SRCS})
-target_compile_options(pycorgitest PRIVATE ${WARNING_FLAGS})
+pybind11_add_module (pycorgitest ${CORGI_TEST_SOURCES})
+target_link_libraries (pycorgitest PRIVATE corgi corgi_warnings)

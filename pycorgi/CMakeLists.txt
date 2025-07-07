@@ -1,12 +1,8 @@
-project (pycorgi)
+file (GLOB CORGI_SOURCES *.c++ *.h)
 
-file(GLOB SOURCES *.c++ *.h)
+pybind11_add_module (pycorgi ${CORGI_SOURCES})
+target_link_libraries (pycorgi PRIVATE corgi corgi_warnings)
 
-#find_package(pybind11 REQUIRED) #loaded externally
-
-pybind11_add_module(pycorgi ${SOURCES})
-target_compile_options(pycorgi PRIVATE ${WARNING_FLAGS})
-target_link_libraries(pycorgi PRIVATE MPI::MPI_CXX)
-
-
-install (TARGETS pycorgi DESTINATION lib)
+set_target_properties (pycorgi PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib"
+)

@@ -7,9 +7,9 @@
 #include <iostream>
 #include <algorithm>
 
-#include "common.h"
-#include "internals.h"
-#include "cellular_automata.h"
+#include "corgi/common.h"
+#include "corgi/internals.h"
+#include "corgi/cellular_automata.h"
 
 #include <mpi4cpp/mpi.h>
 

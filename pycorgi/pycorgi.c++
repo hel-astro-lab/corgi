@@ -2,10 +2,10 @@
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
-#include "tuple"
+#include <tuple>
 
-#include "../common.h"
-#include "../corgi.h"
+#include "corgi/common.h"
+#include "corgi/corgi.h"
 
 
 

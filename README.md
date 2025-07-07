@@ -4,16 +4,21 @@
 
 <img align="right" src="examples/loadbalance/lbal2.gif">
 
-`corgi` is a c++ template library for building massively parallel grids. 
+`corgi` is a c++ template library for building massively parallel grids.
 
 It aims to be *completely* memory local, so every node will only need to work on the data that it currently sees/owns. Underlying communication is done using MPI (Message Passing Interface). Novelty is in the load balancing scheme that applies cellular automata kind of rules to even out load imbalances and tries, at the same time, to minimize the inter-node communication.
 
 **This is still work-in-progress**
 
 ## In a nutshell:
-- c++-14 compatible compiler is needed,
-- `MPI` library should be installed, and
-- it is header only; just include and start using!
+- c++-17 compatible compiler is needed,
+- add as a git submodule to your project, and
+- add following to your `CMakeLists.txt`:
+
+```
+add_subdirectory (corgi)
+target_link_library (<your_target> PRIVATE corgi)
+```
 
 ## Examples
 
