@@ -9,7 +9,7 @@ set (CMAKE_CXX_EXTENSIONS OFF)
 
 project (
     corgi
-    VERSION 0.1.0
+    VERSION 1.0.0
     DESCRIPTION "C++ library for massively parallel computational grids."
     HOMEPAGE_URL "https://github.com/hel-astro-lab"
     LANGUAGES CXX
