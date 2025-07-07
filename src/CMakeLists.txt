@@ -21,7 +21,6 @@ target_sources (
   ./corgi/internals.h
   ./corgi/tags.h
   ./corgi/tile.h
-  ./corgi/toolbox
   ./corgi/geometry/distance.h
   ./corgi/geometry/utilities.h
   ./corgi/toolbox/dataContainer.h
