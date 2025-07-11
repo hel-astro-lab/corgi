@@ -42,7 +42,8 @@ auto declare_tile(
         .def("set_tile_mins",           &corgi::Tile<D>::set_tile_mins)
         .def("set_tile_maxs",           &corgi::Tile<D>::set_tile_maxs)
         .def("load_metainfo",           &corgi::Tile<D>::load_metainfo)
-        .def("nhood",                   &corgi::Tile<D>::nhood);
+        .def("nhood",                   &corgi::Tile<D>::nhood)
+        .def("pairwise_moore_communication", &corgi::Tile<D>::pairwise_moore_communication);
 
     return corgi_tile;
 }
@@ -116,8 +117,8 @@ auto declare_node(
         .def("adoption_council",        &corgi::Grid<D>::adoption_council)
         .def("adoption_council2",       &corgi::Grid<D>::adoption_council2)
         .def("communicate_adoptions",   &corgi::Grid<D>::communicate_adoptions)
-        .def("erase_virtuals",          &corgi::Grid<D>::erase_virtuals);
-
+        .def("erase_virtuals",          &corgi::Grid<D>::erase_virtuals)
+        .def("pairwise_moore_communication", &corgi::Grid<D>::pairwise_moore_communication);
 
   return corgi_node;
 }

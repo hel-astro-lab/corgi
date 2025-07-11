@@ -120,7 +120,7 @@ class Tile
     }
 
     /// general N-dim implementation of wrap
-    size_t wrap(int ind, size_t d)
+    size_t wrap(int ind, size_t d) const
     {
       auto N = static_cast<int>(lengths[d]);
       assert(N < 1e6); // FIXME: debug catch preventing ridiculously large while loops
@@ -131,14 +131,12 @@ class Tile
       return static_cast<size_t>(ind);
     }
 
-
     /// return index of tiles in relative to my position
-  public:
     template<typename... Indices>
     corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
     corgi::internals::are_integral<Indices...>::value, 
     const corgi::internals::tuple_of<D, size_t> > 
-    neighs(Indices... indices_rel)
+    neighs(Indices... indices_rel) const
     {
         std::array<int, D> rel = {{static_cast<int>(indices_rel)...}};
         //std::array<size_t, D> cur = {{index}};
@@ -155,23 +153,15 @@ class Tile
         return ret;
     }
 
-    /// auxiliary function to unpack tuples
-  private:
-    template <size_t... Is>
-    corgi::internals::tuple_of<D, size_t> neighs_impl(
-        corgi::internals::tuple_of<D, int>& tuple, 
-        std::index_sequence<Is...> /*unused*/)
-    {
-      return neighs( std::get<Is>(tuple)... );
-    }
-
-  public:
     /// unpack tuple into variadic argument list
-    template<typename Indices = std::make_index_sequence<D>>
-    corgi::internals::tuple_of<D, size_t> neighs( 
-        corgi::internals::tuple_of<D, int>& indices)
+    corgi::internals::tuple_of<D, size_t> neighs(
+        const corgi::internals::tuple_of<D, int>& indices) const
     {
-        return neighs_impl(indices, Indices{} );
+        auto neigs_wrapper = [this](const auto... i) {
+            return neighs(i...);
+        };
+
+        return std::apply(neigs_wrapper, indices);
     }
 
     // end of neighs + auxiliary functions
@@ -254,6 +244,26 @@ class Tile
       return reqs;
     }
 
+    /// dummy pairwise Moore neighborhood communication.
+    ///
+    /// For each tile A, corgi::Grid::pairwise_moore_communication
+    /// will call A.pairwise_moore_communication(B, dir_to_B, mode)
+    /// for each tile B in A's Moore neighborhood.
+    ///
+    /// Order of the calls in corgi::Grid::pairwise_moore_communication
+    /// is that Tile::pairwise_moore_communication(B, dir_to_B, mode)
+    /// is called for all tiles with same direction before proceeding
+    /// to the next direction. There is no guarantees on the order of directions
+    /// or the order of tiles.
+    virtual void
+    pairwise_moore_communication(const Tile& /* other */,
+                                 const std::array<int, D> dir_to_other,
+                                 const int /* mode */
+    ) {
+        std::cout << "pairwise moore communication towards ";
+        for (const auto x : dir_to_other) { std::cout << x << " "; }
+        std::cout << "\n";
+    };
 
     /// Local computational work estimate for this tile
     virtual double get_work()

@@ -55,7 +55,13 @@ PYBIND11_MODULE(pycorgitest, m) {
     .def(py::init<int>())
     .def("bark",     &corgitest::Vallhund::bark);
 
-
+  using MTile = corgitest::MooreTestTile;
+  py::class_<MTile, corgi::Tile<2>, std::shared_ptr<MTile>>(m, "MooreTestTile")
+      .def(py::init<>())
+      .def_readwrite("communications", &MTile::communications)
+      .def_readwrite("directions", &MTile::directions)
+      .def_readwrite("modes", &MTile::modes)
+      .def("pairwise_moore_communication", &MTile::pairwise_moore_communication);
 
   // --------------------------------------------------
   // Grid bindings
