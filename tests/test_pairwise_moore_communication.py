@@ -32,10 +32,15 @@ class pairwise_moore_communication(unittest.TestCase):
 
                 self.assertEqual(other_indices, expected_other_indices, msg=f"{i}th communication")
 
+        def assertPrePostlude(tile):
+            self.assertEqual(tile.prelude_mode, 42)
+            self.assertEqual(tile.postlude_mode, 42)
+
         for tile_id in grid.get_local_tiles():
             tile = grid.get_tile(tile_id)
             assertTileModes(tile)
             assertTileCommunications(tile)
+            assertPrePostlude(tile)
 
 if __name__ == '__main__':
     unittest.main()

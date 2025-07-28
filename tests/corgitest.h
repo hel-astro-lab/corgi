@@ -109,8 +109,19 @@ struct MooreTestTile : public corgi::Tile<2> {
     std::vector<std::tuple<int, int>> communications{};
     std::vector<std::array<int, 2>> directions{};
     std::vector<int>      modes{};
+    int prelude_mode, postlude_mode;
 
     ~MooreTestTile() override = default;
+
+    virtual void
+    pairwise_moore_communication_prelude(const int mode) override {
+        prelude_mode = mode;
+    };
+
+    virtual void
+    pairwise_moore_communication_postlude(const int mode) override {
+        postlude_mode = mode;
+    };
 
     virtual void
     pairwise_moore_communication(const Tile&    other,

@@ -61,7 +61,8 @@ PYBIND11_MODULE(pycorgitest, m) {
       .def_readwrite("communications", &MTile::communications)
       .def_readwrite("directions", &MTile::directions)
       .def_readwrite("modes", &MTile::modes)
-      .def("pairwise_moore_communication", &MTile::pairwise_moore_communication);
+      .def_readwrite("prelude_mode", &MTile::prelude_mode)
+      .def_readwrite("postlude_mode", &MTile::postlude_mode);
 
   // --------------------------------------------------
   // Grid bindings

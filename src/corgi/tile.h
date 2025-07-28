@@ -246,9 +246,14 @@ class Tile
 
     /// dummy pairwise Moore neighborhood communication.
     ///
-    /// For each tile A, corgi::Grid::pairwise_moore_communication
+    /// For each local tile A, corgi::Grid::pairwise_moore_communication
     /// will call A.pairwise_moore_communication(B, dir_to_B, mode)
-    /// for each tile B in A's Moore neighborhood.
+    /// for each tile B in A's Moore neighborhood. Before this
+    /// A.pairwise_moore_communication_prelude(mode) will be called
+    /// on each tile and A.pairwise_moore_communication_postlude(mode)
+    /// will be called after.
+    ///
+    /// In addition to local tiles pre- and postlude is called on virtual tiles.
     ///
     /// Order of the calls in corgi::Grid::pairwise_moore_communication
     /// is that Tile::pairwise_moore_communication(B, dir_to_B, mode)
@@ -265,12 +270,15 @@ class Tile
         std::cout << "\n";
     };
 
+    virtual void pairwise_moore_communication_prelude(const int /* mode */) { }
+    virtual void pairwise_moore_communication_postlude(const int /* mode */) { }
+
+
     /// Local computational work estimate for this tile
     virtual double get_work()
     {
       return 1.0;
     }
-
 
 
 }; // end of Tile class
