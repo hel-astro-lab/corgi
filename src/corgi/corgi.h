@@ -1762,13 +1762,14 @@ class Grid
   /// See corgi::Tile::pairwise_moore_communication.
   void
   pairwise_moore_communication(const int mode) {
+      // Loops could potentially be parallelized.
+    
       for (const auto tile_id : get_tile_ids()) {
           auto& tile = get_tile(tile_id);
           tile.pairwise_moore_communication_prelude(mode);
       }
 
       for (const auto& dir : corgi::ca::moore_neighborhood<D>()) {
-          // FIXME: parallelize loop below
           for (const auto tile_id : get_local_tiles()) {
               auto& tile = get_tile(tile_id);
 
