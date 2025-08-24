@@ -1759,6 +1759,32 @@ class Grid
   }
 
 
+  /// See corgi::Tile::pairwise_moore_communication.
+  void
+  pairwise_moore_communication(const int mode) {
+      // Loops could potentially be parallelized.
+    
+      for (const auto tile_id : get_tile_ids()) {
+          auto& tile = get_tile(tile_id);
+          tile.pairwise_moore_communication_prelude(mode);
+      }
+
+      for (const auto& dir : corgi::ca::moore_neighborhood<D>()) {
+          for (const auto tile_id : get_local_tiles()) {
+              auto& tile = get_tile(tile_id);
+
+              const auto& other_tile = get_tile(id(tile.neighs(dir)));
+              const auto array_dir = corgi::internals::into_array(dir);
+              tile.pairwise_moore_communication(other_tile, array_dir, mode);
+          }
+      }
+
+      for (const auto tile_id : get_tile_ids()) {
+          auto& tile = get_tile(tile_id);
+          tile.pairwise_moore_communication_postlude(mode);
+      }
+  }
+
 }; // end of Grid class
 
 } // end of corgi namespace

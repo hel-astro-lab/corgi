@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 
 #include "corgi/tile.h"
 
@@ -103,7 +104,36 @@ class Vallhund : public Swede,
 
 };
 
+struct MooreTestTile : public corgi::Tile<2> {
 
+    std::vector<std::tuple<int, int>> communications{};
+    std::vector<std::array<int, 2>> directions{};
+    std::vector<int>      modes{};
+    int prelude_mode, postlude_mode;
+
+    ~MooreTestTile() override = default;
+
+    virtual void
+    pairwise_moore_communication_prelude(const int mode) override {
+        prelude_mode = mode;
+    };
+
+    virtual void
+    pairwise_moore_communication_postlude(const int mode) override {
+        postlude_mode = mode;
+    };
+
+    virtual void
+    pairwise_moore_communication(const Tile&    other,
+                                 const std::array<int, 2> dir_to_other,
+                                 const int      mode) override {
+        const auto& casted_other = dynamic_cast<const MooreTestTile&>(other);
+
+        communications.push_back(casted_other.index);
+        directions.push_back(dir_to_other);
+        modes.push_back(mode);
+    };
+};
 
 //class Grid : public corgi::Grid<2> {
 //  public:
