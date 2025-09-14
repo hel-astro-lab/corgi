@@ -22,7 +22,6 @@ target_sources (
   ./corgi/tags.h
   ./corgi/tile.h
   ./corgi/geometry/distance.h
-  ./corgi/geometry/utilities.h
   ./corgi/toolbox/dataContainer.h
   ./corgi/toolbox/frequency.h
   ./corgi/toolbox/sparse_grid.h

@@ -31,14 +31,9 @@ auto declare_tile(
         .def_readwrite("maxs",          &corgi::Tile<D>::maxs)
         .def_readwrite("index",         &corgi::Tile<D>::index)
         .def_readwrite("lengths",       &corgi::Tile<D>::lengths)
-        .def("get_index",               [](
-              corgi::Tile<D>& t, corgi::Grid<D>& g)
-            {
-              corgi::internals::tuple_of<D, size_t> ind = 
-                g.id2index( t.cid, g.lens() );
-
-              return ind;
-            })
+        .def("get_index",               [](corgi::Tile<D>& t, corgi::Grid<D>& g) {
+            return g.id2index( t.cid, g.lens() );
+         })
         .def("set_tile_mins",           &corgi::Tile<D>::set_tile_mins)
         .def("set_tile_maxs",           &corgi::Tile<D>::set_tile_maxs)
         .def("load_metainfo",           &corgi::Tile<D>::load_metainfo)
@@ -272,7 +267,7 @@ PYBIND11_MODULE(pycorgi, m_base) {
 
 
     n2.def("get_tile", [](corgi::Grid<2> &n, size_t i, size_t j){ 
-          return n.get_tileptr( std::make_tuple(i,j) ); },
+          return n.get_tileptr( std::array{ i,j } ); },
             py::return_value_policy::reference,
             py::keep_alive<1,0>()
           )
@@ -332,8 +327,8 @@ PYBIND11_MODULE(pycorgi, m_base) {
     n3.def("add_tile", &corgi::Grid<3>::add_tile, py::keep_alive<1,2>());
 
     n3.def("get_tile", [](corgi::Grid<3> &n, size_t i, size_t j, size_t k)
-        { 
-          return n.get_tileptr( std::make_tuple(i,j,k) ); 
+        {
+          return n.get_tileptr( std::array{ i,j,k } );
         },
         py::return_value_policy::reference,
         // keep alive for the lifetime of the grid

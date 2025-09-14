@@ -14,53 +14,43 @@ namespace corgi { namespace ca {
 
 
 /// Moore neighborhood of different dimensions
-// using SFINAE to pick dimensionality specialization
+/// using type constraints to pick dimensionality specialization
 
-template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
-std::vector< corgi::internals::tuple_of<D, T> > moore_neighborhood()
+template<std::size_t D>
+  requires (D == 1)
+std::vector<std::array<int, 1>> moore_neighborhood()
 {
-  std::vector<  corgi::internals::tuple_of<D,int> > ret = {
-    {std::make_tuple(-1), std::make_tuple(+1)}
-  };
-  return ret;
+  return std::vector<std::array<int, 1>> { { -1 }, { 1 } };
 }
 
 
-template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
-std::vector< corgi::internals::tuple_of<2,int> > moore_neighborhood()
+template<std::size_t D>
+  requires (D == 2)
+std::vector<std::array<int, 2> > moore_neighborhood()
 {
-  //std::vector<  corgi::internals::tuple_of<2,int> > ret = {
-  //  { std::make_tuple(-1, -1), 
-  //    std::make_tuple(-1,  0), 
-  //    std::make_tuple(-1, +1), 
-  //    std::make_tuple( 0, +1), 
-  //    std::make_tuple(+1, +1), 
-  //    std::make_tuple( 0, +1), 
-  //    std::make_tuple(+1, -1), 
-  //    std::make_tuple( 0, -1) }
-  //};
-  std::vector<  corgi::internals::tuple_of<2,int> > ret;
+  std::vector<std::array<int, 2> > ret;
   ret.reserve(8);
   for (int jr=-1; jr<=1; jr++) {
     for (int ir=-1; ir<=1; ir++) {
       if (!( ir == 0 && jr == 0  )) {
-        ret.emplace_back(ir, jr );
+        ret.push_back( {ir, jr} );
       }
     }
   }
   return ret;
 }
 
-template<std::size_t D, typename T = std::enable_if_t<(D==3),int> >
-std::vector< corgi::internals::tuple_of<3,int> > moore_neighborhood()
+template<std::size_t D>
+  requires (D == 3)
+std::vector<std::array<int, 3> > moore_neighborhood()
 {
-  std::vector<  corgi::internals::tuple_of<3,int> > ret;
+  std::vector<std::array<int, 3> > ret;
   ret.reserve(26);
   for (int kr=-1; kr<=1; kr++) {
     for (int jr=-1; jr<=1; jr++) {
       for (int ir=-1; ir<=1; ir++) {
         if (!( ir == 0 && jr == 0 && kr == 0 )) {
-          ret.emplace_back(ir, jr, kr );
+          ret.push_back( {ir, jr, kr} );
         }
       }
     }
@@ -71,42 +61,45 @@ std::vector< corgi::internals::tuple_of<3,int> > moore_neighborhood()
 
 // Box distances
 //--------------------------------------------------
-template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
-std::vector< corgi::internals::tuple_of<1,int> > chessboard_neighborhood(int radius)
+template<std::size_t D>
+  requires (D == 1)
+std::vector<std::array<int, 1> > chessboard_neighborhood(int radius)
 {
-  std::vector<  corgi::internals::tuple_of<1,int> > ret;
+  std::vector<std::array<int, 1> > ret;
   for (int ir=-radius; ir<=radius; ir++) {
     if (!( ir == 0 )) {
-      ret.emplace_back(ir );
+      ret.push_back( {ir} );
     }
   }
   return ret;
 }
 
 
-template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
-std::vector< corgi::internals::tuple_of<2,int> > chessboard_neighborhood(int radius)
+template<std::size_t D>
+  requires (D == 2)
+std::vector<std::array<int, 2> > chessboard_neighborhood(int radius)
 {
-  std::vector<  corgi::internals::tuple_of<2,int> > ret;
+  std::vector<std::array<int, 2> > ret;
   for (int jr=-radius; jr<=radius; jr++) {
     for (int ir=-radius; ir<=radius; ir++)  {
       if (!( ir == 0 && jr == 0 )) {
-        ret.emplace_back(ir, jr );
+        ret.push_back( {ir, jr} );
       }
     }
   }
   return ret;
 }
 
-template<std::size_t D, typename T = std::enable_if_t<(D==3),int> >
-std::vector< corgi::internals::tuple_of<3,int> > chessboard_neighborhood(int radius)
+template<std::size_t D>
+  requires (D == 3)
+std::vector<std::array<int, 3> > chessboard_neighborhood(int radius)
 {
-  std::vector<  corgi::internals::tuple_of<3,int> > ret;
+  std::vector<std::array<int, 3> > ret;
   for (int kr=-radius; kr<=radius; kr++) {
     for (int jr=-radius; jr<=radius; jr++) {
       for (int ir=-radius; ir<=radius; ir++)  {
         if (!( ir == 0 && jr == 0 && kr == 0)) {
-          ret.emplace_back(ir, jr, kr );
+          ret.push_back( {ir, jr, kr} );
         }
       }
     }
@@ -116,21 +109,23 @@ std::vector< corgi::internals::tuple_of<3,int> > chessboard_neighborhood(int rad
 
 // Spherical distances
 //--------------------------------------------------
-template<std::size_t D, typename T = std::enable_if_t<(D==1),int> >
-std::vector< corgi::internals::tuple_of<1,int> > euler_neighborhood(int radius)
+template<std::size_t D>
+  requires (D == 1)
+std::vector<std::array<int, 1> > euler_neighborhood(int radius)
 {
   return chessboard_neighborhood<1>(radius);
 }
 
 
-template<std::size_t D, typename T = std::enable_if_t<(D==2),int> >
-std::vector< corgi::internals::tuple_of<2,int> > euler_neighborhood(int radius)
+template<std::size_t D>
+  requires (D == 2)
+std::vector<std::array<int, 2> > euler_neighborhood(int radius)
 {
-  std::vector<  corgi::internals::tuple_of<2,int> > ret;
+  std::vector<std::array<int, 2> > ret;
   for (int jr=-radius; jr<=radius; jr++) {
     for (int ir=-radius; ir<=radius; ir++) {
 
-      auto rel = std::make_tuple(ir,jr);
+      auto rel = std::array{ ir,jr };
       if( ::corgi::geom::eulerian_distance<D>(rel) >= (double)radius ) continue;
 
       if (!( ir == 0 && jr == 0 )) {
@@ -141,15 +136,16 @@ std::vector< corgi::internals::tuple_of<2,int> > euler_neighborhood(int radius)
   return ret;
 }
 
-template<std::size_t D, typename T = std::enable_if_t<(D==3),int> >
-std::vector< corgi::internals::tuple_of<3,int> > euler_neighborhood(int radius)
+template<std::size_t D>
+  requires (D == 3)
+std::vector<std::array<int, 3> > euler_neighborhood(int radius)
 {
-  std::vector<  corgi::internals::tuple_of<3,int> > ret;
+  std::vector<std::array<int, 3> > ret;
   for (int kr=-radius; kr<=radius; kr++) {
     for (int jr=-radius; jr<=radius; jr++) {
       for (int ir=-radius; ir<=radius; ir++) {
 
-        auto rel = std::make_tuple(ir,jr,kr);
+        auto rel = std::array{ ir,jr,kr };
         if( ::corgi::geom::eulerian_distance<D>(rel) >= (double)radius ) continue;
 
         if (!( ir == 0 && jr == 0 && kr == 0)) {

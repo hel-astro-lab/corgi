@@ -10,11 +10,13 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <concepts>
 #include <unordered_map>
 #include <cassert>
 #include <initializer_list>
 #include <sstream>
 #include <utility>
+#include <type_traits>
 
 #include "corgi/internals.h"
 #include "corgi/toolbox/sparse_grid.h"
@@ -26,7 +28,6 @@
 
 
 namespace corgi {
-
 
 /*! Individual grid object that stores patches of grid in it.
  *
@@ -93,9 +94,8 @@ class Grid
 
   // get element
   template<typename... Indices>
-  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
-  corgi::internals::are_integral<Indices...>::value, int > 
-  py_get_mpi_grid(Indices... indices)  /*const*/
+    requires indices_for<D, Indices...>
+  int py_get_mpi_grid(Indices... indices)  /*const*/
   {
     return _mpi_grid(indices...);
   }
@@ -103,27 +103,24 @@ class Grid
 
   // set element
   template<typename... Indices>
-  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
-  corgi::internals::are_integral<Indices...>::value, void > 
-  py_set_mpi_grid(int val, Indices... indices) {
+    requires indices_for<D, Indices...>
+  void py_set_mpi_grid(int val, Indices... indices) {
     _mpi_grid(indices...) = val;
   }
 
 
   // get element
   template<typename... Indices>
-  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
-  corgi::internals::are_integral<Indices...>::value, double > 
-  py_get_work_grid(Indices... indices)  /*const*/
+    requires indices_for<D, Indices...>
+  double py_get_work_grid(Indices... indices)  /*const*/
   {
     return _work_grid(indices...);
   }
 
   // set element
   template<typename... Indices>
-  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
-  corgi::internals::are_integral<Indices...>::value, void > 
-  py_set_work_grid(double val, Indices... indices) {
+    requires indices_for<D, Indices...>
+  void py_set_work_grid(double val, Indices... indices) {
     _work_grid(indices...) = val;
   }
 
@@ -146,12 +143,8 @@ class Grid
   {};
    
   /// set dimensions during construction time
-  template<
-    typename... DimensionLength,
-    typename = corgi::internals::enable_if_t< (sizeof...(DimensionLength) == D) && 
-               corgi::internals::are_integral<DimensionLength...>::value, void
-    >
-  > 
+  template<typename... DimensionLength>
+    requires indices_for<D, DimensionLength...>
   Grid(DimensionLength... dimension_lengths) :
     _lengths {{static_cast<size_type>(dimension_lengths)...}},
     _mpi_grid(dimension_lengths...),
@@ -236,12 +229,10 @@ class Grid
   // --------------------------------------------------
   // indexing
   private:
-  
-  template <typename... Indices>
-  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
-  corgi::internals::are_integral<Indices...>::value,
-        ::std::array<index_type, D>>
-    _validate_index_range(Indices... indices) const
+
+  template<typename... Indices>
+    requires indices_for<D, Indices...>
+  std::array<index_type, D> _validate_index_range(Indices... indices) const
   {
     ::std::array<index_type, D> index_array = {{static_cast<index_type>(indices)...}};
 
@@ -324,9 +315,8 @@ class Grid
     
   /// tile IDs
   template<typename... Indices>
-  corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
-  corgi::internals::are_integral<Indices...>::value, index_type > 
-  id(Indices... indices) const
+    requires indices_for<D, Indices...>
+  index_type id(Indices... indices) const
   {
     return _compute_index( _validate_index_range(indices...) );
   }
@@ -335,7 +325,7 @@ class Grid
   /// auxiliary function to unpack tuples
   template <size_t... Is>
   index_type id_impl(
-      corgi::internals::tuple_of<D, size_t>& tuple, 
+      std::array<size_t, D>& tuple, 
       std::index_sequence<Is...> /*unused*/)
   {
     return id( std::get<Is>(tuple)... );
@@ -343,7 +333,7 @@ class Grid
 
   template <size_t... Is>
   index_type id_impl(
-      const corgi::internals::tuple_of<D, size_t>& tuple, 
+      const std::array<size_t, D>& tuple, 
       std::index_sequence<Is...> /*unused*/) const
   {
     return id( std::get<Is>(tuple)... );
@@ -351,13 +341,13 @@ class Grid
 
   /// unpack tuple into variadic argument list
   template<typename Indices = std::make_index_sequence<D>>
-  index_type id( corgi::internals::tuple_of<D, size_t>& indices)
+  index_type id(std::array<size_t, D>& indices)
   {
       return id_impl(indices, Indices{} );
   }
 
   template<typename Indices = std::make_index_sequence<D>>
-  index_type id( const corgi::internals::tuple_of<D, size_t>& indices) const
+  index_type id(const std::array<size_t, D>& indices) const
   {
       return id_impl(indices, Indices{} );
   }
@@ -365,88 +355,51 @@ class Grid
   /// Inverse Morton Z-code
   //
   // TODO: make N-dimensional
-  corgi::internals::tuple_of<1, index_type> id2index(
+  std::array<index_type, 1> id2index(
       uint64_t cid, 
       std::array<size_type,1> /*lengths*/)
   {
-    corgi::internals::tuple_of<1, index_type> indices = std::make_tuple(cid);
-
-    return indices;
+    return { cid };
   }
 
-  corgi::internals::tuple_of<2, index_type> id2index(
+  std::array< index_type, 2> id2index(
       uint64_t cid,
       std::array<size_type,2> lengths)
   {
-    corgi::internals::tuple_of<2, index_type> indices = std::make_tuple
-      (
-       cid % lengths[0],
-      (cid / lengths[0]) % (lengths[1] )
-       );
-
-    return indices;
+    return { cid % lengths[0], (cid / lengths[0]) % (lengths[1] ) };
   }
 
-  corgi::internals::tuple_of<3, index_type> id2index(
+  std::array<index_type, 3> id2index(
       uint64_t cid,
       std::array<size_type,3> lengths)
   {
-    corgi::internals::tuple_of<3, index_type> indices = std::make_tuple
-      (
-       cid % lengths[0],
-      (cid / lengths[0]) % (lengths[1] ),
-       cid /(lengths[0] * lengths[1] )
-       );
-
-    return indices;
+    return { cid % lengths[0],
+             (cid / lengths[0]) % (lengths[1] ),
+             cid /(lengths[0] * lengths[1] )};
   }
 
 
   public:
 
   // --------------------------------------------------
-  // apply SFINAE to create some shortcuts (when appropriate) 
+  // apply constraints to create some shortcuts (when appropriate) 
   // NOTE: valid up to D=3 with x/y/z
 
   // return global grid sizes
-  template<typename T = size_type>
-  corgi::internals::enable_if_t< (D>=1), T> 
-  get_Nx() { return _lengths[0]; }
-
-  template<typename T = size_type>
-  corgi::internals::enable_if_t< (D>=2), T> 
-  get_Ny() { return _lengths[1]; }
-
-  template<typename T = size_type>
-  corgi::internals::enable_if_t< (D>=3), T> 
-  get_Nz() { return _lengths[2]; }
+  size_type get_Nx() requires (D>=1) { return _lengths[0]; }
+  size_type get_Ny() requires (D>=2) { return _lengths[1]; }
+  size_type get_Nz() requires (D>=3) { return _lengths[2]; }
 
 
   // return global grid limits
-  template<typename T = size_type>
-  corgi::internals::enable_if_t< (D>=1), T> 
-  get_xmin() { return _mins[0]; }
-
-  template<typename T = size_type>
-  corgi::internals::enable_if_t< (D>=2), T> 
-  get_ymin() { return _mins[1]; }
-
-  template<typename T = size_type>
-  corgi::internals::enable_if_t< (D>=3), T> 
-  get_zmin() { return _mins[2]; }
+  size_type get_xmin() requires (D>=1) { return _mins[0]; }
+  size_type get_ymin() requires (D>=2) { return _mins[1]; }
+  size_type get_zmin() requires (D>=3) { return _mins[2]; }
 
 
-  template<typename T = size_type>
-  corgi::internals::enable_if_t< (D>=1), T> 
-  get_xmax() { return _maxs[0]; }
-
-  template<typename T = size_type>
-  corgi::internals::enable_if_t< (D>=2), T> 
-  get_ymax() { return _maxs[1]; }
-
-  template<typename T = size_type>
-  corgi::internals::enable_if_t< (D>=3), T> 
-  get_zmax() { return _maxs[2]; }
+  size_type get_xmax() requires (D>=1) { return _maxs[0]; }
+  size_type get_ymax() requires (D>=2) { return _maxs[1]; }
+  size_type get_zmax() requires (D>=3) { return _maxs[2]; }
 
 
   /// Set physical grid size
@@ -477,7 +430,7 @@ class Grid
   // FIXME
   void add_tile(
     Tileptr tileptr,
-    corgi::internals::tuple_of<D, size_t> indices
+    std::array<std::size_t, D> indices
     )
   {
     // check that we are not appending nullptr
@@ -486,7 +439,6 @@ class Grid
     // claim unique ownership of the tile (for unique_ptr)
     // std::unique_ptr<corgi::Tile> tileptr = std::make_unique<corgi:Tile>(tile);
     // Tileptr tileptr = std::make_unique<Tile_t>(tile);
-    
     // calculate unique global tile ID
     uint64_t cid = id( indices );
 
@@ -501,8 +453,7 @@ class Grid
     tileptr->lengths             = _lengths;
 
     // copy indices from tuple into D=3 array in Communication obj
-    auto tmp = corgi::internals::into_array(indices);
-    for(size_t i=0; i<D; i++) tileptr->communication.indices[i] = tmp[i];
+    for(size_t i=0; i<D; i++) tileptr->communication.indices[i] = indices[i];
 
     // tiles.emplace(cid, std::move(tileptr)); // unique_ptr needs to be moved
     tiles.emplace(cid, tileptr); // NOTE using c++14 emplace to avoid copying
@@ -518,7 +469,7 @@ class Grid
   // FIXME
   void replace_tile(
     Tileptr tileptr,
-    corgi::internals::tuple_of<D, size_t> indices
+    std::array<size_t, D> indices
     )
   {
     // check that we are not appending nullptr
@@ -611,10 +562,8 @@ class Grid
   }
 
   template<typename... Indices>
-    corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
-    corgi::internals::are_integral<Indices...>::value, 
-  Tile_t&>
-  get_tile_ind(const Indices... indices) {
+    requires indices_for<D, Indices...>
+  Tile_t& get_tile_ind(const Indices... indices) {
     uint64_t cid = id(indices...);
     return get_tile(cid);
   }
@@ -627,33 +576,21 @@ class Grid
   }
 
   template<typename... Indices>
-    corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
-    corgi::internals::are_integral<Indices...>::value, 
-  Tileptr>
-  get_tileptr_ind(const Indices... indices)
+    requires indices_for<D, Indices...>
+  Tileptr get_tileptr_ind(const Indices... indices)
   {
     uint64_t cid = id(indices...);
     return get_tileptr(cid);
   }
 
-  Tileptr get_tileptr(const std::tuple<size_t> ind) {
-    size_t i = std::get<0>(ind);
-    return get_tileptr_ind(i);
+  template <std::integral T, std::size_t N>
+    requires (D == N)
+  Tileptr get_tileptr(const std::array<T, N> indices)
+  {
+    return [&]<std::size_t... I>(std::index_sequence<I...>) {
+      return get_tileptr_ind(indices[I]...);
+    }(std::make_index_sequence<N>());
   }
-
-  Tileptr get_tileptr(const std::tuple<size_t, size_t> ind) {
-    size_t i = std::get<0>(ind);
-    size_t j = std::get<1>(ind);
-    return get_tileptr_ind(i, j);
-  }
-
-  Tileptr get_tileptr(const std::tuple<size_t, size_t, size_t> ind) {
-    size_t i = std::get<0>(ind);
-    size_t j = std::get<1>(ind);
-    size_t k = std::get<2>(ind);
-    return get_tileptr_ind(i, j, k);
-  }
-
 
   /// Return all local tiles
   std::vector<uint64_t> get_local_tiles(
@@ -1257,35 +1194,28 @@ class Grid
 
 
   /// return index of tiles in relative to my position
-  corgi::internals::tuple_of<D, size_t> neighs(
-      corgi::internals::tuple_of<D, int> indices,
-      corgi::internals::tuple_of<D, int> indices_rel)
+  template <std::integral T, std::integral U>
+  std::array<size_t, D> neighs(std::array<T, D> indices, std::array<U, D> indices_rel)
   {
-    auto cur = corgi::internals::into_array(indices);
-    auto rel = corgi::internals::into_array(indices_rel);
+    auto ret = std::array<std::size_t, D>{};
 
     for(size_t i=0; i<D; i++) {
-      cur[i] = static_cast<size_t>(
-          wrap( static_cast<int>(rel[i]) + 
-            static_cast<int>(cur[i]), i)
-          );
+      ret[i] = static_cast<size_t>(wrap(indices[i] + indices_rel[i], i));
     }
 
-    auto ret = corgi::internals::into_tuple(cur);
     return ret;
   }
 
   /// Return full Moore neighborhood around me
-  std::vector< corgi::internals::tuple_of<D, size_t> > nhood(
-      corgi::internals::tuple_of<D, size_t> indices)
+  std::vector<std::array<size_t, D>> nhood(std::array<size_t, D> indices)
   {
-    std::vector< corgi::internals::tuple_of<D, size_t> > nh;
+    std::vector< std::array< size_t, D> > nh;
     if(D == 1) nh.reserve(2);
     if(D == 2) nh.reserve(8);
     if(D == 3) nh.reserve(26);
 
     for(auto& reli : corgi::ca::moore_neighborhood<D>() ){
-      nh.push_back( neighs(indices, reli) );
+      nh.push_back(neighs(indices, reli));
     }
     return nh;
   }
@@ -1774,8 +1704,7 @@ class Grid
               auto& tile = get_tile(tile_id);
 
               const auto& other_tile = get_tile(id(tile.neighs(dir)));
-              const auto array_dir = corgi::internals::into_array(dir);
-              tile.pairwise_moore_communication(other_tile, array_dir, mode);
+              tile.pairwise_moore_communication(other_tile, dir, mode);
           }
       }
 
