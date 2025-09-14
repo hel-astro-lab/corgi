@@ -6,6 +6,7 @@
 #include <tuple>
 #include <iostream>
 #include <algorithm>
+#include <type_traits>
 
 #include "corgi/common.h"
 #include "corgi/internals.h"
@@ -81,7 +82,7 @@ class Tile
     std::vector<int> virtual_owners;
     
     /// coarse mpi_grid grid indices
-    corgi::internals::tuple_of<D, size_t> index;
+    std::array<size_t, D> index;
 
     /// Global grid dimensions (needed for wrapping boundaries)
     std::array<size_t, D> lengths;
@@ -108,11 +109,10 @@ class Tile
       cid = cm.cid; 
 
       // create temporary array of correct size
-      std::array<size_t, D> ind2;
-      for(size_t i=0; i<D; i++) ind2[i] = static_cast<size_t>(cm.indices[i]);
+      std::array<std::size_t, D> ind2;
+      for(size_t i=0; i<D; i++) ind2[i] = static_cast<std::size_t>(cm.indices[i]);
 
-      // cast into tuple
-      index = corgi::internals::into_tuple(ind2);
+      index = ind2;
 
       for(size_t i=0; i<D; i++) mins[i] = cm.mins[i];
       for(size_t i=0; i<D; i++) maxs[i] = cm.maxs[i];
@@ -133,35 +133,24 @@ class Tile
 
     /// return index of tiles in relative to my position
     template<typename... Indices>
-    corgi::internals::enable_if_t< (sizeof...(Indices) == D) && 
-    corgi::internals::are_integral<Indices...>::value, 
-    const corgi::internals::tuple_of<D, size_t> > 
-    neighs(Indices... indices_rel) const
+      requires indices_for<D, Indices...>
+    std::array<size_t, D> neighs(Indices... indices_rel) const
     {
         std::array<int, D> rel = {{static_cast<int>(indices_rel)...}};
-        //std::array<size_t, D> cur = {{index}};
-        auto cur = corgi::internals::into_array(index);
+        auto cur = index;
 
         for(size_t i=0; i<D; i++) {
           cur[i] = static_cast<size_t>(
-            wrap( static_cast<int>(rel[i]) + 
-                  static_cast<int>(cur[i]), i)
-          );
+            wrap(static_cast<int>(rel[i]) + static_cast<int>(cur[i]), i));
         }
-
-        auto ret = corgi::internals::into_tuple(cur);
-        return ret;
+        return cur;
     }
 
-    /// unpack tuple into variadic argument list
-    corgi::internals::tuple_of<D, size_t> neighs(
-        const corgi::internals::tuple_of<D, int>& indices) const
+    std::array<size_t, D> neighs(const std::array<int, D>& indices) const
     {
-        auto neigs_wrapper = [this](const auto... i) {
-            return neighs(i...);
-        };
-
-        return std::apply(neigs_wrapper, indices);
+        return [&, this]<std::size_t... I>(std::index_sequence<I...>) {
+            return neighs(indices[I]...);
+        }(std::make_index_sequence<D>());
     }
 
     // end of neighs + auxiliary functions
@@ -169,9 +158,9 @@ class Tile
 
 
     /// Return full Moore neighborhood around me
-    std::vector< corgi::internals::tuple_of<D, size_t> > nhood()
+    std::vector<std::array<std::size_t, D>> nhood()
     {
-      std::vector< corgi::internals::tuple_of<D, size_t> > nh;
+      std::vector<std::array<std::size_t, D>> nh;
       for(auto& reli : corgi::ca::moore_neighborhood<D>() ){
         nh.push_back( neighs(reli) );
       }

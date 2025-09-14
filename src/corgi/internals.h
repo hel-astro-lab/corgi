@@ -2,6 +2,8 @@
 
 #include <type_traits>
 #include <array>
+#include <utility>
+#include <concepts>
 
 
 
@@ -14,15 +16,11 @@
  */
 
 namespace corgi {
+
+template <std::size_t D, typename... I>
+concept indices_for = (sizeof...(I) == D) and (std::integral<I> and ...);
+
   namespace internals {
-
-
-/// shorthand for the enable_if syntax
-/// @see http://en.cppreference.com/w/cpp/types/enable_if#Helper_types
-//
-// TODO: move to c++-14 where this is in std::
-template <bool b, typename T=void>
-using enable_if_t = typename std::enable_if<b, T>::type;
 
 /// building block of a neat trick for checking multiple types against a given trait
 template <bool...>
@@ -159,177 +157,6 @@ T ct_inner_product(const ::std::array<T_1, N_1>& arr_1,  ///< calc the inner pro
 //    }
 //    return coeffs;
 //}
-
-
-//--------------------------------------------------
-// tyepdef shortcut for checking indicies
-//
-// TODO: does not work; complains about <anonymous> type?
-//
-// template<std::size_t Dim, typename... Args>
-// using check_index_length_t = 
-//   typename  corgi::internals::enable_if_t<(sizeof...(Args) == Dim) &&
-//             corgi::internals::are_integral<Args...>::value, void>;
-
-template<std::size_t Dim, typename... Args>
-using check_index_length_t = 
-  typename enable_if_t<(sizeof...(Args) == Dim), void>::type;
-
-
-//--------------------------------------------------
-// N-length tuple of type T, i.e., tuple_of<3, int> = tuple<int, int, int>
-// see: 
-//  - https://stackoverflow.com/questions/38885406/produce-stdtuple-of-same-type-in-compile-time-given-its-length-by-a-template-a
-
-template <size_t I,typename T> 
-struct tuple_n{
-    template< typename...Args> using type = typename tuple_n<I-1, T>::template type<T, Args...>;
-};
-
-template <typename T> 
-struct tuple_n<0, T> {
-    template<typename...Args> using type = std::tuple<Args...>;   
-};
-template <size_t I,typename T>  using tuple_of = typename tuple_n<I,T>::template type<>;
-
-
-
-
-//--------------------------------------------------
-// implementations of std::apply (from c++-17)
-// See:
-//  - https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
-//
-// ver1
-/*
-template<typename Function, typename Tuple, size_t ... I>
-auto apply(Function f, Tuple t, std::index_sequence<I ...>)
-{
-     return f(std::get<I>(t) ...);
-}
-
-template<typename Function, typename Tuple>
-auto apply(Function f, Tuple t)
-{
-    static constexpr auto size = std::tuple_size<Tuple>::value;
-    return apply(f, t, std::make_index_sequence<size>{});
-}
-*/
-
-//--------------------------------------------------
-// ver2
-  
-template<std::size_t...Is>
-auto index_over(std::index_sequence<Is...> /*unused*/){
-  return [](auto&&f)->decltype(auto){
-    return decltype(f)(f)( std::integral_constant<std::size_t, Is>{}... );
-  };
-}
-template<std::size_t N>
-auto index_upto(std::integral_constant<std::size_t, N>  /*unused*/={}){
-  return index_over( std::make_index_sequence<N>{} );
-}
-
-//template< class T >
-//constexpr std::size_t tuple_size_v = tuple_size<T>::value;
-//typename std::tuple_size<std::remove_reference_t<Tuple>::value>()
-
-template<class T>
-constexpr auto tuple_size_v = std::tuple_size<T>::value;
-template<class F, class Tuple>
-decltype(auto) apply( F&& f, Tuple&& tup ) {
-  auto indexer = index_upto<
-    tuple_size_v<std::remove_reference_t<Tuple>>
-  >();
-  return indexer(
-    [&](auto...Is)->decltype(auto) {
-      return std::forward<F>(f)(
-        std::get<Is>(std::forward<Tuple>(tup))...
-      );
-    }
-  );
-}
-
-
-// C++-14 index_sequence (maybe?); toggle to get C++-11 compatibility
-// used together with tuple unpacking in corgi::Grid::id()
-//template <size_t... Is>
-//struct index_sequence;
-// See also: 
-//  - https://stackoverflow.com/questions/17424477/implementation-c14-make-integer-sequence/17426611#17426611
-//  - http://aherrmann.github.io/programming/2016/02/28/unpacking-tuples-in-cpp14/
-
-//--------------------------------------------------
-// array into tuple conversion
-//
-// See:
-//  - https://stackoverflow.com/questions/37029886/how-to-construct-a-tuple-from-an-array
-//
-//  try1
-//template <class... Formats, size_t N, size_t... Is>
-//std::tuple<Formats...> as_tuple(std::array<char*, N> const& arr,
-//                                std::index_sequence<Is...>)
-//{
-//    return std::make_tuple(Formats{arr[Is]}...);
-//}
-//
-//template <class... Formats, size_t N,
-//          class = enable_if_t<(N == sizeof...(Formats))>>
-//std::tuple<Formats...> as_tuple(std::array<char*, N> const& arr)
-//{
-//    return as_tuple<Formats...>(arr, std::make_index_sequence<N>{});
-//}
-
-// try2
-// See:
-//  - https://stackoverflow.com/questions/41207774/how-do-i-create-a-tuple-of-n-ts-from-an-array-of-t
-template<std::size_t... I, typename U>
-constexpr auto into_tuple(const U &arr, std::index_sequence<I...> /*unused*/) {
-    return std::make_tuple(arr[I]...);
-}
-
-template<typename T, std::size_t N>
-constexpr auto into_tuple(const T (&arr)[N]) {
-    return into_tuple(arr, std::make_index_sequence<N>{});
-}
-
-template<typename T, std::size_t N>
-constexpr auto into_tuple(const std::array<T, N> &arr) {
-    return into_tuple(arr, std::make_index_sequence<N>{});
-}
-
-//--------------------------------------------------
-// tuple into array
-// See:
-//  - https://stackoverflow.com/questions/10604794/convert-stdtuple-to-stdarray-c11
-//template<typename First, typename... Rem>
-//std::array<First, 1+sizeof...(Rem)>
-//into_array(const std::tuple<First, Rem...>& t) {
-//  std::array<First, 1+sizeof...(Rem)> arr;
-//  Array_filler<First, decltype(t), 1+sizeof...(Rem)>::into_array(t, arr);
-//  return arr;
-//}
-
-// Convert tuple into a array implementation
-template<typename T, std::size_t N, typename Tuple,  std::size_t... I>
-constexpr decltype(auto) into_array_impl(const Tuple& a, std::index_sequence<I...> /*unused*/)
-{
-  return std::array<T,N>{std::get<I>(a)...};
-}
-
-// Convert tuple into a array
-template<typename Head, typename... T>
-constexpr decltype(auto) into_array(const std::tuple<Head, T...>& a)
-{
-  using Tuple = std::tuple<Head, T...>;
-  constexpr auto N = sizeof...(T) + 1;
-  return into_array_impl<Head, N, Tuple>(a, std::make_index_sequence<N>());
-}
-
-
-
-
-
 
   } // end of namespace internals
 } // end of corgi

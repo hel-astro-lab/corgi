@@ -21,11 +21,11 @@ namespace internal {
   //  std::vector<T>& ret,
   //  std::array<size_t, 1>& lengths
   //) = delete;
-  
   // 1D
+
   template<typename T>
-  void serialize( 
-    std::map< corgi::internals::tuple_of<1, size_t>, T>& data,
+  void serialize(
+    std::map<std::array<std::size_t, 1>, T>& data,
     std::vector<T>& ret,
     std::array<size_t, 1>& /*lengths*/)
   {
@@ -39,7 +39,7 @@ namespace internal {
   // 2D
   template<typename T>
   void serialize( 
-    std::map< corgi::internals::tuple_of<2, size_t>, T>& data,
+    std::map<std::array<std::size_t, 2>, T>& data,
     std::vector<T>& ret,
     std::array<size_t, 2>& lengths) 
   {
@@ -54,7 +54,7 @@ namespace internal {
   // 3D
   template<typename T>
   void serialize( 
-    std::map< corgi::internals::tuple_of<3, size_t>, T>& data,
+    std::map<std::array<std::size_t, 3>, T>& data,
     std::vector<T>& ret,
     std::array<size_t, 3>& lengths) 
   {
@@ -71,19 +71,19 @@ namespace internal {
   // 1D
   template<typename T>
   void deserialize( 
-    std::map< corgi::internals::tuple_of<1, size_t>, T>& data,
+    std::map<std::array<std::size_t, 1>, T>& data,
     std::vector<T>& inc,
     std::array<size_t, 1>& lengths)
   {
     for(size_t i=0; i<lengths[0]; i++) {
-      data[ std::make_tuple( i ) ] = inc[i];
+      data[ std::array{ i } ] = inc[i];
     }
   }
-    
+
   // 2D
   template<typename T>
   void deserialize( 
-    std::map< corgi::internals::tuple_of<2, size_t>, T>& data,
+    std::map<std::array<std::size_t, 2>, T>& data,
     std::vector<T>& inc,
     std::array<size_t, 2>& lengths)
   {
@@ -93,7 +93,7 @@ namespace internal {
     for(size_t i=0; i<lengths[0]; i++) {
       indx  = i;
       indx += lengths[0]*j;
-      data[ std::make_tuple( i,j ) ] = inc[indx];
+      data[ std::array{ i,j } ] = inc[indx];
     }
     }
   }
@@ -101,7 +101,7 @@ namespace internal {
   // 3D
   template<typename T>
   void deserialize( 
-    std::map< corgi::internals::tuple_of<3, size_t>, T>& data,
+    std::map<std::array<std::size_t, 3>, T>& data,
     std::vector<T>& inc,
     std::array<size_t, 3>& lengths)
   {
@@ -113,7 +113,7 @@ namespace internal {
       indx  = i;
       indx += lengths[0]*j;
       indx += lengths[0]*lengths[1]*k;
-      data[ std::make_tuple( i,j,k ) ] = inc[indx];
+      data[ std::array{ i,j,k } ] = inc[indx];
     }
     }
     }
@@ -133,7 +133,7 @@ namespace internal {
 template< typename T, int D>
 class sparse_grid {
 
-  using map_t = std::map< corgi::internals::tuple_of<D, size_t>, T>;
+  using map_t = std::map<std::array<std::size_t, D>, T>;
 
 
   private:
@@ -148,36 +148,28 @@ class sparse_grid {
   public:
 
   /// () referencing
-  template<
-    typename... Dlen,
-    typename = corgi::internals::enable_if_t<(sizeof...(Dlen) == D) &&
-               corgi::internals::are_integral<Dlen...>::value , void> 
-  >
+  template<typename... Dlen>
+    requires indices_for<D, Dlen...>
   T& operator()(Dlen... indices)
   {
-    //return _data.at( std::tuple<Dlen...>(indices...) );
-    return this->operator()( std::tuple<Dlen...>(indices...) );
+    return _data[std::array{ indices... }];
   }
 
-  T& operator()(corgi::internals::tuple_of<D,size_t> ind)
+  T& operator()(const std::array<std::size_t, D> ind)
   {
     return _data[ ind ];
   }
 
 
   /// const () referencing
-  template<
-    typename... Dlen,
-    typename = corgi::internals::enable_if_t<(sizeof...(Dlen) == D) &&
-               corgi::internals::are_integral<Dlen...>::value , void> 
-  >
+  template<typename... Dlen>
+    requires indices_for<D, Dlen...>
   const T& operator()(Dlen... indices) const
   {
-    //return _data.at( std::tuple<Dlen...>(indices...) );
-    return this->operator()( std::tuple<Dlen...>(indices...) );
+    return _data[ std::array{ indices... } ];
   }
 
-  const T& operator()(corgi::internals::tuple_of<D,size_t> ind) const
+  const T& operator()(std::array<std::size_t, D> ind) const
   {
     return _data[ ind ];
   }
@@ -185,11 +177,8 @@ class sparse_grid {
 
   
   // ctor with grid size
-  template<
-    typename... Dlen,
-    typename = corgi::internals::enable_if_t<(sizeof...(Dlen) == D) &&
-               corgi::internals::are_integral<Dlen...>::value , void> 
-  >
+  template<typename... Dlen>
+    requires indices_for<D, Dlen...>
   sparse_grid(Dlen... lens) :
     _lengths {{ static_cast<size_t>(lens)... }}
   { }
@@ -222,16 +211,13 @@ class sparse_grid {
 
 
   /// resize the assumed size
-  template< typename... Dlen >
-  corgi::internals::enable_if_t<(sizeof...(Dlen) == D) &&
-  corgi::internals::are_integral<Dlen...>::value , 
-    void> 
-  resize(Dlen... _lens) 
+  template<typename... Dlen>
+    requires indices_for<D, Dlen...>
+  void resize(Dlen... _lens)
   {
     std::array<size_t, D> lens = {{static_cast<size_t>(_lens)...}};
     _lengths = lens;
   }
-  
 
   /// Return object that is contiguous in memory
   std::vector<T> serialize() 
@@ -249,7 +235,7 @@ class sparse_grid {
   
 
   //template< typename... Dlen >
-  //corgi::internals::enable_if_t<(sizeof...(Dlen) == D) &&
+  //std::enable_if_t<(sizeof...(Dlen) == D) &&
   //corgi::internals::are_integral<Dlen...>::value , 
   //  void> 
   //unpack(std::vector<T>& /*vec*/, Dlen... _lens) 

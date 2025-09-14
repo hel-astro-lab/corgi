@@ -106,7 +106,7 @@ class Vallhund : public Swede,
 
 struct MooreTestTile : public corgi::Tile<2> {
 
-    std::vector<std::tuple<int, int>> communications{};
+    std::vector<std::array<std::size_t, 2>> communications{};
     std::vector<std::array<int, 2>> directions{};
     std::vector<int>      modes{};
     int prelude_mode, postlude_mode;

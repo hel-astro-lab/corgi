@@ -28,7 +28,7 @@ class pairwise_moore_communication(unittest.TestCase):
             self.assertEqual(len(tile.directions), 8, msg=f"At tile {tile.index}")
             for i, (other_indices, dir) in enumerate(zip(tile.communications, tile.directions)):
                 my_indices = tile.index
-                expected_other_indices = tuple((o + d) % N for o, d, N in zip(my_indices, dir, (Nx, Ny)))
+                expected_other_indices = [(o + d) % N for o, d, N in zip(my_indices, dir, (Nx, Ny))]
 
                 self.assertEqual(other_indices, expected_other_indices, msg=f"{i}th communication")
 
