@@ -6,3 +6,6 @@
 	path = mpi4cpp
 	url = https://github.com/natj/mpi4cpp.git
 	branch = master
+[submodule "viesti"]
+	path = viesti
+	url = git@github.com:natj/viesti.git

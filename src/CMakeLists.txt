@@ -1,11 +1,8 @@
-add_library (corgi)
-
-set_target_properties(corgi PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(corgi PROPERTIES LINKER_LANGUAGE CXX)
+add_library (corgi INTERFACE)
 
 target_sources (
   corgi
-  PUBLIC
+  INTERFACE
   FILE_SET
   all_headers
   TYPE
@@ -28,4 +25,4 @@ target_sources (
   ./corgi/toolbox/unstable_remove.h
 )
 
-target_link_libraries (corgi PUBLIC mpi4cpp PRIVATE corgi_warnings)
+target_link_libraries (corgi INTERFACE mpi4cpp corgi_warnings)
