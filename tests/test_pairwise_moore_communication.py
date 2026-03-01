@@ -4,7 +4,7 @@ import itertools
 import pycorgi.twoD as corgi2D
 import pycorgitest
 
-class pairwise_moore_communication(unittest.TestCase):
+class local_communication(unittest.TestCase):
 
     def test_wout_virtual_tiles(self):
         Nx, Ny = 6, 7
@@ -16,7 +16,7 @@ class pairwise_moore_communication(unittest.TestCase):
             t = pycorgitest.MooreTestTile()
             grid.add_tile(t, (i, j))
 
-        grid.pairwise_moore_communication(42)
+        grid.local_communication(42)
 
         def assertTileModes(tile):
             self.assertEqual(len(tile.modes), 8, msg=f"At tile {tile.index}")
