@@ -8,4 +8,4 @@
 	branch = master
 [submodule "viesti"]
 	path = viesti
-	url = git@github.com:natj/viesti.git
+	url = https://github.com/natj/viesti
