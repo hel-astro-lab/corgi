@@ -262,6 +262,20 @@ class Tile
     virtual void pairwise_moore_communication_prelude(const int /* mode */) { }
     virtual void pairwise_moore_communication_postlude(const int /* mode */) { }
 
+    /// Initialize persistent MPI requests (optional; default no-op).
+    /// Override in derived classes that support persistent requests (e.g. EMF).
+    virtual void initialize_persistent_requests(
+      mpi::communicator& /*comm*/,
+      const std::vector<int>& /*dest_ranks*/,
+      const std::vector<int>& /*orig_ranks*/,
+      int /*mode*/)
+    {
+    }
+
+    /// Clean up persistent MPI requests (default no-op).
+    virtual void cleanup_persistent_requests()
+    {
+    }
 
     /// Local computational work estimate for this tile
     virtual double get_work()

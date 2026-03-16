@@ -8,6 +8,8 @@
 #include <vector>
 #include <set>
 #include <algorithm>
+#include <cstdlib>
+#include <string>
 #include <cmath>
 #include <memory>
 #include <concepts>
@@ -874,6 +876,18 @@ class Grid
   std::vector<mpi::request> sent_adoption_messages;
   std::vector<mpi::request> recv_adoption_messages;
 
+  /// Modes for which persistent MPI has been initialized (when RUNKO_USE_PERSISTENT_MPI is set).
+  std::set<int> persistent_initialized_modes_;
+
+  static bool use_persistent_mpi() {
+    const char* p = std::getenv("RUNKO_USE_PERSISTENT_MPI");
+    if (!p) return false;
+    std::string s(p);
+    return s == "1" || s == "true" || s == "yes";
+  }
+  /// EMF modes in runko are 0 (J), 1 (E), 2 (B).
+  static bool is_emf_mode(int mode) { return mode >= 0 && mode <= 2; }
+
   // /// Broadcast master ranks mpi_grid to everybody
   void bcast_mpi_grid() {
 
@@ -1556,6 +1570,11 @@ class Grid
   //       this way methods can be extended for different types of send.
   void send_data(int mode)
   {
+    if (use_persistent_mpi() && is_emf_mode(mode) &&
+        persistent_initialized_modes_.find(mode) == persistent_initialized_modes_.end()) {
+      initialize_persistent_requests(mode);
+      persistent_initialized_modes_.insert(mode);
+    }
     sent_data_messages[mode] = {};
 
     
@@ -1607,6 +1626,11 @@ class Grid
   //       this way they can be extended for different types of recv.
   void recv_data(int mode)
   {
+    if (use_persistent_mpi() && is_emf_mode(mode) &&
+        persistent_initialized_modes_.find(mode) == persistent_initialized_modes_.end()) {
+      initialize_persistent_requests(mode);
+      persistent_initialized_modes_.insert(mode);
+    }
     recv_data_messages[mode] = {};
 
     // re-order sends and compute mpi tags
@@ -1671,23 +1695,54 @@ class Grid
     //    &recv_data_messages[tag][0], 
     //    MPI_STATUSES_IGNORE
     //    )
-    
-    //int n1 = 0;
-    //for(auto& vec : sent_data_messages){ n1 += vec.second.size(); }
-    //int n2 = 0;
-    //for(auto& vec : recv_data_messages){ n2 += vec.second.size(); }
-    //std::cout << comm.rank() << ": wait buffer size " << n1 << " " << n2 << "\n";
-
-    // erase (do not force capacity change)
-    sent_data_messages[tag] = {};
-    recv_data_messages[tag] = {};
-
-    // erase and force clean
-    //std::vector<mpi::request>().swap( sent_data_messages[tag] );
-    //std::vector<mpi::request>().swap( recv_data_messages[tag] );
-    
   }
 
+  void initialize_persistent_requests(int mode)
+  {
+    std::map<uint64_t, std::set<int>> tile_dest_ranks;
+    std::map<uint64_t, std::set<int>> tile_orig_ranks;
+    
+    for(auto cid : get_boundary_tiles()) {
+      auto& tile = get_tile(cid);
+      for(auto dest : tile.virtual_owners) {
+        tile_dest_ranks[cid].insert(dest);
+      }
+    }
+    
+    for(auto cid : get_virtuals()) {
+      auto& tile = get_tile(cid);
+      tile_orig_ranks[cid].insert(tile.communication.owner);
+    }
+    
+    for(auto cid : get_local_tiles()) {
+      auto& tile = get_tile(cid);
+      std::vector<int> dests(tile_dest_ranks[cid].begin(), 
+                             tile_dest_ranks[cid].end());
+      std::vector<int> origs(tile_orig_ranks[cid].begin(), 
+                              tile_orig_ranks[cid].end());
+      
+      tile.initialize_persistent_requests(comm, dests, origs, mode);
+    }
+    
+    for(auto cid : get_boundary_tiles()) {
+      auto& tile = get_tile(cid);
+      std::vector<int> dests(tile_dest_ranks[cid].begin(), 
+                             tile_dest_ranks[cid].end());
+      std::vector<int> origs(tile_orig_ranks[cid].begin(), 
+                              tile_orig_ranks[cid].end());
+      
+      tile.initialize_persistent_requests(comm, dests, origs, mode);
+    }
+
+    for(auto cid : get_virtuals()) {
+      auto& tile = get_tile(cid);
+      std::vector<int> dests(tile_dest_ranks[cid].begin(), 
+                             tile_dest_ranks[cid].end());
+      std::vector<int> origs(tile_orig_ranks[cid].begin(), 
+                              tile_orig_ranks[cid].end());
+      tile.initialize_persistent_requests(comm, dests, origs, mode);
+    }
+  }
 
   /// See corgi::Tile::pairwise_moore_communication.
   void
