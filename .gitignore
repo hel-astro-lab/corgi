@@ -5,7 +5,8 @@
 *.obj
 .DS_Store
 
-
+venv
+build
 
 # Precompiled Headers
 *.gch

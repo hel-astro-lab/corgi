@@ -1,0 +1,40 @@
+[build-system]
+requires = ["pybind11", "scikit-build-core>=0.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "corgi"
+version = "1.0.0"
+authors = []
+description = "corgi is a c++ template library for building massively parallel grids."
+readme = "README.md"
+# license = "not-yet-licensed"
+# license-files = []
+requires-python = ">=3.6"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: C++",
+  "Programming Language :: Python",
+  "Topic :: Scientific/Engineering",
+]
+
+[project.urls]
+Homepage = "https://github.com/hel-astro-lab/corgi"
+"Bug Tracker" = "https://github.com/hel-astro-lab/corgi/issues"
+
+[dependency-groups]
+test = [
+  "mpi4py",
+  "numpy",
+]
+dev = [
+  "pybind11",
+  { include-group = "test" },
+]
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+build-dir = "build/{wheel_tag}"

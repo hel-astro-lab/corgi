@@ -4,7 +4,7 @@ target_sources (
   corgi
   INTERFACE
   FILE_SET
-  all_headers
+  all_corgi_headers
   TYPE
   HEADERS
   BASE_DIRS
