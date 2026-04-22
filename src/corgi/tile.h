@@ -148,7 +148,7 @@ class Tile
 
     std::array<size_t, D> neighs(const std::array<int, D>& indices) const
     {
-        return [&, this]<std::size_t... I>(std::index_sequence<I...>) {
+        return [&]<std::size_t... I>(std::index_sequence<I...>) {
             return neighs(indices[I]...);
         }(std::make_index_sequence<D>());
     }
