@@ -3,6 +3,8 @@ file (GLOB CORGI_SOURCES *.c++ *.h)
 pybind11_add_module (pycorgi ${CORGI_SOURCES})
 target_link_libraries (pycorgi PRIVATE corgi corgi_warnings)
 
-set_target_properties (pycorgi PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}"
-)
+if (DEFINED SKBUILD_PROJECT_NAME)
+  install (TARGETS pycorgi corgi DESTINATION ${SKBUILD_PROJECT_NAME}
+    FILE_SET all_headers DESTINATION ${SKBUILD_HEADERS_DIR}
+  )
+endif ()
