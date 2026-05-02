@@ -1,3 +1,6 @@
+# Copyright 2018 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: Apache-2.0
+
 file (GLOB CORGI_SOURCES *.c++ *.h)
 
 pybind11_add_module (pycorgi ${CORGI_SOURCES})

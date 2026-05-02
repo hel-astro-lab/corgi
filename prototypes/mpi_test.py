@@ -1,3 +1,6 @@
+# Copyright 2018 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# SPDX-License-Identifier: Apache-2.0
+
 import numpy as np
 import os, sys
 from mpi4py import MPI
