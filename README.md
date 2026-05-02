@@ -10,17 +10,47 @@ It aims to be *completely* memory local, so every node will only need to work on
 
 **This is still work-in-progress**
 
-## In a nutshell:
-- c++-17 compatible compiler is needed,
-- add as a git submodule to your project, and
-- add following to your `CMakeLists.txt`:
+## Usage
+
+Essentially corgi is a python package which is implemented as a shared library.
+It is build with CMake and the python package uses scikit-build-core backend.
+For development purposes and testing manual CMake building is supported.
+
+Initialize submodules if they are not already initialized:
 
 ```
-add_subdirectory (corgi)
-target_link_library (<your_target> PRIVATE corgi)
+git submodule update --init --recursive
+```
+
+### Python package
+
+```
+pip install <path/to/corgi/repo>
+```
+
+### Manual CMake building and testing
+
+Corgi tests require some dependencies which can be installed using pip (>=25.1)
+(try upgrading pip if it is too old `pip install --upgrade pip`):
+
+```
+pip install --group <path/to/corgi/repo>/pyproject.toml:dev
+```
+
+Here is a minimal example of CMake usage to build and run tests.
+Path to pybind11 installed at previous step is given manually.
+
+```
+PACKAGE_PATH=$(pip show pybind11 | grep Location | awk '{print $2}')
+pybind11_DIR=$PACKAGE_PATH/pybind11/share/cmake/ cmake -B <build-dir> <path/to/corgi/repo>
+cd <build-dir>
+make
+ctest
 ```
 
 ## Examples
+
+These are available targets when manually building with CMake.
 
 ### Mesh-based simulation
 
