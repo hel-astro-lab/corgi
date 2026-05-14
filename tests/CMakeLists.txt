@@ -1,4 +1,4 @@
-# Copyright 2018 - 2026, Joonas Nättilä and the hel-astro-lab contributors
+# Copyright 2018 - 2026, Joonas Nättilä and the corgi contributors
 # SPDX-License-Identifier: Apache-2.0
 
 file (GLOB CORGI_TEST_SOURCES *.c++ *.h *.cpp *.hpp *.c *.cxx)
